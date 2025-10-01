@@ -1,0 +1,72 @@
+# System Architecture for BikeShare Login/Registration System (Iteration 2)
+
+## Tech Stack
+- Backend: Java 23 + Spring Boot 3.x
+- Frontend: Vue.js 3
+- Database:  MySQL
+- Authentication: JWT/OAuth/Session]
+- Build Tools: Maven (Backend), NPM/Vite (Frontend)
+
+## Architecture Layers (Choose at least 3)
+
+### 1. UI Layer (Frontend - Vue.js)
+**Description:** [Fill in - presentation layer responsibilities]
+**Components:**
+- [Fill in - login form component]
+- [Fill in - registration form component]
+- [Fill in - navigation component]
+- [Fill in - other UI components]
+
+**Package Structure:**
+```
+src/
+├── components/
+├── views/
+├── router/
+└── stores/
+```
+
+### 2. Application Layer (Spring Boot Controllers & Services)
+**Description:** [Fill in - application services and controllers]
+**Components:**
+- Controllers: [Fill in - AuthController, UserController, etc.]
+- Services: [Fill in - AuthService, UserService, etc.]
+- DTOs: [Fill in - request/response objects]
+
+**Package Structure:**
+```
+org.example.backend.
+├── web.controller/
+├── application.service/
+└── web.dto/
+```
+
+### 3. Domain Layer
+**Description:** [Fill in - core business logic and entities]
+**Components:**
+- Entities: [Fill in - User, Role, etc.]
+- Repositories: [Fill in - UserRepository, etc.]
+- Business Logic: [Fill in - validation rules, etc.]
+
+**Package Structure:**
+```
+org.example.backend.domain.
+├── model/
+└── repository/
+```
+
+### 4. [Optional] Technical Services Layer
+**Description:** [Fill in if using this layer]
+**Components:**
+- [Fill in - security configuration]
+- [Fill in - JWT handling]
+- [Fill in - database configuration]
+
+### 5. [Optional] Infrastructure Layer
+**Description:** [Fill in if using this layer]
+**Components:**
+- [Fill in - external integrations]
+- [Fill in - persistence implementations]
+
+## Package Diagram
+[Create and describe your package diagram showing layer relationships]

@@ -1,0 +1,7 @@
+#overall component of the bike system
+- has to have a dashboard
+- a payment system
+- a panel to view past rides
+
+#backend for the bike system
+- java for backend combine with spring boot
