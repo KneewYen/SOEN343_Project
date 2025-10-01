@@ -1,0 +1,161 @@
+# Implementation Checklist for BikeShare System - Iteration 2
+
+## Overview
+This checklist helps you track the implementation of the required features for Phase II:
+- Registration and Login Module
+- BMS Core and Station Control Module
+
+## Backend Implementation (Java + Spring Boot)
+
+### Project Setup
+- [ ] Java version: [Fill in - e.g., Java 17/21]
+- [ ] Spring Boot version: [Fill in - e.g., 3.x]
+- [ ] Maven/Gradle configuration
+- [ ] Database setup: [Fill in - MySQL/PostgreSQL/H2]
+
+### Security & Authentication
+- [ ] Spring Security dependency added
+- [ ] JWT token implementation or [Fill in - other auth method]
+- [ ] Password encryption (BCrypt or other)
+- [ ] CORS configuration for frontend
+- [ ] Authentication filter/interceptor
+- [ ] Role-based access control
+
+### Registration and Login Module
+#### Domain Layer
+- [ ] User entity/model class
+- [ ] Role enum/class (Rider, Operator, Admin)
+- [ ] User repository interface
+- [ ] Authentication-related exceptions
+
+#### Application Layer
+- [ ] UserService for user operations
+- [ ] AuthService for login/registration
+- [ ] Password validation logic
+- [ ] Email uniqueness validation
+
+#### Web Layer
+- [ ] AuthController with endpoints:
+  - [ ] POST /api/auth/register
+  - [ ] POST /api/auth/login
+  - [ ] POST /api/auth/logout
+  - [ ] GET /api/auth/profile
+- [ ] Request/Response DTOs
+- [ ] Input validation (@Valid annotations)
+- [ ] Proper HTTP status codes
+
+### BMS Core and Station Control Module
+#### Domain Layer
+- [ ] Station entity/model
+- [ ] Bike entity/model
+- [ ] Station repository
+- [ ] Bike repository
+- [ ] Business rules for station operations
+
+#### Application Layer
+- [ ] StationService for station operations
+- [ ] BikeService for bike management
+- [ ] Station status monitoring logic
+- [ ] Availability check algorithms
+
+#### Web Layer
+- [ ] StationController with endpoints:
+  - [ ] GET /api/stations - list all stations
+  - [ ] GET /api/stations/{id} - get station details
+  - [ ] GET /api/stations/{id}/bikes - get bikes at station
+  - [ ] PUT /api/stations/{id}/status - update station status (operators)
+- [ ] BikeController with endpoints:
+  - [ ] GET /api/bikes/available - check availability
+  - [ ] POST /api/bikes/{id}/reserve - reserve bike
+  - [ ] POST /api/bikes/{id}/unlock - unlock bike
+
+### Database Layer
+- [ ] Database connection configuration
+- [ ] JPA/Hibernate setup
+- [ ] Entity relationships mapping
+- [ ] Database initialization/migration scripts
+- [ ] Test data insertion
+
+## Frontend Implementation (Vue.js)
+
+### Project Setup
+- [ ] Vue.js version: [Fill in - e.g., Vue 3]
+- [ ] Package manager: [Fill in - NPM/Yarn]
+- [ ] Build tool: [Fill in - Vite/Webpack]
+- [ ] HTTP client: [Fill in - Axios/Fetch]
+
+### Authentication Module
+#### Components
+- [ ] LoginForm.vue - login interface
+- [ ] RegisterForm.vue - registration interface
+- [ ] NavBar.vue - navigation with auth state
+- [ ] ProtectedRoute.vue - route guards
+
+#### Views
+- [ ] LoginView.vue - login page
+- [ ] RegisterView.vue - registration page
+- [ ] DashboardView.vue - main app after login
+
+#### State Management
+- [ ] Auth store (Pinia/Vuex)
+- [ ] User session management
+- [ ] Token storage (localStorage/cookies)
+- [ ] Login/logout actions
+
+### BMS Core Module
+#### Components
+- [ ] StationList.vue - display all stations
+- [ ] StationCard.vue - individual station info
+- [ ] BikeAvailability.vue - show available bikes
+- [ ] StationMap.vue - visual station locations
+
+#### Views
+- [ ] StationsView.vue - stations overview
+- [ ] StationDetailView.vue - detailed station info
+- [ ] OperatorDashboard.vue - operator controls
+
+### API Integration
+- [ ] API service layer
+- [ ] Authentication interceptors
+- [ ] Error handling
+- [ ] Loading states
+- [ ] Success/error notifications
+
+## Testing
+
+### Backend Tests
+- [ ] Unit tests for services
+- [ ] Integration tests for controllers
+- [ ] Repository tests
+- [ ] Security configuration tests
+
+### Frontend Tests
+- [ ] Component unit tests
+- [ ] Store/state tests
+- [ ] API integration tests
+- [ ] E2E authentication flow tests
+
+## Design Patterns Implementation
+- [ ] Pattern 1: [Fill in pattern name and location]
+- [ ] Pattern 2: [Fill in pattern name and location]
+- [ ] Pattern 3: [Fill in pattern name and location]
+- [ ] UML diagrams created for each pattern
+
+## Documentation & Deliverables
+- [ ] README.md with setup instructions
+- [ ] API documentation
+- [ ] Architecture diagrams
+- [ ] Use case diagrams
+- [ ] Sequence diagrams
+- [ ] Package diagrams
+- [ ] Git repository tagged as 'phase_2'
+
+## Deployment Checklist
+- [ ] Environment configuration files
+- [ ] Docker setup (optional)
+- [ ] CI/CD pipeline (GitHub Actions)
+- [ ] Database deployment strategy
+- [ ] Frontend build and deployment
+
+## Notes Section
+[Fill in any additional notes, challenges, or decisions made during implementation]

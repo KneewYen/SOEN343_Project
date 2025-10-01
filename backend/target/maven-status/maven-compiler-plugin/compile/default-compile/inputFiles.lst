@@ -1,0 +1,9 @@
+/Users/nguyenle/Desktop/Concordia Software engineer /Summer 2024/data structures and algorithm/SOEN343_Project/backend/src/main/java/org/example/BackendApplication.java
+/Users/nguyenle/Desktop/Concordia Software engineer /Summer 2024/data structures and algorithm/SOEN343_Project/backend/src/main/java/org/example/Main.java
+/Users/nguyenle/Desktop/Concordia Software engineer /Summer 2024/data structures and algorithm/SOEN343_Project/backend/src/main/java/org/example/backend/application/service/UserService.java
+/Users/nguyenle/Desktop/Concordia Software engineer /Summer 2024/data structures and algorithm/SOEN343_Project/backend/src/main/java/org/example/backend/domain/model/User.java
+/Users/nguyenle/Desktop/Concordia Software engineer /Summer 2024/data structures and algorithm/SOEN343_Project/backend/src/main/java/org/example/backend/domain/repository/UserRepository.java
+/Users/nguyenle/Desktop/Concordia Software engineer /Summer 2024/data structures and algorithm/SOEN343_Project/backend/src/main/java/org/example/backend/infrastructure/persistence/InMemoryUserRepository.java
+/Users/nguyenle/Desktop/Concordia Software engineer /Summer 2024/data structures and algorithm/SOEN343_Project/backend/src/main/java/org/example/backend/web/controller/UserController.java
+/Users/nguyenle/Desktop/Concordia Software engineer /Summer 2024/data structures and algorithm/SOEN343_Project/backend/src/main/java/org/example/backend/web/dto/CreateUserRequest.java
+/Users/nguyenle/Desktop/Concordia Software engineer /Summer 2024/data structures and algorithm/SOEN343_Project/backend/src/main/java/org/example/backend/web/dto/UserResponse.java

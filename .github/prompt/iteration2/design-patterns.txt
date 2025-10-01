@@ -1,0 +1,109 @@
+# Design Patterns for BikeShare Login/Registration System (Iteration 2)
+
+## Pattern 1: [Fill in Pattern Name - e.g., Repository Pattern]
+
+### Justification:
+- [Fill in - Why did you choose this pattern?]
+- [Fill in - What problem does it solve in your authentication system?]
+- [Fill in - How does it improve your code architecture?]
+- [Fill in - Benefits for testing/maintainability]
+
+### Implementation:
+- **Classes involved:**
+  - [Fill in - Interface/Abstract class name]
+  - [Fill in - Concrete implementation class]
+  - [Fill in - Client classes that use it]
+- **UML diagram location:** [Fill in - path to your UML class diagram]
+- **Key methods:**
+  - [Fill in - main method signatures]
+  - [Fill in - important operations]
+
+### Code Structure:
+```
+[Fill in - brief code structure example showing the pattern]
+interface SomeRepository {
+    // method signatures
+}
+
+class ConcreteSomeRepository implements SomeRepository {
+    // implementation
+}
+```
+
+---
+
+## Pattern 2: [Fill in Second Pattern Name - e.g., Strategy Pattern]
+
+### Justification:
+- [Fill in - Why is this pattern useful for your authentication?]
+- [Fill in - What flexibility does it provide?]
+- [Fill in - How does it follow SOLID principles?]
+
+### Implementation:
+- **Classes involved:**
+  - [Fill in - Strategy interface]
+  - [Fill in - Concrete strategy classes]
+  - [Fill in - Context class]
+- **UML diagram location:** [Fill in - diagram file path]
+- **Key methods:**
+  - [Fill in - strategy method signatures]
+
+### Code Structure:
+```
+[Fill in - brief example of strategy pattern structure]
+```
+
+---
+
+## Pattern 3: [Fill in Third Pattern Name - e.g., Factory Pattern]
+
+### Justification:
+- [Fill in - How does this pattern help with object creation?]
+- [Fill in - What abstraction does it provide?]
+- [Fill in - Benefits for your user/role management?]
+
+### Implementation:
+- **Classes involved:**
+  - [Fill in - Factory class/interface]
+  - [Fill in - Product classes]
+  - [Fill in - Client code]
+- **UML diagram location:** [Fill in - diagram location]
+- **Key methods:**
+  - [Fill in - factory methods]
+  - [Fill in - creation logic]
+
+### Code Structure:
+```
+[Fill in - factory pattern example structure]
+```
+
+---
+
+## [Optional] Pattern 4: [Fill in Fourth Pattern if implementing more]
+
+### Justification:
+- [Fill in - additional pattern reasoning]
+
+### Implementation:
+- **Classes involved:** [Fill in]
+- **UML diagram location:** [Fill in]
+- **Key methods:** [Fill in]
+
+---
+
+## UML Class Diagrams Required:
+
+### Pattern Implementation Diagrams
+Create separate UML class diagrams for each pattern showing:
+- [Fill in - class relationships]
+- [Fill in - method signatures]
+- [Fill in - dependencies and associations]
+- [Fill in - multiplicity where relevant]
+
+### Suggested Diagram Locations:
+- `docs/patterns/pattern1-class-diagram.png`
+- `docs/patterns/pattern2-class-diagram.png`
+- `docs/patterns/pattern3-class-diagram.png`
+
+### Pattern Integration
+[Fill in - describe how your patterns work together in the overall system]

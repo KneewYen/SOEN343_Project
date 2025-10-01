@@ -1,0 +1,100 @@
+# Use Cases for BikeShare System - Iteration 2
+
+## Registration and Login Module
+
+### Registration Use Case
+ID: UC-REG-01
+Title: [Fill in - User Registration goal]
+Description: [Fill in - Describe user registration process for BikeShare system]
+Primary Actor: [Fill in - Who performs registration]
+Preconditions:
+- [Fill in - System state before registration]
+- [Fill in - User requirements]
+Postconditions:
+- [Fill in - System state after successful registration]
+- [Fill in - User account status]
+Inputs:
+- [Fill in - Required registration data]
+- [Fill in - Optional data]
+Outputs:
+- [Fill in - Registration confirmation]
+- [Fill in - Account details]
+Main Success Scenario:
+1. [Fill in - First step]
+2. [Fill in - Second step]
+3. [Fill in - Continue scenario steps]
+
+### Login Use Case
+ID: UC-LOGIN-01
+Title: [Fill in - User Login goal]
+Description: [Fill in - Describe authentication process]
+Primary Actor: [Fill in - Who performs login]
+Preconditions:
+- [Fill in - Account requirements]
+- [Fill in - System availability]
+Postconditions:
+- [Fill in - Successful authentication state]
+- [Fill in - User session status]
+Inputs:
+- [Fill in - Login credentials]
+Outputs:
+- [Fill in - Authentication response]
+- [Fill in - Session token/info]
+Main Success Scenario:
+1. [Fill in - Login steps]
+2. [Fill in - Validation process]
+3. [Fill in - Success actions]
+
+## BMS Core and Station Control Module
+
+### Station Status Check Use Case
+ID: UC-STATION-01
+Title: [Fill in - Station monitoring goal]
+Description: [Fill in - How system monitors station status]
+Primary Actor: [Fill in - System or user role]
+Preconditions:
+- [Fill in - Station operational requirements]
+Postconditions:
+- [Fill in - Updated station information]
+Inputs:
+- [Fill in - Station identifiers]
+Outputs:
+- [Fill in - Station status data]
+Main Success Scenario:
+1. [Fill in - Status check process]
+
+### Bike Availability Check Use Case
+ID: UC-BIKE-01
+Title: [Fill in - Bike availability goal]
+Description: [Fill in - How users check bike availability]
+Primary Actor: [Fill in - User type]
+Preconditions:
+- [Fill in - System and station requirements]
+Postconditions:
+- [Fill in - Available bike information displayed]
+Inputs:
+- [Fill in - Location/station data]
+Outputs:
+- [Fill in - Bike availability info]
+Main Success Scenario:
+1. [Fill in - Availability check steps]
+
+### Station Control Use Case
+ID: UC-CONTROL-01
+Title: [Fill in - Station control operations]
+Description: [Fill in - How operators control station functions]
+Primary Actor: [Fill in - Operator role]
+Preconditions:
+- [Fill in - Operator permissions]
+- [Fill in - Station status]
+Postconditions:
+- [Fill in - Station state after control action]
+Inputs:
+- [Fill in - Control commands]
+Outputs:
+- [Fill in - Control confirmation]
+Main Success Scenario:
+1. [Fill in - Control operation steps]
+
+## Additional Use Cases (Fill as needed)
+### [Add more use cases based on your specific requirements]
