@@ -1,0 +1,11 @@
+org/example/Main.class
+org/example/domain/entity/User$UserType.class
+org/example/ui/controller/UserController.class
+org/example/infrastructure/config/SupabaseConfig.class
+org/example/domain/entity/Ride.class
+org/example/domain/repository/UserRepository.class
+org/example/infrastructure/config/DatabaseConfig.class
+org/example/domain/entity/Ride$RideStatus.class
+org/example/domain/repository/RideRepository.class
+org/example/application/service/UserService.class
+org/example/domain/entity/User.class

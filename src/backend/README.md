@@ -1,0 +1,1 @@
+TO compile and install all the dependencies , simply mvn clean install

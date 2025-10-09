@@ -1,0 +1,9 @@
+/Users/nguyenle/Documents/SOEN343/RideWithUs/SOEN343_Project/src/backend/src/main/java/org/example/Main.java
+/Users/nguyenle/Documents/SOEN343/RideWithUs/SOEN343_Project/src/backend/src/main/java/org/example/application/service/UserService.java
+/Users/nguyenle/Documents/SOEN343/RideWithUs/SOEN343_Project/src/backend/src/main/java/org/example/domain/entity/Ride.java
+/Users/nguyenle/Documents/SOEN343/RideWithUs/SOEN343_Project/src/backend/src/main/java/org/example/domain/entity/User.java
+/Users/nguyenle/Documents/SOEN343/RideWithUs/SOEN343_Project/src/backend/src/main/java/org/example/domain/repository/RideRepository.java
+/Users/nguyenle/Documents/SOEN343/RideWithUs/SOEN343_Project/src/backend/src/main/java/org/example/domain/repository/UserRepository.java
+/Users/nguyenle/Documents/SOEN343/RideWithUs/SOEN343_Project/src/backend/src/main/java/org/example/infrastructure/config/DatabaseConfig.java
+/Users/nguyenle/Documents/SOEN343/RideWithUs/SOEN343_Project/src/backend/src/main/java/org/example/infrastructure/config/SupabaseConfig.java
+/Users/nguyenle/Documents/SOEN343/RideWithUs/SOEN343_Project/src/backend/src/main/java/org/example/ui/controller/UserController.java
