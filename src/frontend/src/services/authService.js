@@ -193,3 +193,4 @@ class AuthService {
 // Create and export a singleton instance
 export const authService = new AuthService()
 export default authService
+

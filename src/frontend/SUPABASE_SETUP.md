@@ -153,3 +153,4 @@ Your Vue.js frontend is now fully configured to work with:
 - ✅ Error handling and testing tools
 
 Start building your ride-sharing app! 🚗💨
+

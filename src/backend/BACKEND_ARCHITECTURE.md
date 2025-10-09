@@ -118,3 +118,4 @@ package org.example.infrastructure.config;
 - Add validation layers
 - Consider adding a mapper layer for entity-DTO conversion
 - Add security configuration in infrastructure layer
+
