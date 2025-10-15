@@ -34,6 +34,16 @@ public class User {
         this.role = "rider" ;  //ensures user is a rides
     }
 
+    // when manually entering users, use this one to allow operator role
+    public User(String fullname, String userName, String address, String email, String role, String password){
+        this.fullName = fullname ;
+        this.userName = userName ;
+        this.address = address ;
+        this.email = email ;
+        this.password = password ;
+        this.role = role ; 
+    }
+
     // Getters
     public String getFullName(){
         return this.fullName ;
