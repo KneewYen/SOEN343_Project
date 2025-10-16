@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.File;
 import java.io.InputStream;
 import java.util.List;
 
@@ -27,7 +26,6 @@ public class OperatorLoadController {
     public String importOperators(){
         try{
             ObjectMapper mapper = new ObjectMapper();
-            // Load the JSON file from classpath (works in IDE and JAR)
             ClassPathResource resource = new ClassPathResource("operators.json");
             try (InputStream inputStream = resource.getInputStream()) {
                 List<User> operators = mapper.readValue(inputStream, new TypeReference<List<User>>() {});
