@@ -43,12 +43,17 @@ public class ConfigLoadController {
 
             if(stationNodes != null && stationNodes.isArray()){
                 for(JsonNode stationNode: stationNodes){
+
+                    // convert status to StationStatus enum
+                    String stationStatusStr = stationNode.get("status").asText();
+                    Station.StationStatus stationStatus = Station.StationStatus.valueOf(stationStatusStr.toUpperCase());
+
                     Station station = new Station(
                         stationNode.get("latitude").asDouble(),
                         stationNode.get("longitude").asDouble(),
                         stationNode.get("address").asText(),
                         stationNode.get("name").asText(),
-                        stationNode.get("status").asText(),
+                        stationStatus,
                         stationNode.get("capacity").asInt()
                     );
                     stationRepository.save(station);
@@ -70,9 +75,13 @@ public class ConfigLoadController {
                             // check if a dock has a bike, then get that bike
                             if(dockNode.has("bike")){
                                 JsonNode bikeNode = dockNode.get("bike");
+
+                                //convert status to BikeStatus enum
+                                String bikeStatusStr = bikeNode.get("status").asText();
+                                Bike.BikeStatus bikeStatus = Bike.BikeStatus.valueOf(bikeStatusStr.toUpperCase());
                                 
                                 Bike bike = new Bike(
-                                    bikeNode.get("status").asText(),
+                                    bikeStatus,
                                     bikeNode.get("type").asText(),
                                     dock
                                 );
