@@ -26,9 +26,10 @@ public class Station {
 
     public enum StationStatus{
         ACTIVE,
-        OUT_OF_SERVICE
-    }
+        OUT_OF_SERVICE,
 
+    }
+    @Enumerated(EnumType.STRING)
     private StationStatus status;
     private int capacity;
 
@@ -41,7 +42,7 @@ public class Station {
     public Station() {
     }
 
-    public Station(Double latitude, Double longitude, String address, String name, String status, int capacity) {
+    public Station(Double latitude, Double longitude, String address, String name, StationStatus status, int capacity) {
         this.latitude = latitude;
         this.longitude = longitude;
         this.address = address;
