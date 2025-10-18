@@ -9,6 +9,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
+import java.util.List;
 
 @Entity
 @Table(name = "stations")
@@ -20,7 +23,13 @@ public class Station {
     private Double longitude;
     private String address;
     private String name;
-    private String status;
+
+    public enum StationStatus{
+        ACTIVE,
+        OUT_OF_SERVICE
+    }
+
+    private StationStatus status;
     private int capacity;
 
     // cascade: if you save a station, you save all docks and bikes related to it (same with delete...)
@@ -57,12 +66,13 @@ public class Station {
     public String getName() {
         return name;
     }
-    public String getStatus() {
+    public StationStatus getStatus() {
         return status;
     }
     public int getCapacity() {
         return capacity;
     }
+    public List<Dock> getDocks() {return docks;}
 
     // Setters
     public void setId(Long id) {
@@ -80,10 +90,15 @@ public class Station {
     public void setName(String name) {
         this.name = name;
     }
-    public void setStatus(String status) {
+    public void setStatus(StationStatus status) {
         this.status = status;
     }
     public void setCapacity(int capacity) {
         this.capacity = capacity;
+    }
+    public void setDocks(List<Dock> docks) {this.docks = docks;}
+
+    public boolean hasActiveReservation(){
+        return docks.stream().anyMatch(Dock::hasActiveReservation);
     }
 }

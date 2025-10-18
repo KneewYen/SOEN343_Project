@@ -15,7 +15,7 @@ import java.io.InputStream;
 import java.util.List;
 
 @RestController
-@RequestMapping("/import")
+@RequestMapping("/operator/import")
 public class OperatorLoadController {
 
     @Autowired

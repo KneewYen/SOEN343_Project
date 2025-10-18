@@ -10,6 +10,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
+import java.util.List;
 
 @Entity
 @Table(name = "docks")
@@ -30,6 +33,9 @@ public class Dock {
     @JoinColumn(name = "station_id", nullable = false) //station_id cannot be null
     private Station station;
 
+    @OneToMany(mappedBy = "dock")
+    private List<Bike> bikes;
+
     public Dock() {
     }
 
@@ -48,6 +54,7 @@ public class Dock {
     public Station getStation() {
         return station;
     }
+    public List<Bike> getBikes() {return bikes;}
 
     // Setters
     public void setId(Long id) {
@@ -58,5 +65,10 @@ public class Dock {
     }
     public void setStation(Station station) {
         this.station = station;
+    }
+    public void setBikes(List<Bike> bikes) {this.bikes = bikes;}
+
+    public boolean hasActiveReservation() {
+        return bikes.stream().anyMatch(bike -> bike.getStatus() == Bike.BikeStatus.RESERVED);
     }
 }
