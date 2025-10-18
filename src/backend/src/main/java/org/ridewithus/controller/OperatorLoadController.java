@@ -43,4 +43,8 @@ public class OperatorLoadController {
         }
 
     }
+
+    private boolean isOperator(User user){
+        return user.getRole().equals("operator");
+    }
 }

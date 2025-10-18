@@ -16,14 +16,20 @@ public class Station {
     private Long longitude;
     private String address;
     private String name;
-    private String status;
+
+    public enum StationStatus{
+        ACTIVE,
+        OUT_OF_SERVICE
+    }
+
+    private StationStatus status;
     private int capacity;
 
     // Constructors
     public Station() {
     }
 
-    public Station(Long latitude, Long longitude, String address, String name, String status, int capacity) {
+    public Station(Long latitude, Long longitude, String address, String name, StationStatus status, int capacity) {
         this.latitude = latitude;
         this.longitude = longitude;
         this.address = address;
@@ -48,7 +54,7 @@ public class Station {
     public String getName() {
         return name;
     }
-    public String getStatus() {
+    public StationStatus getStatus() {
         return status;
     }
     public int getCapacity() {
@@ -71,7 +77,7 @@ public class Station {
     public void setName(String name) {
         this.name = name;
     }
-    public void setStatus(String status) {
+    public void setStatus(StationStatus status) {
         this.status = status;
     }
     public void setCapacity(int capacity) {
