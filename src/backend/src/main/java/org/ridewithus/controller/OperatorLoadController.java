@@ -15,7 +15,7 @@ import java.io.InputStream;
 import java.util.List;
 
 @RestController
-@RequestMapping("/import")
+@RequestMapping("/operator/import")
 public class OperatorLoadController {
 
     @Autowired
@@ -42,9 +42,5 @@ public class OperatorLoadController {
             return "failure " + e.getMessage() ;
         }
 
-    }
-
-    private boolean isOperator(User user){
-        return user.getRole().equals("operator");
     }
 }

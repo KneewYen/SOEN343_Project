@@ -1,10 +1,8 @@
 package org.ridewithus.domain.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
+import java.util.List;
 
 @Entity
 @Table(name = "stations")
@@ -24,6 +22,9 @@ public class Station {
 
     private StationStatus status;
     private int capacity;
+
+    @OneToMany(mappedBy = "station", cascade = CascadeType.ALL)
+    private List<Dock> docks;
 
     // Constructors
     public Station() {
@@ -60,6 +61,7 @@ public class Station {
     public int getCapacity() {
         return capacity;
     }
+    public List<Dock> getDocks() {return docks;}
 
     // Setters
     public void setId(Long id) {
@@ -82,5 +84,10 @@ public class Station {
     }
     public void setCapacity(int capacity) {
         this.capacity = capacity;
+    }
+    public void setDocks(List<Dock> docks) {this.docks = docks;}
+
+    public boolean hasActiveReservation(){
+        return docks.stream().anyMatch(Dock::hasActiveReservation);
     }
 }
