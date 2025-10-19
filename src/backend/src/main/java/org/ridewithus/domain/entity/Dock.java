@@ -62,6 +62,6 @@ public class Dock {
     public void setBikes(List<Bike> bikes) {this.bikes = bikes;}
 
     public boolean hasActiveReservation() {
-        return bikes.stream().anyMatch(bike -> bike.getStatus() == Bike.BikeStatus.RESERVED);
+        return bikes.stream().anyMatch(bike -> bike.getStatus() == BikeStatus.RESERVED);
     }
 }
