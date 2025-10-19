@@ -15,6 +15,7 @@ public class OperatorController {
     @Autowired
     private UserRepository userRepository;
 
+    // Example: /api/operator/bike/2/toggle?userId=1
     @PostMapping("/bike/{id}/toggle")
     public String toggleBike(@PathVariable("id") Long id, @RequestParam("userId") Long userId) {
         User operator = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
@@ -33,14 +34,28 @@ public class OperatorController {
         return operatorService.toggleStationStatus(id, operator);
     }
 
-    // Example request: /api/operator/moveBike?bikeId=5&sourceStationId=2&destinationStationId=4&userId=1
+    // Example: /api/operator/moveBike?bikeId=5&sourceStationId=2&destinationStationId=4&userId=1
     @PostMapping("/moveBike")
-    public String moveBike(@RequestParam("bikeId") Long bikeId, @RequestParam("sourceStationId") Long sourceStationId,
-                           @RequestParam("destinationStationId") Long destinationSourceId, @RequestParam("userId") Long userId) {
+    public String moveBike(@RequestParam("bikeId") Long bikeId,
+                           @RequestParam("sourceStationId") Long sourceStationId,
+                           @RequestParam("destinationStationId") Long destinationSourceId,
+                           @RequestParam("userId") Long userId) {
 
         User operator = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
 
         return operatorService.moveBike(bikeId, sourceStationId, destinationSourceId, operator);
+    }
+
+    // Example: /api/operator/rebalanceBikes?sourceStationId=2&destinationId=5&numberOfBikes=3&userId=1
+    @PostMapping("/rebalanceBikes")
+    public String rebalanceBikes(@RequestParam("sourceStationId") Long sourceStationId,
+                                 @RequestParam("destinationStationId") Long destionationStationId,
+                                 @RequestParam("numberOfBikes") int numberOfBikes,
+                                 @RequestParam("userId") Long userId) {
+
+        User operator = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+
+        return operatorService.rebalanceBikes(sourceStationId, destionationStationId, numberOfBikes, operator);
     }
 
 }
