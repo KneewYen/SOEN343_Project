@@ -33,4 +33,14 @@ public class OperatorController {
         return operatorService.toggleStationStatus(id, operator);
     }
 
+    // Example request: /api/operator/moveBike?bikeId=5&sourceStationId=2&destinationStationId=4&userId=1
+    @PostMapping("/moveBike")
+    public String moveBike(@RequestParam("bikeId") Long bikeId, @RequestParam("sourceStationId") Long sourceStationId,
+                           @RequestParam("destinationStationId") Long destinationSourceId, @RequestParam("userId") Long userId) {
+
+        User operator = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+
+        return operatorService.moveBike(bikeId, sourceStationId, destinationSourceId, operator);
+    }
+
 }

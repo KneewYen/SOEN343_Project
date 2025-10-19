@@ -77,4 +77,51 @@ public class OperatorService {
 
         return "Station status updated successfully";
     }
+
+    @Transactional
+    public String moveBike(Long bikeId, Long sourceStationId, Long destinationStationId, User operator){
+        if(!operator.getRole().equals("operator")){
+            return "Error: Unauthorized";
+        }
+
+        Bike bike = bikeRepository.findById(bikeId).orElseThrow(() -> new RuntimeException("Bike not found"));
+
+        Station sourceStation = stationRepository.findById(sourceStationId).orElseThrow(() -> new RuntimeException("Station not found"));
+
+        Station destinationStation = stationRepository.findById(destinationStationId).orElseThrow(() -> new RuntimeException("Station not found"));
+
+        if(sourceStation.getStatus() != Station.StationStatus.ACTIVE){
+            return "Source station is not active";
+        }
+
+        if(destinationStation.getStatus() != Station.StationStatus.ACTIVE){
+            return "Destination station is not active";
+        }
+
+        if(bike.getStatus() == Bike.BikeStatus.ON_TRIP || bike.getStatus() == Bike.BikeStatus.RESERVED){
+            return "Bike is currently unavailable for transfer";
+        }
+
+        // Find free dock in destination
+        Dock freeDock = dockRepository.findFirstByStationAndStatus(destinationStation, Dock.DockStatus.EMPTY)
+                .orElseThrow(() -> new RuntimeException("No free docks available in destination station."));
+
+        // Remove bike from current dock
+        Dock currentDock = bike.getDock();
+        if(currentDock != null){
+            currentDock.setStatus(Dock.DockStatus.EMPTY);
+            dockRepository.save(currentDock);
+        }
+
+        // Assign to new dock
+        bike.setDock(freeDock);
+        freeDock.setStatus(Dock.DockStatus.OCCUPIED);
+
+        dockRepository.save(freeDock);
+        bikeRepository.save(bike);
+
+        return "Bike " + bike.getId() + " successfully moved from station " + sourceStation.getName()
+                + " to station " + destinationStation.getName();
+
+    }
 }

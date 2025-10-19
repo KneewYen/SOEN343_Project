@@ -7,6 +7,7 @@ import org.ridewithus.domain.entity.Station;
 import org.ridewithus.domain.entity.Bike;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface DockRepository extends JpaRepository<Dock, Long> {
@@ -16,6 +17,8 @@ public interface DockRepository extends JpaRepository<Dock, Long> {
 
     // returns the list of bikes docked, similar to the one above
     List<Bike> findByStationAndStatus(Station station, String status);
+
+    Optional<Dock> findFirstByStationAndStatus(Station station, Dock.DockStatus status);
 
     
 }
