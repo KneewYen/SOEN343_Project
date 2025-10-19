@@ -15,7 +15,9 @@ public interface DockRepository extends JpaRepository<Dock, Long> {
     long countByStationAndStatus(Station station, String status);
 
     // returns the list of bikes docked, similar to the one above
-    List<Bike> findByStationAndStatus(Station station, String status);
+    List<Bike> findBikesByStationAndStatus(Station station, Dock.DockStatus status);
+
+    List<Dock> findByStationAndStatus(Station station, Dock.DockStatus status);
 
     
 }

@@ -1,6 +1,7 @@
 package org.ridewithus.controller;
 
 import org.ridewithus.domain.entity.Bike;
+import org.ridewithus.domain.entity.BikeStatus;
 import org.ridewithus.domain.entity.Dock;
 import org.ridewithus.domain.entity.Station;
 import org.ridewithus.domain.entity.Dock.DockStatus;
@@ -78,13 +79,10 @@ public class ConfigLoadController {
 
                                 //convert status to BikeStatus enum
                                 String bikeStatusStr = bikeNode.get("status").asText();
-                                Bike.BikeStatus bikeStatus = Bike.BikeStatus.valueOf(bikeStatusStr.toUpperCase());
+                                BikeStatus bikeStatus = BikeStatus.valueOf(bikeStatusStr.toUpperCase());
                                 
-                                Bike bike = new Bike(
-                                    bikeStatus,
-                                    bikeNode.get("type").asText(),
-                                    dock
-                                );
+                                Bike bike = Bike.builder().status(bikeStatus).type(bikeNode.get("type").asText()).dock(dock).build();
+
                                 bikeRepository.save(bike);
                                 
                             }
