@@ -9,7 +9,13 @@ import org.ridewithus.domain.entity.Dock;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DockDTO {
+
     private Long id;
+
     private Dock.DockStatus status;
-    private StationDTO station;
+
+    private Long stationId;
+
+    private Long bikeId;
+
 }

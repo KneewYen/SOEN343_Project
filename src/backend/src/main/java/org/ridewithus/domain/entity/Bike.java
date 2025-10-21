@@ -1,5 +1,6 @@
 package org.ridewithus.domain.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -23,9 +24,10 @@ public class Bike {
     private BikeStatus status; // Persisted in DB
 
     @Transient
+    @JsonIgnore
     private BikeState state; // In-memory state
 
-    @ManyToOne
+    @OneToOne
     @JoinColumn(name = "dock_id", unique = true) //unique makes it so it has acts as One-to-one relationship, more flexible for later on
     private Dock dock;
 

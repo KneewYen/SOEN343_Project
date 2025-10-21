@@ -38,8 +38,7 @@ public class Station {
     @Enumerated(EnumType.STRING)
     private StationStatus status;
 
-    @Builder.Default
-    private int capacity = 15;
+    private int capacity;
 
     public enum StationStatus{
         ACTIVE,
