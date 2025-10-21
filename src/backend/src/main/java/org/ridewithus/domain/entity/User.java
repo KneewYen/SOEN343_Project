@@ -5,7 +5,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.Getter;
 
+@Getter
 @Entity
 @Table(name = "users")
 public class User {
@@ -42,26 +44,6 @@ public class User {
         this.email = email ;
         this.password = password ;
         this.role = role ; 
-    }
-
-    // Getters
-    public String getFullName(){
-        return this.fullName ;
-    }
-    public String getUserName(){
-        return this.userName ;
-    }
-    public String getAddress(){
-        return this.address ;
-    }
-    public String getEmail(){
-        return this.email ;
-    }
-    public String getPassword(){
-        return this.password ;
-    }
-    public String getRole(){
-        return this.role;
     }
 
     // Setters

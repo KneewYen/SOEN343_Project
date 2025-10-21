@@ -1,11 +1,7 @@
 package org.ridewithus.domain.services;
 
 import jakarta.transaction.Transactional;
-import org.apache.hc.core5.reactor.IOSession;
-import org.ridewithus.domain.entity.Bike;
-import org.ridewithus.domain.entity.Dock;
-import org.ridewithus.domain.entity.Station;
-import org.ridewithus.domain.entity.User;
+import org.ridewithus.domain.entity.*;
 import org.ridewithus.infrastructure.repository.BikeRepository;
 import org.ridewithus.infrastructure.repository.DockRepository;
 import org.ridewithus.infrastructure.repository.StationRepository;
@@ -34,11 +30,11 @@ public class OperatorService {
         }
         Bike bike = bikeRepository.findById(bikeId).orElseThrow(() -> new RuntimeException("Bike not found"));
 
-        if(bike.isReserved() || bike.isOnTrip()){
+        if (bike.getStatus() == BikeStatus.RESERVED || bike.getStatus() == BikeStatus.ON_TRIP) {
             return "Error: Bike cannot be toggled while reserved or on a trip.";
         }
 
-        bike.setStatus(bike.getStatus() == Bike.BikeStatus.AVAILABLE ? Bike.BikeStatus.MAINTENANCE : Bike.BikeStatus.AVAILABLE);
+        bike.setStatus(bike.getStatus() == BikeStatus.AVAILABLE ? BikeStatus.MAINTENANCE : BikeStatus.AVAILABLE);
         bikeRepository.save(bike);
 
         return "Bike status updated successfully";
