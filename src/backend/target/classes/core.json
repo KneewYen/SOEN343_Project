@@ -1,0 +1,114 @@
+{
+  "stations": [
+    {
+      "name": "Concordia",
+      "address": "1550 De Maisonneuve Blvd W",
+      "latitude": 45.496712,
+      "longitude": -73.577934,
+      "capacity": 10,
+      "status": "active",
+      "docks": [
+        {
+          "status": "occupied",
+          "bike": { "type": "e-bike", "status": "available" }
+        },
+        {
+          "status": "empty"
+        },
+        {
+          "status": "occupied",
+          "bike": { "type": "e-bike", "status": "available" }
+        },
+        {
+          "status": "occupied",
+          "bike": { "type": "e-bike", "status": "available" }
+        },
+        {
+          "status": "occupied",
+          "bike": { "type": "standard", "status": "available" }
+        },
+        {
+          "status": "occupied",
+          "bike": { "type": "standard", "status": "available" }
+        },
+        {
+          "status": "occupied",
+          "bike": { "type": "standard", "status": "available" }
+        },
+        {
+          "status": "out_of_service"
+        },
+        {
+          "status": "empty"
+        },
+        {
+          "status": "empty"
+        }
+      ]
+    },
+    {
+      "name": "McGill",
+      "address": "845 Sherbrooke St W, Montreal, Quebec H3A 0G4",
+      "latitude": 45.5060,
+      "longitude": -73.5783,
+      "capacity": 10,
+      "status": "active",
+      "docks": [
+        {
+          "status": "occupied",
+          "bike": {
+            "type": "e-bike",
+            "status": "available"
+          }
+        },
+        {
+          "status": "empty"
+        },
+        {
+          "status": "occupied",
+          "bike": {
+            "type": "e-bike",
+            "status": "available"
+          }
+        },
+        {
+          "status": "occupied",
+          "bike": {
+            "type": "e-bike",
+            "status": "available"
+          }
+        },
+        {
+          "status": "occupied",
+          "bike": {
+            "type": "standard",
+            "status": "available"
+          }
+        },
+        {
+          "status": "occupied",
+          "bike": {
+            "type": "standard",
+            "status": "available"
+          }
+        },
+        {
+          "status": "occupied",
+          "bike": {
+            "type": "standard",
+            "status": "available"
+          }
+        },
+        {
+          "status": "out_of_service"
+        },
+        {
+          "status": "empty"
+        },
+        {
+          "status": "empty"
+        }
+      ]
+    }
+  ]
+}
