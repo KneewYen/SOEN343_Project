@@ -35,25 +35,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-m2-
 
-      - name: Apply Spotless formatting
-        run: |
-          mvn -B -f src/backend/pom.xml spotless:apply
-          # If Spotless changed files, commit and push them back to the branch
-          if ! git diff --quiet; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add -A
-            git commit -m "chore: apply code formatting via Spotless"
-            echo "Attempting to push formatting changes back to the branch..."
-            if git push --set-upstream origin HEAD; then
-              echo "Formatting changes pushed successfully."
-            else
-              echo "Push failed (likely a fork). Running spotless:check to fail the build so contributor can format locally."
-              mvn -B -f src/backend/pom.xml spotless:check
-            fi
-          else
-            echo "No formatting changes needed."
-          fi
 
       - name: Build backend (mvn clean install)
         run: mvn -B -f src/backend/pom.xml clean install
