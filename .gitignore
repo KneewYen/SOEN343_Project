@@ -1,0 +1,26 @@
+# Ignore Maven build output
+# Ignore any target/ directory at repo root or in modules
+target/
+**/target/
+
+# IntelliJ / IDE
+/.idea/
+*.iml
+
+# VS Code
+.vscode/
+
+# Node
+node_modules/
+dist/
+
+# Environment files
+.env
+.env.local
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
