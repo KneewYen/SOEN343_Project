@@ -13,6 +13,8 @@
         <maven.compiler.target>23</maven.compiler.target>
         <spring-boot.version>3.3.5</spring-boot.version>
         <java.version>23</java.version>
+        <!-- Lombok version property so annotationProcessorPaths can reference it -->
+        <lombok.version>1.18.34</lombok.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -140,6 +142,14 @@
                     <source>23</source>
                     <target>23</target>
                     <release>23</release>
+                    <!-- Enable annotation processing for Lombok -->
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
         </plugins>

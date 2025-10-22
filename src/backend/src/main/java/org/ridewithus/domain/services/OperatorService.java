@@ -8,10 +8,10 @@ import org.ridewithus.infrastructure.repository.StationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.Serial;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+
+import static org.ridewithus.domain.entity.BikeStatus.ON_TRIP;
+import static org.ridewithus.domain.entity.BikeStatus.RESERVED;
 
 @Service
 public class OperatorService {
@@ -30,7 +30,7 @@ public class OperatorService {
         }
         Bike bike = bikeRepository.findById(bikeId).orElseThrow(() -> new RuntimeException("Bike not found"));
 
-        if (bike.getStatus() == BikeStatus.RESERVED || bike.getStatus() == BikeStatus.ON_TRIP) {
+        if (bike.getStatus() == RESERVED || bike.getStatus() == ON_TRIP) {
             return "Error: Bike cannot be toggled while reserved or on a trip.";
         }
 
@@ -98,7 +98,7 @@ public class OperatorService {
             return "Destination station is not active";
         }
 
-        if(bike.getStatus() == Bike.BikeStatus.ON_TRIP || bike.getStatus() == Bike.BikeStatus.RESERVED){
+        if(bike.getStatus() == ON_TRIP || bike.getStatus() == RESERVED){
             return "Bike is currently unavailable for transfer";
         }
 
