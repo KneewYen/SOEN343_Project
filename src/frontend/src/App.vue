@@ -1,147 +1,155 @@
-<script setup>
-import { ref, onMounted } from 'vue'
-import LoginView from './views/LoginView.vue'
-import RegisterView from './views/RegisterView.vue'
-import DashboardView from './views/DashboardView.vue'
-import { useAuthStore } from './stores/authStore'
-
-const authStore = useAuthStore()
-const currentView = ref('login')
-const isInitialized = ref(false)
-
-// Initialize authentication on app start
-onMounted(async () => {
-  await authStore.initializeAuth()
-  isInitialized.value = true
-  
-  // If user is authenticated, show dashboard
-  if (authStore.isAuthenticated.value) {
-    currentView.value = 'dashboard'
-  }
-})
-
-// Handle view switching
-const switchToRegister = () => {
-  currentView.value = 'register'
-}
-
-const switchToLogin = () => {
-  currentView.value = 'login'
-}
-
-const handleLoginSuccess = (user) => {
-  console.log('Login successful:', user)
-  currentView.value = 'dashboard'
-}
-
-const handleRegisterSuccess = (user) => {
-  console.log('Registration successful:', user)
-  currentView.value = 'dashboard'
-}
-
-const handleLogout = () => {
-  authStore.signOut()
-  currentView.value = 'login'
-}
-</script>
-
 <template>
   <div id="app">
-    <!-- Loading screen while initializing -->
-    <div v-if="!isInitialized" class="loading-screen">
-      <div class="loading-spinner"></div>
-      <p>Loading RideWithUs...</p>
-    </div>
-
-    <!-- Main app content -->
-    <div v-else>
-      <!-- Login View -->
-      <LoginView 
-        v-if="currentView === 'login'"
-        @switch-to-register="switchToRegister"
-        @login-success="handleLoginSuccess"
-      />
-
-      <!-- Register View -->
-      <RegisterView 
-        v-if="currentView === 'register'"
-        @switch-to-login="switchToLogin"
-        @register-success="handleRegisterSuccess"
-      />
-
-      <!-- Dashboard View -->
-      <DashboardView 
-        v-if="currentView === 'dashboard'"
-        @logout="handleLogout"
-      />
-    </div>
+    <RouterView />
   </div>
 </template>
 
+<script>
+import { RouterView } from 'vue-router'
+import { useTheme } from './composables/useTheme'
+import { onMounted, watch } from 'vue'
+
+export default {
+  name: 'App',
+  components: {
+    RouterView
+  },
+  setup() {
+    const { isDarkMode } = useTheme()
+
+    const updateTheme = (dark) => {
+      const root = document.documentElement
+
+      if (dark) {
+        // Dark theme
+        root.style.setProperty('--primary', '#ec4899')
+        root.style.setProperty('--primary-hover', '#f472b6')
+        root.style.setProperty('--primary-light', '#831843')
+        root.style.setProperty('--secondary', '#f472b6')
+        root.style.setProperty('--background', '#111827')
+        root.style.setProperty('--surface', '#1f2937')
+        root.style.setProperty('--surface-hover', '#374151')
+        root.style.setProperty('--text', '#f9fafb')
+        root.style.setProperty('--text-secondary', '#d1d5db')
+        root.style.setProperty('--border', '#9d174d')
+        root.style.setProperty('--error', '#f87171')
+        root.style.setProperty('--error-bg', '#7f1d1d')
+        root.style.setProperty('--success', '#34d399')
+        root.style.setProperty('--success-bg', '#064e3b')
+        root.style.setProperty('--gradient', 'linear-gradient(135deg, #ec4899 0%, #db2777 50%, #be185d 100%)')
+        root.style.setProperty('--card-shadow', '0 10px 40px rgba(0, 0, 0, 0.5)')
+      } else {
+        // Light theme
+        root.style.setProperty('--primary', '#ec4899')
+        root.style.setProperty('--primary-hover', '#db2777')
+        root.style.setProperty('--primary-light', '#fbcfe8')
+        root.style.setProperty('--secondary', '#f472b6')
+        root.style.setProperty('--background', '#ffffff')
+        root.style.setProperty('--surface', '#fdf2f8')
+        root.style.setProperty('--surface-hover', '#fce7f3')
+        root.style.setProperty('--text', '#1f2937')
+        root.style.setProperty('--text-secondary', '#6b7280')
+        root.style.setProperty('--border', '#f9a8d4')
+        root.style.setProperty('--error', '#ef4444')
+        root.style.setProperty('--error-bg', '#fee2e2')
+        root.style.setProperty('--success', '#10b981')
+        root.style.setProperty('--success-bg', '#d1fae5')
+        root.style.setProperty('--gradient', 'linear-gradient(135deg, #ec4899 0%, #db2777 50%, #be185d 100%)')
+        root.style.setProperty('--card-shadow', '0 10px 40px rgba(236, 72, 153, 0.15)')
+      }
+    }
+
+    onMounted(() => {
+      updateTheme(isDarkMode.value)
+    })
+
+    watch(isDarkMode, (newValue) => {
+      updateTheme(newValue)
+    })
+
+    return {}
+  }
+}
+</script>
+
 <style>
+/* Global reset and base styles */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-html, body {
+html {
   width: 100%;
   height: 100%;
-  margin: 0;
-  padding: 0;
   overflow-x: hidden;
-  background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 50%, #ffb3c6 100%);
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  width: 100%;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--background);
+  color: var(--text);
+  transition: background-color 0.3s ease, color 0.3s ease;
   line-height: 1.6;
-  color: #333;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
-  -ms-text-size-adjust: 100%;
 }
 
 #app {
-  min-height: 100vh;
   width: 100%;
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-}
-
-.loading-screen {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
+}
+
+/* Smooth transitions for theme changes */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Responsive design for different screen sizes */
+@media (max-width: 480px) {
+  /* Mobile phones */
+  body {
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  /* Large phones and small tablets */
+  body {
+    font-size: 15px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  /* Tablets */
+  body {
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1440px) {
+  /* Laptops and small desktops */
+  body {
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 1441px) {
+  /* Large desktops */
+  body {
+    font-size: 18px;
+  }
+}
+
+/* Ensure full viewport usage */
+html, body, #app {
+  height: 100%;
   width: 100%;
-  background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 50%, #ffb3c6 100%);
-  color: white;
-  margin: 0;
-  padding: 0;
-}
-
-.loading-spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  border-top: 4px solid white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 20px;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.loading-screen p {
-  font-size: 1.2rem;
-  font-weight: 500;
 }
 </style>
+

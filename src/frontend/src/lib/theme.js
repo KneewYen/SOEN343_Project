@@ -1,0 +1,42 @@
+// Theme configuration with pink color palette
+export const themes = {
+  light: {
+    primary: '#ec4899',
+    primaryHover: '#db2777',
+    primaryLight: '#fbcfe8',
+    secondary: '#f472b6',
+    background: '#ffffff',
+    surface: '#fdf2f8',
+    surfaceHover: '#fce7f3',
+    text: '#1f2937',
+    textSecondary: '#6b7280',
+    border: '#f9a8d4',
+    error: '#ef4444',
+    errorBg: '#fee2e2',
+    success: '#10b981',
+    successBg: '#d1fae5',
+    gradient: 'linear-gradient(135deg, #ec4899 0%, #db2777 50%, #be185d 100%)',
+    cardShadow: '0 10px 40px rgba(236, 72, 153, 0.15)',
+  },
+  dark: {
+    primary: '#ec4899',
+    primaryHover: '#f472b6',
+    primaryLight: '#831843',
+    secondary: '#f472b6',
+    background: '#111827',
+    surface: '#1f2937',
+    surfaceHover: '#374151',
+    text: '#f9fafb',
+    textSecondary: '#d1d5db',
+    border: '#9d174d',
+    error: '#f87171',
+    errorBg: '#7f1d1d',
+    success: '#34d399',
+    successBg: '#064e3b',
+    gradient: 'linear-gradient(135deg, #ec4899 0%, #db2777 50%, #be185d 100%)',
+    cardShadow: '0 10px 40px rgba(0, 0, 0, 0.5)',
+  }
+}
+
+export const getTheme = (isDark) => isDark ? themes.dark : themes.light
+

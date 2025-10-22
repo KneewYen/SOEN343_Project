@@ -12,8 +12,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.74.0",
-    "vue": "^3.5.18"
+    "@supabase/supabase-js": "^2.76.1",
+    "vue": "^3.5.18",
+    "vue-router": "^4.6.3"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.1",

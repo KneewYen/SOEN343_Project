@@ -3,30 +3,96 @@
   <head>
     <meta charset="UTF-8">
     <link rel="icon" href="/favicon.ico">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#ff6b9d">
+    <!-- Enhanced viewport meta tag for better mobile responsiveness -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="theme-color" content="#ec4899">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="RideWithUs">
+    <meta name="description" content="RideWithUs - Your Journey, Our Priority. A modern bike-sharing platform.">
+    <meta name="keywords" content="bike sharing, cycling, transportation, eco-friendly">
     <title>RideWithUs - Your Journey, Our Priority</title>
+    
+    <!-- Preload critical resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
     <style>
+      /* Critical CSS for immediate rendering */
       * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
       }
-      html, body {
+      
+      html {
         width: 100%;
         height: 100%;
+        overflow-x: hidden;
+        -webkit-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+      }
+      
+      body {
+        width: 100%;
+        min-height: 100vh;
         margin: 0;
         padding: 0;
-        background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 50%, #ffb3c6 100%);
+        background: linear-gradient(135deg, #ec4899 0%, #db2777 50%, #be185d 100%);
         overflow-x: hidden;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      
+      #app {
+        width: 100%;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      
+      /* Loading state */
+      .loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        color: white;
+        font-size: 18px;
+        font-weight: 600;
+      }
+      
+      /* Responsive design for different devices */
+      @media (max-width: 480px) {
+        body {
+          font-size: 14px;
+        }
+      }
+      
+      @media (min-width: 481px) and (max-width: 768px) {
+        body {
+          font-size: 15px;
+        }
+      }
+      
+      @media (min-width: 769px) and (max-width: 1024px) {
+        body {
+          font-size: 16px;
+        }
+      }
+      
+      @media (min-width: 1025px) {
+        body {
+          font-size: 16px;
+        }
       }
     </style>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <div class="loading">Loading RideWithUs...</div>
+    </div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
