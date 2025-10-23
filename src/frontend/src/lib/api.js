@@ -49,6 +49,36 @@ class ApiClient {
     return this.request('/users')
   }
 
+  // Authentication API methods
+  async register(userData) {
+    return this.request('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+      credentials: 'include' // Include cookies for session
+    })
+  }
+
+  async login(credentials) {
+    return this.request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials),
+      credentials: 'include' // Include cookies for session
+    })
+  }
+
+  async logout() {
+    return this.request('/auth/logout', {
+      method: 'POST',
+      credentials: 'include'
+    })
+  }
+
+  async getCurrentUser() {
+    return this.request('/auth/me', {
+      credentials: 'include'
+    })
+  }
+
   async getUserById(id) {
     return this.request(`/users/${id}`)
   }
@@ -228,4 +258,5 @@ class ApiClient {
   }
 }
 
-export const apiClient = new ApiClient()
+const apiClient = new ApiClient()
+export default apiClient
