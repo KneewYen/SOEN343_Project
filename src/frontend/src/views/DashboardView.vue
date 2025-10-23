@@ -122,7 +122,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import { apiClient } from '@/lib/api'
+import apiClient from '@/lib/api'
 import StationsMap from '@/components/StationsMap.vue'
 
 const emit = defineEmits(['logout'])
@@ -137,7 +137,6 @@ const isRedirecting = ref(isRootDashboard)
 // Reactive data
 const loading = ref(false)
 const stations = ref([])
-const apiTestResult = ref('')
 
 // Computed properties
 const userEmail = computed(() => authStore.userEmail?.value)
