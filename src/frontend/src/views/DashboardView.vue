@@ -39,6 +39,11 @@
             </div>
           </div>
 
+          <!-- Map Component -->
+          <div class="feature-card">
+            <StationsMap :stations="stations" :loading="loading" />
+          </div>
+
           <div class="feature-card">
             <div class="feature-icon">📋</div>
             <h3>Reservation Endpoints</h3>
@@ -49,7 +54,6 @@
               <li>POST /reservation/createReservation/{bikeId}/{userId}</li>
               <li>DELETE /reservation/delete/{id}</li>
             </ul>
-            </div>
           </div>
 
           <div class="feature-card">
@@ -107,6 +111,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
 import { apiClient } from '@/lib/api'
+import StationsMap from '@/components/StationsMap.vue'
 
 const authStore = useAuthStore()
 
