@@ -19,46 +19,82 @@
           <p>You're successfully logged in to RideWithUs!</p>
         </div>
 
+        <!-- Backend Data Display -->
         <div class="features-grid">
           <div class="feature-card">
-            <div class="feature-icon">🚗</div>
-            <h3>Request a Ride</h3>
-            <p>Book a ride to your destination</p>
-            <button class="feature-btn">Book Now</button>
+            <div class="feature-icon">🚲</div>
+            <h3>Stations Data</h3>
+            <div v-if="loading">Loading...</div>
+            <div v-else>
+              <p>Total Stations: {{ stations.length }}</p>
+              <div v-for="station in stations" :key="station.id" class="data-item">
+                <strong>{{ station.name }}</strong><br>
+                Address: {{ station.address }}<br>
+                Total Bikes: {{ station.count }}<br>
+                Capacity: {{ station.capacity }}<br>
+                Status: {{ station.status }}<br>
+                Free Docks: {{ getFreeDocksCount(station) }}<br>
+                Available Bikes: {{ getAvailableBikesCount(station) }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Map Component -->
+          <div class="feature-card">
+            <StationsMap :stations="stations" :loading="loading" />
           </div>
 
           <div class="feature-card">
-            <div class="feature-icon">👨‍💼</div>
-            <h3>Drive with Us</h3>
-            <p>Start earning as a driver</p>
-            <button class="feature-btn">Start Driving</button>
+            <div class="feature-icon">📋</div>
+            <h3>Reservation Endpoints</h3>
+            <p>Available endpoints:</p>
+            <ul>
+              <li>GET /reservation/{id}</li>
+              <li>GET /reservation/valid/{id}</li>
+              <li>POST /reservation/createReservation/{bikeId}/{userId}</li>
+              <li>DELETE /reservation/delete/{id}</li>
+            </ul>
           </div>
 
           <div class="feature-card">
-            <div class="feature-icon">📱</div>
-            <h3>My Rides</h3>
-            <p>View your ride history</p>
-            <button class="feature-btn">View Rides</button>
+            <div class="feature-icon">🚴</div>
+            <h3>Trip Endpoints</h3>
+            <p>Available endpoints:</p>
+            <ul>
+              <li>POST /trip/{reservationId}</li>
+              <li>PUT /trip/{tripId}/{stationId}</li>
+            </ul>
           </div>
 
-          <div class="feature-card">
+          <div class="feature-card" v-if="userRole === 'operator'">
             <div class="feature-icon">⚙️</div>
-            <h3>Settings</h3>
-            <p>Manage your account</p>
-            <button class="feature-btn">Settings</button>
+            <h3>Operator Endpoints</h3>
+            <p>Available endpoints:</p>
+            <ul>
+              <li>POST /operator/bike/{id}/toggle</li>
+              <li>POST /operator/dock/{id}/toggle</li>
+              <li>POST /operator/station/{id}/toggle</li>
+              <li>POST /operator/moveBike</li>
+              <li>POST /operator/rebalanceBikes</li>
+            </ul>
           </div>
         </div>
 
+        <!-- User Details -->
         <div class="user-details">
           <h3>Your Account Details</h3>
           <div class="details-grid">
             <div class="detail-item">
               <span class="detail-label">Email:</span>
-              <span class="detail-value">{{ userEmail }}</span>
+              <span class="detail-value">{{ userEmail || 'Not available' }}</span>
             </div>
             <div class="detail-item">
               <span class="detail-label">User ID:</span>
-              <span class="detail-value">{{ userId }}</span>
+              <span class="detail-value">{{ userId || 'Not available' }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Role:</span>
+              <span class="detail-value">{{ userRole || 'rider' }}</span>
             </div>
             <div class="detail-item">
               <span class="detail-label">Status:</span>
@@ -72,19 +108,57 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/authStore'
+import { apiClient } from '@/lib/api'
+import StationsMap from '@/components/StationsMap.vue'
 
 const authStore = useAuthStore()
 
 const emit = defineEmits(['logout'])
 
+// Reactive data
+const loading = ref(false)
+const stations = ref([])
+const apiTestResult = ref('')
+
+// Computed properties
 const userEmail = computed(() => authStore.userEmail.value)
 const userId = computed(() => authStore.userId.value)
+const userRole = computed(() => authStore.userRole?.value || 'rider')
 
+// Methods
 const handleLogout = () => {
   emit('logout')
 }
+
+const loadStations = async () => {
+  try {
+    loading.value = true
+    const stationsData = await apiClient.getAllStations()
+    stations.value = stationsData
+    console.log('Loaded stations:', stationsData)
+  } catch (error) {
+    console.error('Error loading stations:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const getFreeDocksCount = (station) => {
+  if (!station.dockIds) return 0
+  return station.dockIds.filter(dock => dock.status === 'EMPTY').length
+}
+
+const getAvailableBikesCount = (station) => {
+  if (!station.dockIds) return 0
+  return station.dockIds.filter(dock => dock.status === 'OCCUPIED' && dock.bikeId).length
+}
+
+// Lifecycle
+onMounted(() => {
+  loadStations()
+})
 </script>
 
 <style scoped>
@@ -271,6 +345,40 @@ const handleLogout = () => {
 .status-active {
   color: #28a745;
   font-weight: 600;
+}
+
+/* Simple data display styles */
+.data-item {
+  margin: 10px 0;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.data-item strong {
+  color: #ff6b9d;
+}
+
+.test-section {
+  margin-top: 15px;
+  padding: 15px;
+  background: #e8f4fd;
+  border-radius: 8px;
+}
+
+.test-section h4 {
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.test-result {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f0f8ff;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  color: #0066cc;
 }
 
 /* Web-First Responsive Design */

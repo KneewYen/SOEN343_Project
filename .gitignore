@@ -1,0 +1,17 @@
+# Maven target directory
+src/backend/target/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Node modules (for frontend)
+node_modules/

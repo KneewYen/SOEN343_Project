@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fawmi/vue-google-maps": "^0.9.79",
     "@supabase/supabase-js": "^2.74.0",
     "vue": "^3.5.18"
   },
