@@ -73,83 +73,26 @@ export default {
 </script>
 
 <style>
-/* Global reset and base styles */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-html {
-  width: 100%;
-  height: 100%;
-  overflow-x: hidden;
-}
-
 body {
-  width: 100%;
-  min-height: 100vh;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background: var(--background);
   color: var(--text);
   transition: background-color 0.3s ease, color 0.3s ease;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 #app {
-  width: 100%;
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
 }
 
 /* Smooth transitions for theme changes */
 * {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-}
-
-/* Responsive design for different screen sizes */
-@media (max-width: 480px) {
-  /* Mobile phones */
-  body {
-    font-size: 14px;
-  }
-}
-
-@media (min-width: 481px) and (max-width: 768px) {
-  /* Large phones and small tablets */
-  body {
-    font-size: 15px;
-  }
-}
-
-@media (min-width: 769px) and (max-width: 1024px) {
-  /* Tablets */
-  body {
-    font-size: 16px;
-  }
-}
-
-@media (min-width: 1025px) and (max-width: 1440px) {
-  /* Laptops and small desktops */
-  body {
-    font-size: 16px;
-  }
-}
-
-@media (min-width: 1441px) {
-  /* Large desktops */
-  body {
-    font-size: 18px;
-  }
-}
-
-/* Ensure full viewport usage */
-html, body, #app {
-  height: 100%;
-  width: 100%;
 }
 </style>
 

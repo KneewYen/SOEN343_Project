@@ -87,7 +87,7 @@
             <version>42.7.3</version>
         </dependency>
         
-        <!-- H2 Database (for testing) -->
+        <!-- H2 Database (for testing only) -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
