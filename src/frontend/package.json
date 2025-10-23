@@ -11,11 +11,12 @@
     "build": "vite build",
     "preview": "vite preview"
   },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.76.1",
-    "vue": "^3.5.18",
-    "vue-router": "^4.6.3"
-  },
+"dependencies": {
+  "@fawmi/vue-google-maps": "^0.9.79",
+  "@supabase/supabase-js": "^2.76.1",
+  "vue": "^3.5.18",
+  "vue-router": "^4.6.3"
+},
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.1",
     "postcss": "^8.5.6",

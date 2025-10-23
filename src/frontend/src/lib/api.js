@@ -144,6 +144,104 @@ class ApiClient {
     })
   }
 
+  // Station API methods
+  async getAllStations() {
+    return this.request('/station/allStations')
+  }
+
+  async getNumberOfAvailableBikes(stationId) {
+    return this.request(`/station/numberOfAvailableBikes/${stationId}`)
+  }
+
+  async getNumberOfFreeDocks(stationId) {
+    return this.request(`/station/numberOfFreeDocks/${stationId}`)
+  }
+
+  async getAvailableBikes(stationId) {
+    return this.request(`/station/availableBikes/${stationId}`)
+  }
+
+  async getFreeDocks(stationId) {
+    return this.request(`/station/freeDocks/${stationId}`)
+  }
+
+  // Reservation API methods
+  async getReservation(reservationId) {
+    return this.request(`/reservation/${reservationId}`)
+  }
+
+  async isReservationValid(reservationId) {
+    return this.request(`/reservation/valid/${reservationId}`)
+  }
+
+  async createReservation(bikeId, userId) {
+    return this.request(`/reservation/createReservation/${bikeId}/${userId}`, {
+      method: 'POST'
+    })
+  }
+
+  async deleteReservation(reservationId) {
+    return this.request(`/reservation/delete/${reservationId}`, {
+      method: 'DELETE'
+    })
+  }
+
+  // Trip API methods
+  async startTrip(reservationId) {
+    return this.request(`/trip/${reservationId}`, {
+      method: 'POST'
+    })
+  }
+
+  async endTrip(tripId, stationId) {
+    return this.request(`/trip/${tripId}/${stationId}`, {
+      method: 'PUT'
+    })
+  }
+
+  // Operator API methods
+  async toggleBike(bikeId, userId) {
+    return this.request(`/operator/bike/${bikeId}/toggle?userId=${userId}`, {
+      method: 'POST'
+    })
+  }
+
+  async toggleDock(dockId, userId) {
+    return this.request(`/operator/dock/${dockId}/toggle?userId=${userId}`, {
+      method: 'POST'
+    })
+  }
+
+  async toggleStation(stationId, userId) {
+    return this.request(`/operator/station/${stationId}/toggle?userId=${userId}`, {
+      method: 'POST'
+    })
+  }
+
+  async moveBike(bikeId, sourceStationId, destinationStationId, userId) {
+    const params = new URLSearchParams({
+      bikeId,
+      sourceStationId,
+      destinationStationId,
+      userId
+    })
+    return this.request(`/operator/moveBike?${params}`, {
+      method: 'POST'
+    })
+  }
+
+  async rebalanceBikes(sourceStationId, destinationStationId, numberOfBikes, userId) {
+    const params = new URLSearchParams({
+      sourceStationId,
+      destinationStationId,
+      numberOfBikes,
+      userId
+    })
+    return this.request(`/operator/rebalanceBikes?${params}`, {
+      method: 'POST'
+    })
+  }
+
   // Health check
   async healthCheck() {
     return this.request('/users/health')

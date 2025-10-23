@@ -1,3 +1,16 @@
+
+# Maven target directory
+src/backend/target/
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
 # Ignore Maven build output
 # Ignore any target/ directory at repo root or in modules
 target/
@@ -21,6 +34,8 @@ dist/
 # macOS
 .DS_Store
 
+
 # Logs
 *.log
+
 
