@@ -1,6 +1,7 @@
 package org.ridewithus.domain.dto;
 
 import lombok.*;
+import org.ridewithus.domain.entity.BikeStatus;
 import org.ridewithus.domain.entity.Dock;
 
 @Getter
@@ -17,5 +18,7 @@ public class DockDTO {
     private Long stationId;
 
     private Long bikeId;
+
+    private BikeStatus bikeStatus;
 
 }

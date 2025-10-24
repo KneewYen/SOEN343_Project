@@ -52,6 +52,11 @@ public class ReservationService {
             throw new Exception("User not found");
         }
 
+        // Check if user is an operator - operators cannot reserve bikes
+        if ("operator".equals(user.get().getRole())) {
+            throw new Exception("Operators cannot reserve bikes. Only riders can make reservations.");
+        }
+
         List<Reservation> reservations = reservationRepository.findByUserId(userId);
 
         boolean hasActiveReservation = reservations.stream().anyMatch(res -> res.getExpiryDateTime().isAfter(LocalDateTime.now()));
@@ -60,9 +65,9 @@ public class ReservationService {
             throw new Exception("You already have an active reservation");
         }
 
-        List<Trip> trips = tripRepository.findByTripComplete(false);
+        List<Trip> userTrips = tripRepository.findByReservationUserId(userId);
 
-        boolean hasActiveTrip = trips.stream().anyMatch(trip -> userId.equals(trip.getReservation().getUser().getId()));
+        boolean hasActiveTrip = userTrips.stream().anyMatch(trip -> !trip.isTripComplete());
 
         if (hasActiveTrip) {
             throw new Exception("You already have an active trip");
@@ -86,6 +91,7 @@ public class ReservationService {
 
     }
 
+
     public boolean isReservationValid(Long reservationId) {
         Reservation reservation = reservationRepository.findByReservationId(reservationId);
 
@@ -106,6 +112,14 @@ public class ReservationService {
         reservationRepository.deleteById(reservationId);
     }
 
+    public List<ReservationDTO> getUserReservations(Long userId) {
+        List<Reservation> reservations = reservationRepository.findByUserId(userId);
+        return reservations.stream()
+                .filter(res -> res.getExpiryDateTime().isAfter(LocalDateTime.now()))
+                .map(this::mapToDTO)
+                .toList();
+    }
+
     private ReservationDTO mapToDTO(Reservation reservation) {
         User user = reservation.getUser();
 
@@ -118,7 +132,6 @@ public class ReservationService {
                 .address(user.getAddress())
                 .email(user.getEmail())
                 .role(user.getRole())
-                .password(user.getPassword())
                 .build();
 
         BikeDTO bikeDTO = BikeDTO.builder()

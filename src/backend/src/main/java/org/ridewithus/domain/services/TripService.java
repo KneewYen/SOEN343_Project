@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import org.ridewithus.domain.dto.TripDTO;
 
 @Service
 @NoArgsConstructor
@@ -40,6 +41,11 @@ public class TripService {
             throw new Exception("Reservation is Invalid or has Expired");
         }
 
+        // Check if user is an operator - operators cannot start trips
+        if ("operator".equals(reservation.getUser().getRole())) {
+            throw new Exception("Operators cannot start trips. Only riders can use bikes.");
+        }
+
         Station station = reservation.getBike().getDock().getStation();
 
         if (station == null) {
@@ -58,7 +64,12 @@ public class TripService {
 
         stationRepository.save(station);
 
-        Trip trip = Trip.builder().startStation(station).reservation(reservation).startTime(LocalDateTime.now()).build();
+        Trip trip = Trip.builder()
+                .startStation(station)
+                .reservation(reservation)
+                .userId(reservation.getUser().getId())
+                .startTime(LocalDateTime.now())
+                .build();
 
         tripRepository.save(trip);
 
@@ -103,10 +114,39 @@ public class TripService {
         trip.setEndStation(station.get());
         trip.setTripComplete(true);
 
+        // Store reservation reference before clearing it
+        Reservation reservation = trip.getReservation();
+        
+        // Clear the reservation reference from the trip to avoid cascade delete
+        trip.setReservation(null);
+        
         tripRepository.save(trip);
+
+        // Clean up the reservation when trip ends (as per BikeShare requirements)
+        // Reservations should not remain for record-keeping
+        reservationRepository.delete(reservation);
 
         return trip.getTripId();
 
+    }
+
+    public List<TripDTO> getUserTrips(Long userId) {
+        List<Trip> trips = tripRepository.findByUserId(userId);
+        return trips.stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
+    private TripDTO mapToDTO(Trip trip) {
+        return TripDTO.builder()
+                .tripId(trip.getTripId())
+                .startTime(trip.getStartTime())
+                .endTime(trip.getEndTime())
+                .tripComplete(trip.isTripComplete())
+                .startStationId(trip.getStartStation() != null ? trip.getStartStation().getId() : null)
+                .endStationId(trip.getEndStation() != null ? trip.getEndStation().getId() : null)
+                .reservationId(trip.getReservation() != null ? trip.getReservation().getReservationId() : null)
+                .build();
     }
 
 }

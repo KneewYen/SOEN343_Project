@@ -2,6 +2,8 @@ package org.ridewithus.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.LocalDateTime;
 
@@ -22,13 +24,14 @@ public class Trip {
 
     @OneToOne
     @JoinColumn(name = "reservation_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Reservation reservation;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "start_station_id")
     private Station startStation;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "end_station_id")
     private Station endStation;
 
@@ -42,5 +45,8 @@ public class Trip {
 
     @Column(name = "end_time")
     private LocalDateTime endTime;
+    
+    @Column(name = "user_id")
+    private Long userId;
 
 }

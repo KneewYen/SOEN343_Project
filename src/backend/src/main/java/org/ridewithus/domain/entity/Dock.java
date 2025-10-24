@@ -40,6 +40,6 @@ public class Dock {
     }
 
     public boolean hasActiveReservation() {
-        return bike.getStatus() == BikeStatus.RESERVED;
+        return bike != null && bike.getStatus() == BikeStatus.RESERVED;
     }
 }
