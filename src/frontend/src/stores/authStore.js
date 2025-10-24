@@ -12,6 +12,7 @@ const isAuthenticated = computed(() => !!user.value)
 const userEmail = computed(() => user.value?.email || '')
 const userId = computed(() => user.value?.id || '')
 const userMetadata = computed(() => user.value?.user_metadata || {})
+const userRole = computed(() => user.value?.role || 'rider')
 
 // Actions
 const setUser = (newUser) => {
@@ -223,6 +224,7 @@ export const useAuthStore = () => {
     userEmail,
     userId,
     userMetadata,
+    userRole,
     
     // Actions
     signUp,

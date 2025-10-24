@@ -1,146 +1,177 @@
-import { supabase } from '@/lib/supabase'
+import apiClient from '@/lib/api'
 
 class AuthService {
   constructor() {
     this.user = null
     this.session = null
-    this.setupAuthListener()
+    this.initializeAuth()
   }
 
-  // Set up authentication state listener
-  setupAuthListener() {
-    supabase.auth.onAuthStateChange((event, session) => {
-      this.session = session
-      this.user = session?.user || null
+  // Initialize authentication state from localStorage
+  async initializeAuth() {
+    try {
+      const storedUser = localStorage.getItem('user')
+      const storedSession = localStorage.getItem('session')
       
-      // Emit custom events for components to listen to
-      window.dispatchEvent(new CustomEvent('auth-state-changed', {
-        detail: { user: this.user, session: this.session, event }
-      }))
-    })
+      if (storedUser && storedSession) {
+        this.user = JSON.parse(storedUser)
+        this.session = JSON.parse(storedSession)
+        
+        // Verify session is still valid with backend
+        try {
+          const currentUser = await this.getCurrentUser()
+          this.user = currentUser
+        } catch (error) {
+          // Session invalid, clear stored data
+          this.clearAuth()
+        }
+      }
+    } catch (error) {
+      console.warn('Auth initialization failed:', error)
+      this.clearAuth()
+    }
+  }
+
+  // Clear authentication data
+  clearAuth() {
+    this.user = null
+    this.session = null
+    localStorage.removeItem('user')
+    localStorage.removeItem('session')
+    localStorage.removeItem('reservation')
+    localStorage.removeItem('trip')
   }
 
   // Get current user
   async getCurrentUser() {
-    const { data: { user }, error } = await supabase.auth.getUser()
-    if (error) throw error
-    this.user = user
-    return user
+    try {
+      const response = await apiClient.getCurrentUser()
+      if (response.success) {
+        this.user = response.user
+        return response.user
+      } else {
+        throw new Error(response.message || 'Failed to get current user')
+      }
+    } catch (error) {
+      this.clearAuth()
+      throw error
+    }
   }
 
   // Get current session
   async getCurrentSession() {
-    const { data: { session }, error } = await supabase.auth.getSession()
-    if (error) throw error
-    this.session = session
-    return session
+    return this.session
   }
 
   // Sign up with email and password
   async signUp(email, password, userData = {}) {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: userData
+    try {
+      const response = await apiClient.register({
+        fullName: userData.fullName || userData.name || '',
+        userName: userData.userName || userData.username || '',
+        email: email,
+        password: password,
+        address: userData.address || '',
+        paymentInfo: userData.paymentInfo || ''
+      })
+      
+      if (response.success) {
+        this.user = response.user
+        this.session = { token: response.token }
+        
+        // Store in localStorage
+        localStorage.setItem('user', JSON.stringify(response.user))
+        localStorage.setItem('session', JSON.stringify({ token: response.token }))
+        
+        // Emit auth state change event
+        window.dispatchEvent(new CustomEvent('auth-state-changed', {
+          detail: { user: this.user, session: this.session, event: 'SIGNED_UP' }
+        }))
+        
+        return { user: response.user, session: this.session }
+      } else {
+        throw new Error(response.message || 'Registration failed')
       }
-    })
-    
-    if (error) throw error
-    
-    // Create user profile in database if signup successful
-    if (data.user) {
-      try {
-        await this.createUserProfile(data.user, userData)
-      } catch (profileError) {
-        console.warn('Profile creation failed:', profileError)
-        // Don't throw here as auth was successful
-      }
+    } catch (error) {
+      throw error
     }
-    
-    return data
   }
 
   // Sign in with email and password
   async signIn(email, password) {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    })
-    
-    if (error) throw error
-    return data
+    try {
+      const response = await apiClient.login({
+        usernameOrEmail: email,
+        password: password
+      })
+      
+      if (response.success) {
+        this.user = response.user
+        this.session = { token: response.token }
+        
+        // Store in localStorage
+        localStorage.setItem('user', JSON.stringify(response.user))
+        localStorage.setItem('session', JSON.stringify({ token: response.token }))
+        
+        // Emit auth state change event
+        window.dispatchEvent(new CustomEvent('auth-state-changed', {
+          detail: { user: this.user, session: this.session, event: 'SIGNED_IN' }
+        }))
+        
+        return { user: response.user, session: this.session }
+      } else {
+        throw new Error(response.message || 'Login failed')
+      }
+    } catch (error) {
+      throw error
+    }
   }
 
   // Sign out
   async signOut() {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
-    this.user = null
-    this.session = null
-    return true
-  }
-
-  // Create user profile in database
-  async createUserProfile(authUser, userData) {
-    const { error } = await supabase
-      .from('users')
-      .insert([{
-        id: authUser.id,
-        name: userData.name || `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
-        email: authUser.email,
-        phone: userData.phone || null,
-        user_type: userData.user_type || 'PASSENGER',
-        is_active: true
-      }])
-
-    if (error) throw error
+    try {
+      await apiClient.logout()
+    } catch (error) {
+      console.warn('Logout API call failed:', error)
+    } finally {
+      this.clearAuth()
+      
+      // Emit auth state change event
+      window.dispatchEvent(new CustomEvent('auth-state-changed', {
+        detail: { user: null, session: null, event: 'SIGNED_OUT' }
+      }))
+    }
     return true
   }
 
   // Update user profile
   async updateUserProfile(userId, updates) {
-    const { data, error } = await supabase
-      .from('users')
-      .update(updates)
-      .eq('id', userId)
-      .select()
-      .single()
-
-    if (error) throw error
-    return data
+    try {
+      const response = await apiClient.updateUser(userId, updates)
+      return response
+    } catch (error) {
+      throw error
+    }
   }
 
   // Get user profile
   async getUserProfile(userId) {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', userId)
-      .single()
-
-    if (error) throw error
-    return data
+    try {
+      const response = await apiClient.getUserById(userId)
+      return response
+    } catch (error) {
+      throw error
+    }
   }
 
-  // Reset password
+  // Reset password (not implemented in backend yet)
   async resetPassword(email) {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`
-    })
-    
-    if (error) throw error
-    return true
+    throw new Error('Password reset not implemented yet')
   }
 
-  // Update password
+  // Update password (not implemented in backend yet)
   async updatePassword(newPassword) {
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword
-    })
-    
-    if (error) throw error
-    return true
+    throw new Error('Password update not implemented yet')
   }
 
   // Check if user is authenticated
@@ -163,30 +194,14 @@ class AuthService {
     return this.user?.user_metadata
   }
 
-  // Sign in with Google (if configured)
+  // Sign in with Google (not implemented in backend yet)
   async signInWithGoogle() {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`
-      }
-    })
-    
-    if (error) throw error
-    return data
+    throw new Error('Google sign-in not implemented yet')
   }
 
-  // Sign in with Facebook (if configured)
+  // Sign in with Facebook (not implemented in backend yet)
   async signInWithFacebook() {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'facebook',
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`
-      }
-    })
-    
-    if (error) throw error
-    return data
+    throw new Error('Facebook sign-in not implemented yet')
   }
 }
 

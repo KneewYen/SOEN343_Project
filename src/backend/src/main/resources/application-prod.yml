@@ -1,9 +1,9 @@
 # Production Environment Configuration
 spring:
-  datasource:
-    url: ${DATABASE_URL}
-    username: ${DATABASE_USERNAME}
-    password: ${DATABASE_PASSWORD}
+  # datasource:
+  #   url: ${DATABASE_URL}
+  #   username: ${DATABASE_USERNAME}
+  #   password: ${DATABASE_PASSWORD}
     
   jpa:
     hibernate:
