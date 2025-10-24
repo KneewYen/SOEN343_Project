@@ -42,7 +42,7 @@
                   </svg>
                 </div>
                 <div class="card-content">
-                  <div class="card-value">45</div>
+                  <div class="card-value">{{ systemStats.availableBikes }}</div>
                   <div class="card-label">Available Bikes</div>
                 </div>
               </div>
@@ -54,7 +54,7 @@
                   </svg>
                 </div>
                 <div class="card-content">
-                  <div class="card-value">12</div>
+                  <div class="card-value">{{ systemStats.activeStations }}</div>
                   <div class="card-label">Active Stations</div>
                 </div>
               </div>
@@ -68,7 +68,7 @@
                   </svg>
                 </div>
                 <div class="card-content">
-                  <div class="card-value">156</div>
+                  <div class="card-value">{{ systemStats.activeUsers }}</div>
                   <div class="card-label">Active Users</div>
                 </div>
               </div>
@@ -79,7 +79,7 @@
                   </svg>
                 </div>
                 <div class="card-content">
-                  <div class="card-value">3</div>
+                  <div class="card-value">{{ systemStats.maintenance }}</div>
                   <div class="card-label">Maintenance</div>
                 </div>
               </div>
@@ -90,7 +90,7 @@
           <section class="quick-actions">
             <h2 class="section-title">Quick Actions</h2>
             <div class="action-buttons">
-              <button class="action-btn primary">
+              <button @click="showRebalanceModal = true" class="action-btn primary">
                 <span class="btn-icon">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18 20V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -98,9 +98,18 @@
                     <path d="M6 20v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </span>
-                <span class="btn-text">View Analytics</span>
+                <span class="btn-text">Rebalance Bikes</span>
               </button>
-              <button class="action-btn secondary">
+              <button @click="showStationManagement = true" class="action-btn secondary">
+                <span class="btn-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                </span>
+                <span class="btn-text">Manage Stations</span>
+              </button>
+              <button @click="showBikeManagement = true" class="action-btn secondary">
                 <span class="btn-icon">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -111,22 +120,13 @@
               <button class="action-btn secondary">
                 <span class="btn-icon">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2"/>
-                  </svg>
-                </span>
-                <span class="btn-text">Manage Stations</span>
-              </button>
-              <button class="action-btn secondary">
-                <span class="btn-icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
                     <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </span>
-                <span class="btn-text">User Management</span>
+                <span class="btn-text">View Analytics</span>
               </button>
             </div>
           </section>
@@ -180,41 +180,160 @@
           <!-- Station Status -->
           <section class="station-status">
             <h2 class="section-title">Station Status</h2>
-            <div class="stations-list">
-              <div class="station-item">
-                <div class="station-info">
-                  <div class="station-name">Central Station</div>
-                  <div class="station-location">Downtown</div>
+            <div class="stations-grid">
+              <div v-for="station in stations" :key="station.id" class="station-card">
+                <div class="station-header">
+                  <div class="station-info">
+                    <h3 class="station-name">{{ station.name }}</h3>
+                    <p class="station-address">{{ station.address }}</p>
+                  </div>
+                  <div class="station-summary">
+                    <div class="bike-count">
+                      <span class="count-number">{{ station.count }}</span>
+                      <span class="count-total">/{{ station.capacity }}</span>
+                      <span class="count-label">bikes</span>
+                    </div>
+                    <div class="status-badge" :class="getStationStatusClass(station)">
+                      {{ station.status }}
+                    </div>
+                  </div>
                 </div>
-                <div class="station-stats">
-                  <div class="bike-count">8/12 bikes</div>
-                  <div class="status-indicator available"></div>
-                </div>
-              </div>
-              <div class="station-item">
-                <div class="station-info">
-                  <div class="station-name">University Station</div>
-                  <div class="station-location">Campus</div>
-                </div>
-                <div class="station-stats">
-                  <div class="bike-count">15/20 bikes</div>
-                  <div class="status-indicator available"></div>
-                </div>
-              </div>
-              <div class="station-item">
-                <div class="station-info">
-                  <div class="station-name">Park Station</div>
-                  <div class="station-location">Green Park</div>
-                </div>
-                <div class="station-stats">
-                  <div class="bike-count">2/10 bikes</div>
-                  <div class="status-indicator low"></div>
+                
+                <div class="docks-grid">
+                  <div v-for="dock in station.dockIds" :key="dock.id" class="dock-card" :class="getDockStatusClass(dock)">
+                    <div class="dock-header">
+                      <span class="dock-id">Dock {{ dock.id }}</span>
+                      <span class="dock-status">{{ dock.status }}</span>
+                    </div>
+                    <div v-if="dock.bikeId" class="bike-info">
+                      <span class="bike-id">Bike #{{ dock.bikeId }}</span>
+                      <span class="bike-status" :class="getBikeStatusClass(dock.bikeStatus)">
+                        {{ dock.bikeStatus || 'N/A' }}
+                      </span>
+                    </div>
+                    <div v-else class="empty-dock">
+                      <span class="empty-text">Empty</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </section>
         </div>
       </main>
+    </div>
+
+    <!-- Rebalance Bikes Modal -->
+    <div v-if="showRebalanceModal" class="modal-overlay" @click="showRebalanceModal = false">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>Rebalance Bikes</h3>
+          <button @click="showRebalanceModal = false" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Source Station:</label>
+            <select v-model="rebalanceForm.sourceStationId" class="form-select">
+              <option value="">Select source station</option>
+              <option v-for="station in stations" :key="station.id" :value="station.id">
+                {{ station.name }} ({{ getAvailableBikesCount(station) }} bikes)
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Destination Station:</label>
+            <select v-model="rebalanceForm.destinationStationId" class="form-select">
+              <option value="">Select destination station</option>
+              <option v-for="station in stations" :key="station.id" :value="station.id">
+                {{ station.name }} ({{ getFreeDocksCount(station) }} free docks)
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Number of Bikes:</label>
+            <input 
+              v-model.number="rebalanceForm.numberOfBikes" 
+              type="number" 
+              min="1" 
+              max="10" 
+              class="form-input"
+            />
+          </div>
+          <div class="modal-actions">
+            <button @click="executeRebalance" class="action-btn primary" :disabled="loading">
+              <span v-if="loading">Rebalancing...</span>
+              <span v-else>Rebalance Bikes</span>
+            </button>
+            <button @click="showRebalanceModal = false" class="action-btn secondary">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Station Management Modal -->
+    <div v-if="showStationManagement" class="modal-overlay" @click="showStationManagement = false">
+      <div class="modal-content large" @click.stop>
+        <div class="modal-header">
+          <h3>Station Management</h3>
+          <button @click="showStationManagement = false" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="stations-management">
+            <div v-for="station in stations" :key="station.id" class="station-management-item">
+              <div class="station-info">
+                <h4>{{ station.name }}</h4>
+                <p>{{ station.address }}</p>
+                <p>Available bikes: {{ getAvailableBikesCount(station) }} | Free docks: {{ getFreeDocksCount(station) }}</p>
+              </div>
+              <div class="station-actions">
+                <button 
+                  @click="toggleStationStatus(station.id)" 
+                  class="action-btn"
+                  :class="station.status === 'ACTIVE' ? 'danger' : 'success'"
+                >
+                  {{ station.status === 'ACTIVE' ? 'Set Out of Service' : 'Set Active' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bike Management Modal -->
+    <div v-if="showBikeManagement" class="modal-overlay" @click="showBikeManagement = false">
+      <div class="modal-content large" @click.stop>
+        <div class="modal-header">
+          <h3>Bike Management</h3>
+          <button @click="showBikeManagement = false" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="bikes-management">
+            <div v-for="station in stations" :key="station.id" class="station-bikes">
+              <h4>{{ station.name }}</h4>
+              <div class="bikes-list">
+                <div v-for="dock in station.dockIds" :key="dock.id" class="bike-item">
+                  <div class="bike-info">
+                    <span v-if="dock.bikeId">Bike #{{ dock.bikeId }}</span>
+                    <span v-else>Empty Dock</span>
+                    <span class="dock-status" :class="(dock.bikeStatus || dock.status).toLowerCase().replace('_', '-')">{{ dock.bikeStatus || dock.status }}</span>
+                  </div>
+                  <div v-if="dock.bikeId" class="bike-actions">
+                    <button 
+                      @click="toggleBikeStatus(dock.bikeId)" 
+                      class="action-btn small"
+                    >
+                      Toggle Status
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -223,6 +342,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import ThemeToggle from '../components/ThemeToggle.vue'
+import apiClient from '../lib/api'
 
 export default {
   name: 'OperatorDashboard',
@@ -232,6 +352,24 @@ export default {
   setup() {
     const router = useRouter()
     const user = ref(null)
+    const stations = ref([])
+    const loading = ref(false)
+    const showRebalanceModal = ref(false)
+    const showStationManagement = ref(false)
+    const showBikeManagement = ref(false)
+    const rebalanceForm = ref({
+      sourceStationId: '',
+      destinationStationId: '',
+      numberOfBikes: 1
+    })
+
+    // System statistics
+    const systemStats = ref({
+      availableBikes: 0,
+      activeStations: 0,
+      activeUsers: 0,
+      maintenance: 0
+    })
 
     onMounted(() => {
       // Load user data from localStorage
@@ -239,6 +377,8 @@ export default {
       if (userData) {
         user.value = JSON.parse(userData)
       }
+      // Load stations data
+      loadStations()
     })
 
     const handleLogout = () => {
@@ -247,9 +387,139 @@ export default {
       router.push('/login')
     }
 
+    const loadStations = async () => {
+      try {
+        loading.value = true
+        const stationsData = await apiClient.getAllStations()
+        stations.value = stationsData
+        calculateSystemStats()
+      } catch (error) {
+        console.error('Error loading stations:', error)
+      } finally {
+        loading.value = false
+      }
+    }
+
+    const calculateSystemStats = () => {
+      let availableBikes = 0
+      let activeStations = 0
+      let maintenance = 0
+
+      stations.value.forEach(station => {
+        if (station.status === 'ACTIVE') {
+          activeStations++
+          availableBikes += station.count
+        } else {
+          maintenance++
+        }
+      })
+
+      systemStats.value = {
+        availableBikes,
+        activeStations,
+        activeUsers: 2, // Hardcoded for now - in real app would fetch from API
+        maintenance
+      }
+    }
+
+    const getAvailableBikesCount = (station) => {
+      if (!station.dockIds) return 0
+      return station.dockIds.filter(dock => dock.bikeId && dock.status === 'OCCUPIED').length
+    }
+
+    const getFreeDocksCount = (station) => {
+      if (!station.dockIds) return 0
+      return station.dockIds.filter(dock => dock.status === 'EMPTY').length
+    }
+
+    const executeRebalance = async () => {
+      try {
+        loading.value = true
+        const result = await apiClient.rebalanceBikes(
+          rebalanceForm.value.sourceStationId,
+          rebalanceForm.value.destinationStationId,
+          rebalanceForm.value.numberOfBikes,
+          user.value.id
+        )
+        alert(result.message || result)
+        showRebalanceModal.value = false
+        rebalanceForm.value = {
+          sourceStationId: '',
+          destinationStationId: '',
+          numberOfBikes: 1
+        }
+        // Reload stations to reflect changes
+        await loadStations()
+      } catch (error) {
+        alert('Failed to rebalance bikes: ' + error.message)
+      } finally {
+        loading.value = false
+      }
+    }
+
+    const toggleStationStatus = async (stationId) => {
+      try {
+        const result = await apiClient.toggleStation(stationId, user.value.id)
+        alert(result.message || result)
+        await loadStations()
+      } catch (error) {
+        alert('Failed to toggle station status: ' + error.message)
+      }
+    }
+
+    const toggleBikeStatus = async (bikeId) => {
+      try {
+        const result = await apiClient.toggleBike(bikeId, user.value.id)
+        if (result.success) {
+          alert(result.message || 'Bike status updated successfully')
+          // Reload stations to get the latest data from backend
+          await loadStations()
+        } else {
+          alert(result.message || 'Failed to toggle bike status')
+        }
+      } catch (error) {
+        alert('Failed to toggle bike status: ' + error.message)
+      }
+    }
+
+    const getStationStatusClass = (station) => {
+      if (station.status !== 'ACTIVE') return 'inactive'
+      if (station.count === 0) return 'empty'
+      if (station.count < station.capacity * 0.3) return 'low'
+      return 'available'
+    }
+
+    const getDockStatusClass = (dock) => {
+      if (dock.status === 'OUT_OF_SERVICE') return 'out-of-service'
+      if (dock.status === 'OCCUPIED') return 'occupied'
+      return 'empty'
+    }
+
+    const getBikeStatusClass = (bikeStatus) => {
+      if (bikeStatus === 'MAINTENANCE') return 'maintenance'
+      if (bikeStatus === 'ON_TRIP') return 'on-trip'
+      if (bikeStatus === 'RESERVED') return 'reserved'
+      return 'available'
+    }
+
     return {
       user,
-      handleLogout
+      handleLogout,
+      stations,
+      loading,
+      showRebalanceModal,
+      showStationManagement,
+      showBikeManagement,
+      rebalanceForm,
+      systemStats,
+      getAvailableBikesCount,
+      getFreeDocksCount,
+      executeRebalance,
+      toggleStationStatus,
+      toggleBikeStatus,
+      getStationStatusClass,
+      getDockStatusClass,
+      getBikeStatusClass
     }
   }
 }
@@ -681,4 +951,524 @@ export default {
     gap: 16px;
   }
 }
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  border: 2px solid var(--border);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content.large {
+  max-width: 800px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+/* Form Styles */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.form-select, .form-input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.form-select:focus, .form-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.1);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+/* Station Management Styles */
+.stations-management {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.station-management-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: var(--surface-hover);
+  border-radius: 12px;
+  border: 2px solid var(--border);
+}
+
+.station-info h4 {
+  margin: 0 0 8px 0;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.station-info p {
+  margin: 4px 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.station-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Bike Management Styles */
+.bikes-management {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.station-bikes h4 {
+  margin: 0 0 12px 0;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 600;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border);
+}
+
+.bikes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bike-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: var(--surface-hover);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.bike-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dock-status {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.dock-status.occupied {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.dock-status.empty {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.dock-status.out-of-service {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.dock-status.available {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.dock-status.maintenance {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.dock-status.reserved {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.dock-status.on-trip {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.bike-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn.small {
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+.action-btn.danger {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 2px solid #fecaca;
+}
+
+.action-btn.danger:hover {
+  background: #fecaca;
+}
+
+.action-btn.success {
+  background: #dcfce7;
+  color: #166534;
+  border: 2px solid #bbf7d0;
+}
+
+.action-btn.success:hover {
+  background: #bbf7d0;
+}
+
+/* Station Actions */
+.station-actions {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.dock-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.dock-item:last-child {
+  border-bottom: none;
+}
+
+.dock-info {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.action-btn.small {
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+/* Enhanced Station Status Styles */
+.stations-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.station-card {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 20px;
+  border: 2px solid var(--border);
+  box-shadow: var(--card-shadow);
+  transition: all 0.3s ease;
+}
+
+.station-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.station-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid var(--border);
+}
+
+.station-info h3 {
+  margin: 0 0 8px 0;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.station-address {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.station-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.bike-count {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.count-number {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.count-total {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.count-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.status-badge.available {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.low {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.empty {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.status-badge.inactive {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.docks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.dock-card {
+  background: var(--surface-hover);
+  border-radius: 12px;
+  padding: 16px;
+  border: 2px solid var(--border);
+  transition: all 0.3s ease;
+}
+
+.dock-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.dock-card.occupied {
+  border-color: #22c55e;
+  background: linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%);
+}
+
+.dock-card.empty {
+  border-color: #e5e7eb;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+}
+
+.dock-card.out-of-service {
+  border-color: #ef4444;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+}
+
+.dock-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.dock-id {
+  font-weight: 700;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.dock-status {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.dock-status.OCCUPIED {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.dock-status.EMPTY {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.dock-status.OUT_OF_SERVICE {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.bike-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bike-id {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.bike-status {
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  display: inline-block;
+  width: fit-content;
+}
+
+.bike-status.available {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.bike-status.maintenance {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.bike-status.reserved {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.bike-status.on-trip {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.empty-dock {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+}
+
+.empty-text {
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: 12px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .station-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .station-summary {
+    align-items: flex-start;
+  }
+  
+  .docks-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .dock-card {
+    padding: 12px;
+  }
+}
 </style>
+

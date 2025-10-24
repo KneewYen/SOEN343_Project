@@ -12,7 +12,7 @@ const isAuthenticated = computed(() => !!user.value)
 const userEmail = computed(() => user.value?.email || '')
 const userId = computed(() => user.value?.id || '')
 const userMetadata = computed(() => user.value?.user_metadata || {})
-const userRole = computed(() => user.value?.user_metadata?.role || 'rider')
+const userRole = computed(() => user.value?.role || 'rider')
 
 // Actions
 const setUser = (newUser) => {

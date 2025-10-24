@@ -34,6 +34,28 @@
   --color-text: var(--vt-c-text-light-1);
 
   --section-gap: 160px;
+
+  /* Dashboard-specific variables */
+  --bg-primary: var(--vt-c-white);
+  --bg-secondary: var(--vt-c-white-soft);
+  --bg-tertiary: var(--vt-c-white-mute);
+  --bg-hover: #f3f4f6;
+  --text-primary: var(--vt-c-text-light-1);
+  --text-secondary: var(--vt-c-text-light-2);
+  --border-color: var(--vt-c-divider-light-2);
+  --accent-color: #3b82f6;
+  --accent-hover: #2563eb;
+  
+  /* Theme variables for new template */
+  --gradient: linear-gradient(135deg, #ec4899 0%, #db2777 50%, #be185d 100%);
+  --surface: #fdf2f8;
+  --surface-hover: #fce7f3;
+  --text: #1f2937;
+  --text-secondary: #6b7280;
+  --border: #f9a8d4;
+  --primary: #ec4899;
+  --primary-hover: #db2777;
+  --card-shadow: 0 10px 40px rgba(236, 72, 153, 0.15);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -47,6 +69,28 @@
 
     --color-heading: var(--vt-c-text-dark-1);
     --color-text: var(--vt-c-text-dark-2);
+
+    /* Dashboard-specific variables for dark mode */
+    --bg-primary: var(--vt-c-black);
+    --bg-secondary: var(--vt-c-black-soft);
+    --bg-tertiary: var(--vt-c-black-mute);
+    --bg-hover: #374151;
+    --text-primary: var(--vt-c-text-dark-1);
+    --text-secondary: var(--vt-c-text-dark-2);
+    --border-color: var(--vt-c-divider-dark-2);
+    --accent-color: #60a5fa;
+    --accent-hover: #3b82f6;
+    
+    /* Theme variables for new template - dark mode */
+    --gradient: linear-gradient(135deg, #ec4899 0%, #db2777 50%, #be185d 100%);
+    --surface: #1f2937;
+    --surface-hover: #374151;
+    --text: #f9fafb;
+    --text-secondary: #d1d5db;
+    --border: #9d174d;
+    --primary: #ec4899;
+    --primary-hover: #f472b6;
+    --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   }
 }
 

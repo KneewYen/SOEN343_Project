@@ -94,10 +94,6 @@
             <span v-else>{{ 'Sign In' }}</span>
           </button>
           
-          <!-- Debug button -->
-          <button type="button" @click="debugAuth" class="btn-secondary" style="margin-top: 10px; font-size: 12px; width: 100%;">
-            🐛 Debug Auth
-          </button>
 
           <div v-if="error" class="error-message">
             <span class="message-icon">
@@ -134,7 +130,7 @@
 <script>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { auth, testAuth } from '../lib/supabase.js'
+import { useAuthStore } from '../stores/authStore'
 import ThemeToggle from '../components/ThemeToggle.vue'
 
 export default {
@@ -144,6 +140,7 @@ export default {
   },
   setup() {
     const router = useRouter()
+    const authStore = useAuthStore()
     const form = ref({
       usernameOrEmail: '',
       password: ''
@@ -159,43 +156,24 @@ export default {
       success.value = ''
 
       try {
-        const response = await auth.login({
-          usernameOrEmail: form.value.usernameOrEmail,
-          password: form.value.password
-        })
+        const response = await authStore.signIn(
+          form.value.usernameOrEmail,
+          form.value.password
+        )
 
-        if (response.success) {
-          success.value = response.message
-
-          // Store user info in localStorage for persistence
-          const userData = {
-            id: response.user.id,
-            email: response.user.email,
-            role: response.user.user_metadata?.role || 'rider',
-            fullName: response.user.user_metadata?.full_name || '',
-            userName: response.user.user_metadata?.username || '',
-            address: response.user.user_metadata?.address || ''
-          }
-          
-          localStorage.setItem('user', JSON.stringify(userData))
-          if (response.session) {
-            localStorage.setItem('token', response.session.access_token)
-          }
+        if (response.user) {
+          success.value = 'Login successful!'
 
           // Role-based redirection
           setTimeout(() => {
-            if (userData.role === 'operator') {
+            if (response.user.role === 'operator') {
               router.push('/dashboard/operator')
             } else {
               router.push('/dashboard/rider')
             }
           }, 800)
         } else {
-          if (response.needsConfirmation) {
-            error.value = '📧 ' + response.message + ' Check your email inbox and spam folder.'
-          } else {
-            error.value = response.message
-          }
+          error.value = 'Login failed'
         }
       } catch (err) {
         error.value = err.message || 'Login failed. Please try again.'
@@ -204,24 +182,6 @@ export default {
       }
     }
 
-    const debugAuth = async () => {
-      console.log('=== DEBUG AUTHENTICATION ===')
-      
-      // Test user creation
-      console.log('1. Creating test user...')
-      const createResult = await testAuth.createTestUser()
-      console.log('Create result:', createResult)
-      
-      // Wait a moment
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Test login
-      console.log('2. Testing login...')
-      const loginResult = await testAuth.testLogin()
-      console.log('Login result:', loginResult)
-      
-      console.log('=== END DEBUG ===')
-    }
 
     const togglePassword = () => {
       showPassword.value = !showPassword.value
@@ -234,7 +194,6 @@ export default {
       success,
       showPassword,
       handleLogin,
-      debugAuth,
       togglePassword
     }
   }

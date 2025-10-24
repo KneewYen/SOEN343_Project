@@ -1,18 +1,23 @@
 server:
   port: 8080
-  servlet:
-    context-path: /api
 
 spring:
   application:
     name: ride-with-us-backend
   
-  # Database Configuration
-  # datasource:
-  #   url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/ridewithus}
-  #   username: ${DATABASE_USERNAME:postgres}
-  #   password: ${DATABASE_PASSWORD:password}
-  #   driver-class-name: org.postgresql.Driver
+  # Database Configuration - Using H2 for testing
+  datasource:
+    url: jdbc:h2:mem:testdb
+    username: sa
+    password: 
+    driver-class-name: org.h2.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000
     
   # JPA/Hibernate Configuration
   jpa:
@@ -21,10 +26,8 @@ spring:
     show-sql: true
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        dialect: org.hibernate.dialect.H2Dialect
         format_sql: true
-        jdbc:
-          time_zone: UTC
     open-in-view: false
     
   # Supabase Configuration

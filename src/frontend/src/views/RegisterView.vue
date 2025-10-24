@@ -222,7 +222,7 @@
 <script>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { auth } from '../lib/supabase.js'
+import { useAuthStore } from '../stores/authStore'
 import ThemeToggle from '../components/ThemeToggle.vue'
 
 export default {
@@ -232,6 +232,7 @@ export default {
   },
   setup() {
     const router = useRouter()
+    const authStore = useAuthStore()
     const form = ref({
       fullName: '',
       userName: '',
@@ -265,16 +266,15 @@ export default {
       }
 
       try {
-        const response = await auth.register({
+        const response = await authStore.signUp(form.value.email, form.value.password, {
           fullName: form.value.fullName,
           userName: form.value.userName,
-          email: form.value.email,
           address: form.value.address,
-          password: form.value.password
+          paymentInfo: form.value.paymentInfo
         })
 
-        if (response.success) {
-          success.value = response.message + ' Redirecting to login...'
+        if (response.user) {
+          success.value = 'Registration successful! Redirecting to dashboard...'
 
           // Clear form
           form.value = {
@@ -287,12 +287,12 @@ export default {
             paymentInfo: ''
           }
 
-          // Redirect to login after 2 seconds
+          // Redirect to rider dashboard after 2 seconds (all new users are riders)
           setTimeout(() => {
-            router.push('/login')
+            router.push('/dashboard/rider')
           }, 2000)
         } else {
-          error.value = response.message
+          error.value = 'Registration failed'
         }
       } catch (err) {
         error.value = err.message || 'Registration failed. Please try again.'

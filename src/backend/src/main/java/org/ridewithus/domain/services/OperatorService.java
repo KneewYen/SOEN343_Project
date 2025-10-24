@@ -35,6 +35,8 @@ public class OperatorService {
         }
 
         bike.setStatus(bike.getStatus() == BikeStatus.AVAILABLE ? BikeStatus.MAINTENANCE : BikeStatus.AVAILABLE);
+        // Update the bike's state to match the new status
+        bike.initState();
         bikeRepository.save(bike);
 
         return "Bike status updated successfully";
@@ -126,6 +128,7 @@ public class OperatorService {
     }
 
     // Bulk rebalancing
+    @Transactional
     public String rebalanceBikes(Long sourceStationId, Long destinationStationId, int numberOfBikes, User operator){
         if(!operator.getRole().equals("operator")){
             return "Error: Unauthorized";

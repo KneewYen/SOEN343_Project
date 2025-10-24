@@ -170,6 +170,10 @@ class ApiClient {
     return this.request(`/reservation/${reservationId}`)
   }
 
+  async getUserReservations(userId) {
+    return this.request(`/reservation/user/${userId}`)
+  }
+
   async isReservationValid(reservationId) {
     return this.request(`/reservation/valid/${reservationId}`)
   }
@@ -187,6 +191,10 @@ class ApiClient {
   }
 
   // Trip API methods
+  async getUserTrips(userId) {
+    return this.request(`/trip/user/${userId}`)
+  }
+
   async startTrip(reservationId) {
     return this.request(`/trip/${reservationId}`, {
       method: 'POST'
