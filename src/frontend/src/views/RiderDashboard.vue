@@ -42,7 +42,7 @@
                 </span>
                 <span class="btn-text">Find Bike</span>
               </button>
-              <button class="action-btn secondary">
+              <button class="action-btn secondary" @click="showStations">
                 <span class="btn-icon">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -62,6 +62,12 @@
                 <span class="btn-text">My Trips</span>
               </button>
             </div>
+          </section>
+
+          <!-- Nearby Stations -->
+          <section v-if="showStationsList" class="nearby-stations">
+            <h2 class="section-title">Nearby Stations</h2>
+            <StationsMap :stations="stations" :loading="loading" />
           </section>
 
           <!-- Current Trip -->
@@ -120,6 +126,7 @@
               </div>
             </div>
           </section>
+
         </div>
       </main>
     </div>
@@ -130,15 +137,21 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import ThemeToggle from '../components/ThemeToggle.vue'
+import StationsMap from '../components/StationsMap.vue'
+import apiClient from '../lib/api'
 
 export default {
   name: 'RiderDashboard',
   components: {
-    ThemeToggle
+    ThemeToggle,
+    StationsMap
   },
   setup() {
     const router = useRouter()
     const user = ref(null)
+    const showStationsList = ref(false)
+    const stations = ref([])
+    const loading = ref(false)
 
     onMounted(() => {
       // Load user data from localStorage
@@ -154,9 +167,45 @@ export default {
       router.push('/login')
     }
 
+    const loadStations = async () => {
+      try {
+        loading.value = true
+        const stationsData = await apiClient.getAllStations()
+        stations.value = stationsData
+      } catch (error) {
+        console.error('Error loading stations:', error)
+      } finally {
+        loading.value = false
+      }
+    }
+
+    const showStations = () => {
+      // Toggle stations visibility and load data if needed
+      showStationsList.value = !showStationsList.value
+      if (showStationsList.value && stations.value.length === 0) {
+        loadStations()
+      }
+    }
+
+    const getAvailableBikesCount = (station) => {
+      if (!station.dockIds) return 0
+      return station.dockIds.filter(dock => dock.bikeId && dock.status === 'OCCUPIED').length
+    }
+
+    const getFreeDocksCount = (station) => {
+      if (!station.dockIds) return 0
+      return station.dockIds.filter(dock => dock.status === 'EMPTY').length
+    }
+
     return {
       user,
-      handleLogout
+      handleLogout,
+      showStations,
+      showStationsList,
+      stations,
+      loading,
+      getAvailableBikesCount,
+      getFreeDocksCount
     }
   }
 }
@@ -524,6 +573,75 @@ export default {
   
   .dashboard-grid {
     gap: 16px;
+  }
+}
+
+/* Nearby Stations */
+.nearby-stations {
+  margin-top: 2rem;
+}
+
+.stations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.station-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+}
+
+.station-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.station-header h3 {
+  margin: 0;
+  color: #1e293b;
+  font-size: 1.1rem;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.status-badge.active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.inactive {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.station-details p {
+  margin: 0.5rem 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+}
+
+@media (max-width: 768px) {
+  .stations-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

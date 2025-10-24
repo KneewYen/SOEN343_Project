@@ -2,7 +2,16 @@
   <div class="map-container">
     <h3>Station Locations</h3>
     <div v-if="loading" class="map-loading">Loading map...</div>
-    <div v-else-if="error" class="map-error">Error loading map: {{ error }}</div>
+    <div v-else-if="error" class="map-fallback">
+      <div class="fallback-content">
+        <h4>📍 Station Locations</h4>
+        <p>Google Maps API key not configured. Showing station list below.</p>
+        <div class="coordinates-info">
+          <p><strong>Map Center:</strong> Montreal, QC (45.5017, -73.5673)</p>
+          <p><strong>Stations with coordinates:</strong> {{ stationsWithCoords.length }}</p>
+        </div>
+      </div>
+    </div>
     <div v-else class="map-wrapper">
       <GMapMap
         :center="mapCenter"
@@ -169,6 +178,38 @@ onMounted(() => {
 
 .map-error {
   color: #e74c3c;
+}
+
+.map-fallback {
+  background: #f8fafc;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.fallback-content h4 {
+  color: #1e293b;
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.fallback-content p {
+  color: #64748b;
+  margin-bottom: 15px;
+}
+
+.coordinates-info {
+  background: white;
+  border-radius: 8px;
+  padding: 15px;
+  border: 1px solid #e2e8f0;
+}
+
+.coordinates-info p {
+  margin: 5px 0;
+  font-size: 14px;
 }
 
 .info-window {
