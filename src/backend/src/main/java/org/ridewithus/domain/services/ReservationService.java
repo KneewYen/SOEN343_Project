@@ -118,7 +118,6 @@ public class ReservationService {
                 .address(user.getAddress())
                 .email(user.getEmail())
                 .role(user.getRole())
-                .password(user.getPassword())
                 .build();
 
         BikeDTO bikeDTO = BikeDTO.builder()

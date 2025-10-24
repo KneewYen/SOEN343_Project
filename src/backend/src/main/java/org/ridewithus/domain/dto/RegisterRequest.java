@@ -1,20 +1,18 @@
 package org.ridewithus.domain.dto;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDTO {
-    private Long id;
+public class RegisterRequest {
     private String fullName;
     private String userName;
-    private String email;
-    private String role;
     private String address;
+    private String email;
+    private String password;
+    private String paymentInfo; // Can be enhanced later with a separate Payment entity
 }
 

@@ -87,7 +87,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { supabase, supabaseHelpers } from '@/lib/supabase'
-import { apiClient } from '@/lib/api'
+import apiClient from '@/lib/api'
 import { config } from '@/lib/config'
 
 const supabaseLoading = ref(true)
@@ -279,4 +279,3 @@ onMounted(() => {
   cursor: not-allowed;
 }
 </style>
-

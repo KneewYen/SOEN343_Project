@@ -13,6 +13,8 @@
         <maven.compiler.target>23</maven.compiler.target>
         <spring-boot.version>3.3.5</spring-boot.version>
         <java.version>23</java.version>
+        <!-- Lombok version property so annotationProcessorPaths can reference it -->
+        <lombok.version>1.18.34</lombok.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -85,7 +87,7 @@
             <version>42.7.3</version>
         </dependency>
         
-        <!-- H2 Database (for testing) -->
+        <!-- H2 Database (for testing only) -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
@@ -131,7 +133,22 @@
                     </execution>
                 </executions>
             </plugin>
-            
+
+            <!-- Spotless: enforce/format Java code using google-java-format -->
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>2.40.0</version>
+                <configuration>
+                    <java>
+                        <googleJavaFormat>
+                            <version>1.17.0</version>
+                        </googleJavaFormat>
+                        <target>src/main/java/**/*.java,src/test/java/**/*.java</target>
+                    </java>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -140,6 +157,14 @@
                     <source>23</source>
                     <target>23</target>
                     <release>23</release>
+                    <!-- Enable annotation processing for Lombok -->
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
         </plugins>

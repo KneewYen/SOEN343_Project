@@ -1,567 +1,679 @@
 <template>
-  <div class="login-container">
-    <div class="login-card">
-      <div class="logo-section">
-        <h1 class="app-title">RideWithUs</h1>
-        <p class="app-subtitle">Your journey, our priority</p>
+  <div class="login-view">
+    <ThemeToggle />
+    <div class="login-container">
+      <div class="back-to-home">
+        <router-link to="/" class="home-link">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <polyline points="9,22 9,12 15,12 15,22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Back to Home
+        </router-link>
       </div>
-
-      <form @submit.prevent="handleLogin" class="login-form">
-        <h2 class="form-title">Welcome Back</h2>
-        
-        <div class="form-group">
-          <label for="email" class="form-label">Email</label>
-          <input
-            id="email"
-            v-model="form.email"
-            type="email"
-            class="form-input"
-            placeholder="Enter your email"
-            required
-          />
+      <div class="login-card">
+        <div class="logo-section">
+          <div class="logo-icon">
+            <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="32" cy="32" r="30" stroke="currentColor" stroke-width="2"/>
+              <path d="M20 32h8l4-8h8l4 8h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="20" cy="44" r="6" stroke="currentColor" stroke-width="2"/>
+              <circle cx="44" cy="44" r="6" stroke="currentColor" stroke-width="2"/>
+              <path d="M26 44h12" stroke="currentColor" stroke-width="2"/>
+            </svg>
+          </div>
+          <h1 class="app-title">RideWithUs</h1>
+          <p class="app-subtitle">Your journey starts here</p>
         </div>
 
-        <div class="form-group">
-          <label for="password" class="form-label">Password</label>
-          <input
-            id="password"
-            v-model="form.password"
-            type="password"
-            class="form-input"
-            placeholder="Enter your password"
-            required
-          />
-        </div>
+        <form @submit.prevent="handleLogin" class="login-form">
+          <h2 class="form-title">Welcome Back</h2>
 
-        <button type="submit" class="login-btn" :disabled="loading">
-          <span v-if="loading" class="spinner"></span>
-          {{ loading ? 'Signing In...' : 'Sign In' }}
-        </button>
+          <div class="form-group">
+            <label for="usernameOrEmail" class="form-label">
+              <span class="label-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </span>
+              Username or Email
+            </label>
+            <input
+              id="usernameOrEmail"
+              v-model="form.usernameOrEmail"
+              type="text"
+              class="form-input"
+              placeholder="Enter your username or email"
+              required
+              autocomplete="username"
+            />
+          </div>
 
-        <div v-if="error" class="error-message">
-          {{ error }}
-        </div>
+          <div class="form-group">
+            <label for="password" class="form-label">
+              <span class="label-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>
+                  <circle cx="12" cy="16" r="1" fill="currentColor"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor" stroke-width="2"/>
+                </svg>
+              </span>
+              Password
+            </label>
+            <div class="password-input-container">
+              <input
+                id="password"
+                v-model="form.password"
+                :type="showPassword ? 'text' : 'password'"
+                class="form-input"
+                placeholder="Enter your password"
+                required
+                autocomplete="current-password"
+              />
+              <button
+                type="button"
+                @click="togglePassword"
+                class="password-toggle"
+                :title="showPassword ? 'Hide password' : 'Show password'"
+              >
+                <svg v-if="!showPassword" width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
+          </div>
 
-        <div class="form-footer">
-          <p>Don't have an account? 
-            <button type="button" @click="$emit('switch-to-register')" class="link-btn">
-              Sign Up
-            </button>
-          </p>
-        </div>
-      </form>
-    </div>
+          <button type="submit" class="login-btn" :disabled="loading">
+            <span v-if="loading" class="spinner"></span>
+            <span v-else>{{ 'Sign In' }}</span>
+          </button>
+          
+          <!-- Debug button -->
+          <button type="button" @click="debugAuth" class="btn-secondary" style="margin-top: 10px; font-size: 12px; width: 100%;">
+            🐛 Debug Auth
+          </button>
 
-    <div class="background-decoration">
-      <div class="circle circle-1"></div>
-      <div class="circle circle-2"></div>
-      <div class="circle circle-3"></div>
+          <div v-if="error" class="error-message">
+            <span class="message-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                <line x1="15" y1="9" x2="9" y2="15" stroke="currentColor" stroke-width="2"/>
+                <line x1="9" y1="9" x2="15" y2="15" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </span>
+            {{ error }}
+          </div>
+
+          <div v-if="success" class="success-message">
+            <span class="message-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <polyline points="22,4 12,14.01 9,11.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            {{ success }}
+          </div>
+
+          <div class="form-footer">
+            <p>Don't have an account?
+              <router-link to="/register" class="link-btn">Sign Up</router-link>
+            </p>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 </template>
 
-<script setup>
-import { ref, reactive } from 'vue'
-import { supabase } from '@/lib/supabase'
+<script>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { auth, testAuth } from '../lib/supabase.js'
+import ThemeToggle from '../components/ThemeToggle.vue'
 
-const emit = defineEmits(['switch-to-register', 'login-success'])
-
-const loading = ref(false)
-const error = ref('')
-
-const form = reactive({
-  email: '',
-  password: ''
-})
-
-const handleLogin = async () => {
-  loading.value = true
-  error.value = ''
-
-  try {
-    const { data, error: authError } = await supabase.auth.signInWithPassword({
-      email: form.email,
-      password: form.password
+export default {
+  name: 'LoginView',
+  components: {
+    ThemeToggle
+  },
+  setup() {
+    const router = useRouter()
+    const form = ref({
+      usernameOrEmail: '',
+      password: ''
     })
+    const loading = ref(false)
+    const error = ref('')
+    const success = ref('')
+    const showPassword = ref(false)
 
-    if (authError) {
-      throw authError
+    const handleLogin = async () => {
+      loading.value = true
+      error.value = ''
+      success.value = ''
+
+      try {
+        const response = await auth.login({
+          usernameOrEmail: form.value.usernameOrEmail,
+          password: form.value.password
+        })
+
+        if (response.success) {
+          success.value = response.message
+
+          // Store user info in localStorage for persistence
+          const userData = {
+            id: response.user.id,
+            email: response.user.email,
+            role: response.user.user_metadata?.role || 'rider',
+            fullName: response.user.user_metadata?.full_name || '',
+            userName: response.user.user_metadata?.username || '',
+            address: response.user.user_metadata?.address || ''
+          }
+          
+          localStorage.setItem('user', JSON.stringify(userData))
+          if (response.session) {
+            localStorage.setItem('token', response.session.access_token)
+          }
+
+          // Role-based redirection
+          setTimeout(() => {
+            if (userData.role === 'operator') {
+              router.push('/dashboard/operator')
+            } else {
+              router.push('/dashboard/rider')
+            }
+          }, 800)
+        } else {
+          if (response.needsConfirmation) {
+            error.value = '📧 ' + response.message + ' Check your email inbox and spam folder.'
+          } else {
+            error.value = response.message
+          }
+        }
+      } catch (err) {
+        error.value = err.message || 'Login failed. Please try again.'
+      } finally {
+        loading.value = false
+      }
     }
 
-    if (data.user) {
-      emit('login-success', data.user)
+    const debugAuth = async () => {
+      console.log('=== DEBUG AUTHENTICATION ===')
+      
+      // Test user creation
+      console.log('1. Creating test user...')
+      const createResult = await testAuth.createTestUser()
+      console.log('Create result:', createResult)
+      
+      // Wait a moment
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      // Test login
+      console.log('2. Testing login...')
+      const loginResult = await testAuth.testLogin()
+      console.log('Login result:', loginResult)
+      
+      console.log('=== END DEBUG ===')
     }
-  } catch (err) {
-    error.value = err.message || 'Login failed. Please try again.'
-  } finally {
-    loading.value = false
+
+    const togglePassword = () => {
+      showPassword.value = !showPassword.value
+    }
+
+    return {
+      form,
+      loading,
+      error,
+      success,
+      showPassword,
+      handleLogin,
+      debugAuth,
+      togglePassword
+    }
   }
 }
 </script>
 
 <style scoped>
+.login-view {
+  min-height: 100vh;
+  background: var(--gradient);
+  position: relative;
+}
+
 .login-container {
   min-height: 100vh;
-  width: 100%;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #ff6b9d 0%, #ff8fab 50%, #ffb3c6 100%);
-  position: relative;
-  overflow: hidden;
   padding: 20px;
-  margin: 0;
+  position: relative;
+}
+
+.back-to-home {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 10;
+}
+
+.home-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.home-link:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
 }
 
 .login-card {
-  background: white;
-  border-radius: 20px;
-  padding: 50px;
-  box-shadow: 0 20px 40px rgba(255, 107, 157, 0.2);
-  width: 95%;
-  max-width: 500px;
-  position: relative;
-  z-index: 10;
-  margin: 0 auto;
+  background: var(--surface);
+  border-radius: 24px;
+  box-shadow: var(--card-shadow);
+  padding: 48px;
+  max-width: 480px;
+  width: 100%;
+  border: 2px solid var(--border);
+  animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .logo-section {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 32px;
+}
+
+.logo-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 .app-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, #ff6b9d, #ff8fab);
+  font-size: 36px;
+  font-weight: 800;
+  background: var(--gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  margin: 0;
+  margin: 0 0 8px 0;
 }
 
 .app-subtitle {
-  color: #666;
-  font-size: 1rem;
-  margin: 5px 0 0 0;
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 16px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
 .form-title {
-  font-size: 1.8rem;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 30px;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 8px 0;
   text-align: center;
 }
 
 .form-group {
-  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .form-label {
-  display: block;
-  margin-bottom: 8px;
-  color: #555;
-  font-weight: 500;
-  font-size: 0.9rem;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.label-icon {
+  font-size: 18px;
 }
 
 .form-input {
-  width: 100%;
-  padding: 15px;
-  border: 2px solid #f0f0f0;
+  padding: 14px 18px;
+  border: 2px solid var(--border);
   border-radius: 12px;
-  font-size: 1rem;
+  font-size: 16px;
   transition: all 0.3s ease;
-  box-sizing: border-box;
+  background: var(--background);
+  color: var(--text);
 }
 
 .form-input:focus {
   outline: none;
-  border-color: #ff6b9d;
-  box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.1);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px var(--primary-light);
+  transform: translateY(-2px);
+}
+
+/* Password input container */
+.password-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.password-toggle:hover {
+  color: var(--primary);
+  background: rgba(236, 72, 153, 0.1);
+}
+
+.password-toggle:focus {
+  outline: none;
+  color: var(--primary);
+  background: rgba(236, 72, 153, 0.1);
 }
 
 .login-btn {
-  width: 100%;
-  padding: 15px;
-  background: linear-gradient(135deg, #ff6b9d, #ff8fab);
+  background: var(--gradient);
   color: white;
+  padding: 16px;
   border: none;
   border-radius: 12px;
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
+  margin-top: 8px;
 }
 
 .login-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(255, 107, 157, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(236, 72, 153, 0.4);
 }
 
 .login-btn:disabled {
-  opacity: 0.7;
+  opacity: 0.6;
   cursor: not-allowed;
-  transform: none;
 }
 
 .spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top: 2px solid white;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: spin 0.6s linear infinite;
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  to { transform: rotate(360deg); }
+}
+
+.error-message,
+.success-message {
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
 }
 
 .error-message {
-  background: #ffe6e6;
-  color: #d63384;
-  padding: 12px;
-  border-radius: 8px;
-  margin-top: 15px;
-  font-size: 0.9rem;
-  border-left: 4px solid #d63384;
+  background-color: var(--error-bg);
+  color: var(--error);
+  border: 2px solid var(--error);
+}
+
+.success-message {
+  background-color: var(--success-bg);
+  color: var(--success);
+  border: 2px solid var(--success);
+}
+
+.message-icon {
+  font-size: 18px;
 }
 
 .form-footer {
   text-align: center;
-  margin-top: 25px;
-  color: #666;
+  margin-top: 8px;
+}
+
+.form-footer p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin: 0;
 }
 
 .link-btn {
-  background: none;
-  border: none;
-  color: #ff6b9d;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: underline;
-  font-size: inherit;
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 700;
+  transition: all 0.3s ease;
 }
 
 .link-btn:hover {
-  color: #ff8fab;
+  text-decoration: underline;
+  color: var(--primary-hover);
 }
 
-.background-decoration {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-}
-
-.circle {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  animation: float 6s ease-in-out infinite;
-}
-
-.circle-1 {
-  width: 200px;
-  height: 200px;
-  top: 10%;
-  left: 10%;
-  animation-delay: 0s;
-}
-
-.circle-2 {
-  width: 150px;
-  height: 150px;
-  top: 60%;
-  right: 15%;
-  animation-delay: 2s;
-}
-
-.circle-3 {
-  width: 100px;
-  height: 100px;
-  bottom: 20%;
-  left: 20%;
-  animation-delay: 4s;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
-}
-
-/* Web-First Responsive Design */
-
-/* Default Desktop Styles (1024px+) */
-.login-container {
-  padding: 20px;
-}
-
-.login-card {
-  max-width: 550px;
-  padding: 60px;
-}
-
-.app-title {
-  font-size: 3rem;
-}
-
-.app-subtitle {
-  font-size: 1.2rem;
-}
-
-.form-title {
-  font-size: 2rem;
-  margin-bottom: 35px;
-}
-
-.form-input {
-  padding: 18px;
-  font-size: 1.1rem;
-}
-
-.login-btn {
-  padding: 18px;
-  font-size: 1.2rem;
-}
-
-.circle-1 {
-  width: 250px;
-  height: 250px;
-}
-
-.circle-2 {
-  width: 180px;
-  height: 180px;
-}
-
-.circle-3 {
-  width: 120px;
-  height: 120px;
-}
-
-/* Large Desktop (1440px+) */
-@media (min-width: 1440px) {
-  .login-container {
-    padding: 20px;
-  }
-  
-  .login-card {
-    max-width: 650px;
-    padding: 70px;
-  }
-  
-  .app-title {
-    font-size: 3.5rem;
-  }
-  
-  .form-title {
-    font-size: 2.2rem;
-  }
-  
-  .form-input {
-    padding: 20px;
-    font-size: 1.2rem;
-  }
-  
-  .login-btn {
-    padding: 20px;
-    font-size: 1.3rem;
-  }
-}
-
-/* Medium Desktop (1200px - 1439px) */
-@media (max-width: 1439px) and (min-width: 1200px) {
-  .login-card {
-    max-width: 480px;
-    padding: 45px;
-  }
-  
-  .app-title {
-    font-size: 2.8rem;
-  }
-}
-
-/* Small Desktop/Large Tablet (1024px - 1199px) */
-@media (max-width: 1199px) and (min-width: 1024px) {
-  .login-container {
-    padding: 20px;
-  }
-  
-  .login-card {
-    max-width: 500px;
-    padding: 50px;
-  }
-  
-  .app-title {
-    font-size: 2.5rem;
-  }
-  
-  .form-title {
-    font-size: 1.8rem;
-  }
-}
-
-/* Tablet (768px - 1023px) */
-@media (max-width: 1023px) and (min-width: 768px) {
-  .login-container {
-    padding: 20px;
-  }
-  
-  .login-card {
-    max-width: 450px;
-    padding: 45px;
-  }
-  
-  .app-title {
-    font-size: 2.2rem;
-  }
-  
-  .form-title {
-    font-size: 1.6rem;
-  }
-  
-  .form-input {
-    padding: 15px;
-  }
-  
-  .login-btn {
-    padding: 15px;
-  }
-  
-  .circle-1 {
-    width: 180px;
-    height: 180px;
-  }
-  
-  .circle-2 {
-    width: 120px;
-    height: 120px;
-  }
-  
-  .circle-3 {
-    width: 80px;
-    height: 80px;
-  }
-}
-
-/* Mobile (up to 767px) */
-@media (max-width: 767px) {
-  .login-container {
-    padding: 15px;
-  }
-  
-  .login-card {
-    padding: 30px 25px;
-    margin: 10px;
-    max-width: 100%;
-    border-radius: 16px;
-  }
-  
-  .app-title {
-    font-size: 2rem;
-  }
-  
-  .app-subtitle {
-    font-size: 1rem;
-  }
-  
-  .form-title {
-    font-size: 1.5rem;
-    margin-bottom: 25px;
-  }
-  
-  .form-input {
-    padding: 14px;
-    font-size: 16px; /* Prevents zoom on iOS */
-  }
-  
-  .login-btn {
-    padding: 14px;
-    font-size: 1.1rem;
-  }
-  
-  .circle-1 {
-    width: 120px;
-    height: 120px;
-  }
-  
-  .circle-2 {
-    width: 80px;
-    height: 80px;
-  }
-  
-  .circle-3 {
-    width: 60px;
-    height: 60px;
-  }
-}
-
-/* Small Mobile (up to 480px) */
+/* Mobile-first responsive design */
 @media (max-width: 480px) {
+  /* Small mobile phones */
   .login-container {
-    padding: 0;
+    padding: 16px;
+  }
+  
+  .back-to-home {
+    top: 10px;
+    left: 10px;
+  }
+  
+  .home-link {
+    padding: 6px 12px;
+    font-size: 14px;
   }
   
   .login-card {
-    padding: 25px 20px;
-    margin: 5px;
-    border-radius: 12px;
+    padding: 24px 20px;
+    border-radius: 20px;
   }
   
   .app-title {
-    font-size: 1.8rem;
+    font-size: 28px;
+  }
+  
+  .logo-icon {
+    font-size: 40px;
   }
   
   .form-title {
-    font-size: 1.3rem;
-  }
-  
-  .form-group {
-    margin-bottom: 15px;
+    font-size: 24px;
   }
   
   .form-input {
-    padding: 12px;
+    padding: 12px 16px;
+    font-size: 16px;
   }
   
   .login-btn {
-    padding: 12px;
+    padding: 14px;
+    font-size: 16px;
   }
 }
 
-/* Landscape Mobile */
-@media (max-width: 767px) and (orientation: landscape) {
+@media (min-width: 481px) and (max-width: 640px) {
+  /* Large mobile phones */
   .login-container {
-    padding: 0;
+    padding: 20px;
   }
   
   .login-card {
-    padding: 25px;
-    max-height: 90vh;
-    overflow-y: auto;
+    padding: 32px 24px;
+  }
+  
+  .app-title {
+    font-size: 32px;
+  }
+  
+  .logo-icon {
+    font-size: 48px;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  /* Small tablets */
+  .login-card {
+    padding: 40px 32px;
+    max-width: 520px;
+  }
+  
+  .app-title {
+    font-size: 36px;
+  }
+  
+  .logo-icon {
+    font-size: 56px;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  /* Tablets */
+  .login-card {
+    padding: 48px 40px;
+    max-width: 560px;
+  }
+  
+  .app-title {
+    font-size: 40px;
+  }
+  
+  .logo-icon {
+    font-size: 64px;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1440px) {
+  /* Laptops and small desktops */
+  .login-card {
+    padding: 48px;
+    max-width: 480px;
+  }
+}
+
+@media (min-width: 1441px) {
+  /* Large desktops */
+  .login-card {
+    padding: 56px;
+    max-width: 520px;
+  }
+  
+  .app-title {
+    font-size: 40px;
+  }
+  
+  .logo-icon {
+    font-size: 72px;
+  }
+  
+  .form-title {
+    font-size: 32px;
+  }
+}
+
+/* Landscape orientation adjustments */
+@media (max-height: 600px) and (orientation: landscape) {
+  .login-container {
+    padding: 10px;
+  }
+  
+  .login-card {
+    padding: 24px;
   }
   
   .logo-section {
     margin-bottom: 20px;
   }
   
+  .logo-icon {
+    font-size: 40px;
+  }
+  
   .app-title {
-    font-size: 1.8rem;
+    font-size: 28px;
   }
   
   .form-title {
-    font-size: 1.4rem;
-    margin-bottom: 20px;
+    font-size: 24px;
   }
 }
 </style>
+
