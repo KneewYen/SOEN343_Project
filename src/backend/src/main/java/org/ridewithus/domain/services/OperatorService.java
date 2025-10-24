@@ -22,6 +22,8 @@ public class OperatorService {
     private DockRepository dockRepository;
     @Autowired
     private StationRepository stationRepository;
+    @Autowired
+    private DomainEventService eventService;
 
     @Transactional
     public String toggleBikeStatus(Long bikeId, User operator){
@@ -34,8 +36,14 @@ public class OperatorService {
             return "Error: Bike cannot be toggled while reserved or on a trip.";
         }
 
+        String oldStatus = bike.getStatus().toString();
+
         bike.setStatus(bike.getStatus() == BikeStatus.AVAILABLE ? BikeStatus.MAINTENANCE : BikeStatus.AVAILABLE);
         bikeRepository.save(bike);
+
+        String newStatus = bike.getStatus().toString();
+
+        eventService.emitEvent("BIKE_STATUS_CHANGED", String.format("Bike %d: %s -> %s", bike.getId(), oldStatus, newStatus));
 
         return "Bike status updated successfully";
     }
@@ -52,8 +60,14 @@ public class OperatorService {
             return "Error: Dock cannot be toggled while it has active reservations.";
         }
 
+        String oldStatus = dock.getStatus().toString();
+
         dock.setStatus(dock.getStatus() == Dock.DockStatus.EMPTY ? Dock.DockStatus.OUT_OF_SERVICE : Dock.DockStatus.EMPTY);
         dockRepository.save(dock);
+
+        String newStatus = dock.getStatus().toString();
+        eventService.emitEvent("DOCK_STATUS_CHANGED", String.format("Dock %d: %s -> %s", dock.getId(), oldStatus, newStatus));
+
 
         return "Dock status updated successfully";
 
@@ -71,8 +85,13 @@ public class OperatorService {
             return "Error: Station cannot be toggled while it has active reservations.";
         }
 
+        String oldStatus = station.getStatus().toString();
+
         station.setStatus(station.getStatus() == Station.StationStatus.ACTIVE ? Station.StationStatus.OUT_OF_SERVICE : Station.StationStatus.ACTIVE);
         stationRepository.save(station);
+
+        String newStatus = station.getStatus().toString();
+        eventService.emitEvent("STATION_STATUS_CHANGED", String.format("Station %d: %s -> %s", station.getId(), oldStatus, newStatus));
 
         return "Station status updated successfully";
     }
@@ -106,6 +125,8 @@ public class OperatorService {
         Dock freeDock = dockRepository.findFirstByStationAndStatus(destinationStation, Dock.DockStatus.EMPTY)
                 .orElseThrow(() -> new RuntimeException("No free docks available in destination station."));
 
+        String oldDock = bike.getDock().getStation().getName();
+
         // Remove bike from current dock
         Dock currentDock = bike.getDock();
         if(currentDock != null){
@@ -119,6 +140,9 @@ public class OperatorService {
 
         dockRepository.save(freeDock);
         bikeRepository.save(bike);
+
+        String newDock = bike.getDock().getStation().getName();
+        eventService.emitEvent("REBALANCE", String.format("Bike %d: %s -> %s", bike.getId(), oldDock, newDock));
 
         return "Bike " + bike.getId() + " successfully moved from station " + sourceStation.getName()
                 + " to station " + destinationStation.getName();
@@ -163,6 +187,8 @@ public class OperatorService {
             Dock oldDock = bike.getDock();
             Dock newDock = freeDocks.get(i);
 
+            String oldDockStr = bike.getDock().getStation().getName();
+
             // Update old dock
             oldDock.setStatus(Dock.DockStatus.EMPTY);
             dockRepository.save(oldDock);
@@ -173,6 +199,9 @@ public class OperatorService {
 
             dockRepository.save(newDock);
             bikeRepository.save(bike);
+
+            String newDockStr = bike.getDock().getStation().getName();
+            eventService.emitEvent("REBALANCE", String.format("Bike %d: %s -> %s", bike.getId(), oldDockStr, newDockStr));
         }
 
         return numberOfBikes + " bikes successfully rebalanced from " + sourceStation.getName() + " to " + destinationStation.getName();
