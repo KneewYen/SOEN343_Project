@@ -4,7 +4,8 @@ import jakarta.servlet.http.HttpSession;
 import org.ridewithus.domain.dto.AuthResponse;
 import org.ridewithus.domain.dto.LoginRequest;
 import org.ridewithus.domain.dto.RegisterRequest;
-import org.ridewithus.domain.services.AuthenticationService;
+import org.ridewithus.domain.dto.UserDTO;
+import org.ridewithus.domain.facade.AuthenticationFacade;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 /**
  * Authentication Controller
  * Handles UC1 (Register) and UC2 (Login) endpoints
+ * Uses Facade pattern to delegate authentication operations
  */
 @RestController
 @RequestMapping("/api/auth")
@@ -20,7 +22,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     @Autowired
-    private AuthenticationService authenticationService;
+    private AuthenticationFacade authenticationFacade;
 
     /**
      * UC1 - Register a new rider account
@@ -28,7 +30,7 @@ public class AuthController {
      */
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
-        AuthResponse response = authenticationService.register(request);
+        AuthResponse response = authenticationFacade.register(request);
 
         if (response.isSuccess()) {
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -43,7 +45,7 @@ public class AuthController {
      */
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request, HttpSession session) {
-        AuthResponse response = authenticationService.login(request);
+        AuthResponse response = authenticationFacade.login(request);
 
         if (response.isSuccess()) {
             // Store user info in session for role-based routing
@@ -64,8 +66,11 @@ public class AuthController {
      */
     @PostMapping("/logout")
     public ResponseEntity<AuthResponse> logout(HttpSession session) {
+        boolean success = authenticationFacade.logout();
         session.invalidate();
-        return ResponseEntity.ok(new AuthResponse(true, "Logout successful", null, null));
+        
+        return ResponseEntity.ok(new AuthResponse(success, 
+            success ? "Logout successful" : "Logout failed", null, null));
     }
 
     /**
@@ -75,21 +80,20 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<AuthResponse> getCurrentUser(HttpSession session) {
         Long userId = (Long) session.getAttribute("userId");
-        String userName = (String) session.getAttribute("userName");
-        String userRole = (String) session.getAttribute("userRole");
 
         if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new AuthResponse(false, "Not authenticated", null, null));
         }
 
-        // Return minimal user info from session
-        org.ridewithus.domain.dto.UserDTO userDTO = new org.ridewithus.domain.dto.UserDTO();
-        userDTO.setId(userId);
-        userDTO.setUserName(userName);
-        userDTO.setRole(userRole);
-
-        return ResponseEntity.ok(new AuthResponse(true, "Authenticated", userDTO, null));
+        // Get user details from facade
+        UserDTO user = authenticationFacade.getCurrentUser();
+        if (user != null) {
+            return ResponseEntity.ok(new AuthResponse(true, "Authenticated", user, null));
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new AuthResponse(false, "User not found", null, null));
+        }
     }
 }
 
