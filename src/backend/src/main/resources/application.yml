@@ -1,23 +1,23 @@
 server:
-  port: 8081
+  port: 8080
 
 spring:
   application:
     name: ride-with-us-backend
   
   # Database Configuration - Using H2 for testing
-  datasource:
-    url: jdbc:h2:mem:testdb
-    username: sa
-    password: 
-    driver-class-name: org.h2.Driver
-    hikari:
-      maximum-pool-size: 5
-      minimum-idle: 2
-      connection-timeout: 30000
-      idle-timeout: 600000
-      max-lifetime: 1800000
-      leak-detection-threshold: 60000
+  # datasource:
+  #   url: jdbc:h2:mem:testdb
+  #   username: sa
+  #   password: 
+  #   driver-class-name: org.h2.Driver
+  #   hikari:
+  #     maximum-pool-size: 5
+  #     minimum-idle: 2
+  #     connection-timeout: 30000
+  #     idle-timeout: 600000
+  #     max-lifetime: 1800000
+  #     leak-detection-threshold: 60000
     
   # JPA/Hibernate Configuration
   jpa:
@@ -26,7 +26,7 @@ spring:
     show-sql: true
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
     open-in-view: false
     

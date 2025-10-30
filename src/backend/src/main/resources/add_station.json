@@ -1,0 +1,31 @@
+{
+  "stations": [
+    {
+      "name": "Eaton Centre",
+      "address": "705 rue Sainte-Catherine Ouest",
+      "latitude": 45.502586,
+      "longitude": -73.571404,
+      "capacity": 5,
+      "status": "active",
+      "docks": [
+        {
+          "status": "occupied",
+          "bike": { "type": "standard", "status": "available" }
+        },
+        {
+          "status": "occupied",
+          "bike": { "type": "standard", "status": "available" }
+        },
+        {
+          "status": "out_of_service"
+        },
+        {
+          "status": "empty"
+        },
+        {
+          "status": "empty"
+        }
+      ]
+    }
+  ]
+}

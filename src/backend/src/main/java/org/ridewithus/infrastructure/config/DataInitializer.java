@@ -42,7 +42,7 @@ public class DataInitializer implements CommandLineRunner {
     public void run(String... args) throws Exception {
         // Only initialize if database is empty
         if (userRepository.count() == 0) {
-            initializeTestData();
+            //initializeTestData();
         }
     }
 

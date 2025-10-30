@@ -56,7 +56,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             }
 
             // Hash the password
-            String hashedPassword = hashPassword(request.getPassword());
+            //String hashedPassword = hashPassword(request.getPassword());
 
             // Create new user
             User user = new User();
@@ -64,7 +64,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             user.setUserName(request.getUserName());
             user.setEmail(request.getEmail());
             user.setAddress(request.getAddress());
-            user.setPassword(hashedPassword);
+            user.setPassword(request.getPassword());
             user.setRole("rider"); // Default role
 
             // Save to database
@@ -102,7 +102,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
             // Verify password
             String hashedInputPassword = hashPassword(request.getPassword());
-            if (!hashedInputPassword.equals(user.getPassword())) {
+
+            if (!request.getPassword().equals(user.getPassword())) {
                 return new AuthResponse(false, "Incorrect username or password", null, null);
             }
 
