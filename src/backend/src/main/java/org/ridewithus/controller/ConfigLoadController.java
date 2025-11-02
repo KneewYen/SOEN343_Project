@@ -37,10 +37,12 @@ public class ConfigLoadController {
     public String importOperators(){
         try{
             ObjectMapper mapper = new ObjectMapper();
-            InputStream inputStream = getClass().getClassLoader().getResourceAsStream("core.json");
+            InputStream inputStream = getClass().getClassLoader().getResourceAsStream("add_station.json");
 
 
             JsonNode stationNodes = mapper.readTree(inputStream).get("stations");
+
+            //System.out.println(stationNodes != null);
 
             if(stationNodes != null && stationNodes.isArray()){
                 for(JsonNode stationNode: stationNodes){
@@ -58,6 +60,8 @@ public class ConfigLoadController {
                         stationNode.get("capacity").asInt()
                     );
                     stationRepository.save(station);
+
+                    System.out.println("suc");
 
                     // Get docks for a station now
                     if(stationNode.has("docks")){
