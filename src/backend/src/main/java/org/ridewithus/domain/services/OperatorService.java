@@ -22,6 +22,8 @@ public class OperatorService {
     private DockRepository dockRepository;
     @Autowired
     private StationRepository stationRepository;
+    @Autowired
+    private DomainEventService eventService;
 
     @Transactional
     public String toggleBikeStatus(Long bikeId, User operator){
@@ -34,10 +36,16 @@ public class OperatorService {
             return "Error: Bike cannot be toggled while reserved or on a trip.";
         }
 
+        String oldStatus = bike.getStatus().toString();
+
         bike.setStatus(bike.getStatus() == BikeStatus.AVAILABLE ? BikeStatus.MAINTENANCE : BikeStatus.AVAILABLE);
         // Update the bike's state to match the new status
         bike.initState();
         bikeRepository.save(bike);
+
+        String newStatus = bike.getStatus().toString();
+
+        eventService.emitEvent(operator,"BIKE_MAINTENANCE", String.format("Bike %d: %s -> %s", bike.getId(), oldStatus, newStatus));
 
         return "Bike status updated successfully";
     }
@@ -54,8 +62,13 @@ public class OperatorService {
             return "Error: Dock cannot be toggled while it has active reservations.";
         }
 
+        String oldStatus = dock.getStatus().toString();
+
         dock.setStatus(dock.getStatus() == Dock.DockStatus.EMPTY ? Dock.DockStatus.OUT_OF_SERVICE : Dock.DockStatus.EMPTY);
         dockRepository.save(dock);
+
+        String newStatus = dock.getStatus().toString();
+        eventService.emitEvent(operator,"DOCK_MAINTENANCE", String.format("Dock %d: %s -> %s", dock.getId(), oldStatus, newStatus));
 
         return "Dock status updated successfully";
 
@@ -73,8 +86,13 @@ public class OperatorService {
             return "Error: Station cannot be toggled while it has active reservations.";
         }
 
+        String oldStatus = station.getStatus().toString();
+
         station.setStatus(station.getStatus() == Station.StationStatus.ACTIVE ? Station.StationStatus.OUT_OF_SERVICE : Station.StationStatus.ACTIVE);
         stationRepository.save(station);
+
+        String newStatus = station.getStatus().toString();
+        eventService.emitEvent(operator,"STATION_MAINTENANCE", String.format("Station %d (%s): %s -> %s", station.getId(), station.getName(), oldStatus, newStatus));
 
         return "Station status updated successfully";
     }
@@ -108,6 +126,8 @@ public class OperatorService {
         Dock freeDock = dockRepository.findFirstByStationAndStatus(destinationStation, Dock.DockStatus.EMPTY)
                 .orElseThrow(() -> new RuntimeException("No free docks available in destination station."));
 
+        String oldDock = bike.getDock().getStation().getName();
+
         // Remove bike from current dock
         Dock currentDock = bike.getDock();
         if(currentDock != null){
@@ -121,6 +141,9 @@ public class OperatorService {
 
         dockRepository.save(freeDock);
         bikeRepository.save(bike);
+
+        String newDock = bike.getDock().getStation().getName();
+        eventService.emitEvent(operator,"REBALANCE", String.format("Bike %d: %s -> %s", bike.getId(), oldDock, newDock));
 
         return "Bike " + bike.getId() + " successfully moved from station " + sourceStation.getName()
                 + " to station " + destinationStation.getName();
@@ -166,6 +189,8 @@ public class OperatorService {
             Dock oldDock = bike.getDock();
             Dock newDock = freeDocks.get(i);
 
+            String oldDockStr = bike.getDock().getStation().getName();
+
             // Update old dock
             oldDock.setStatus(Dock.DockStatus.EMPTY);
             dockRepository.save(oldDock);
@@ -176,6 +201,9 @@ public class OperatorService {
 
             dockRepository.save(newDock);
             bikeRepository.save(bike);
+
+            String newDockStr = bike.getDock().getStation().getName();
+            eventService.emitEvent(operator,"REBALANCE", String.format("Bike %d: %s -> %s", bike.getId(), oldDockStr, newDockStr));
         }
 
         return numberOfBikes + " bikes successfully rebalanced from " + sourceStation.getName() + " to " + destinationStation.getName();

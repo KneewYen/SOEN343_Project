@@ -24,7 +24,7 @@ public class Trip {
 
     @OneToOne
     @JoinColumn(name = "reservation_id")
-    @OnDelete(action = OnDeleteAction.CASCADE)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private Reservation reservation;
 
     @ManyToOne

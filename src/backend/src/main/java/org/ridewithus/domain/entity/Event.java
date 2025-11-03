@@ -1,14 +1,16 @@
 package org.ridewithus.domain.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
 @Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "events")
 public class Event {
 
@@ -16,15 +18,19 @@ public class Event {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = true)
+    private User user;
+
     private String eventType;
     private String description;
     private LocalDateTime timestamp = LocalDateTime.now();
 
-    public Event() {}
-
-    public Event(String eventType, String description) {
+    public Event(User user, String eventType, String description) {
+        this.user = user;
         this.eventType = eventType;
         this.description = description;
     }
+
 
 }
