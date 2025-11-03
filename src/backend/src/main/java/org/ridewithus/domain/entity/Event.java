@@ -24,12 +24,13 @@ public class Event {
 
     private String eventType;
     private String description;
-    private LocalDateTime timestamp = LocalDateTime.now();
+    private LocalDateTime timestamp;
 
-    public Event(User user, String eventType, String description) {
-        this.user = user;
-        this.eventType = eventType;
-        this.description = description;
+    @PrePersist
+    protected void onCreate() {
+        if (timestamp == null) {
+            timestamp = LocalDateTime.now();
+        }
     }
 
 
