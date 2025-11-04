@@ -3,9 +3,13 @@ package org.ridewithus.domain.services;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.ridewithus.domain.entity.*;
 import org.ridewithus.infrastructure.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -46,12 +50,13 @@ public class TripService {
             throw new Exception("Operators cannot start trips. Only riders can use bikes.");
         }
 
+        //Finds the station where the bike currently sits
         Station station = reservation.getBike().getDock().getStation();
 
         if (station == null) {
             throw new Exception("Station does not Exists");
         }
-
+        //Decrements available bikes at that station and marks the dock as empty
         station.setCount(station.getCount() - 1);
 
         reservation.getBike().getDock().setStatus(Dock.DockStatus.EMPTY);
@@ -98,6 +103,8 @@ public class TripService {
             throw new Exception("No empty places available to Dock");
         }
 
+        //increment available bikes at station
+        //Marks one more bike as present at the station and assigns the bike to an empty dock.
         station.get().setCount(station.get().getCount() + 1);
 
         trip.getReservation().getBike().setDock(docks.getFirst());
@@ -137,12 +144,30 @@ public class TripService {
                 .toList();
     }
 
+    public Page<TripDTO> getAllTrips(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("endTime").descending());
+        Page<Trip> trips = tripRepository.findAll(pageable);
+
+        return trips.map(this::mapToDTO);
+    }
+
+    public Page<TripDTO> getUserTrips(Long userId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("endTime").descending());
+        Page<Trip> trips = tripRepository.findByUserId(userId, pageable);
+
+        return trips.map(this::mapToDTO);
+    }
+
     private TripDTO mapToDTO(Trip trip) {
         return TripDTO.builder()
                 .tripId(trip.getTripId())
                 .startTime(trip.getStartTime())
                 .endTime(trip.getEndTime())
                 .tripComplete(trip.isTripComplete())
+                .bikeType(trip.getReservation().getBike().getType())
+                .userName(trip.getReservation().getUser().getUserName())
+                .startStationName(trip.getStartStation() != null ? trip.getStartStation().getName() : null)
+                .endStationName(trip.getEndStation() != null ? trip.getEndStation().getName() : null)
                 .startStationId(trip.getStartStation() != null ? trip.getStartStation().getId() : null)
                 .endStationId(trip.getEndStation() != null ? trip.getEndStation().getId() : null)
                 .reservationId(trip.getReservation() != null ? trip.getReservation().getReservationId() : null)

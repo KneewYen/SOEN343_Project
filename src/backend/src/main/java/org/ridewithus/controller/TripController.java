@@ -3,6 +3,7 @@ package org.ridewithus.controller;
 import org.ridewithus.domain.dto.TripDTO;
 import org.ridewithus.domain.services.TripService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -58,6 +59,41 @@ public class TripController {
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("trips", trips);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @GetMapping("/paginate/user/{userId}")
+    public ResponseEntity<Map<String, Object>> getUserTrips(@PathVariable("userId") Long userId,
+                                                            @RequestParam(name = "page", defaultValue = "0") int page,
+                                                            @RequestParam(name = "size", defaultValue = "3") int size) {
+        try {
+            Page<TripDTO> trips = tripService.getUserTrips(userId, page, size);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("trips", trips);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @GetMapping("/AllTrips")
+    public ResponseEntity<Map<String, Object>> getAllTrips( @RequestParam(name = "page", defaultValue = "0") int page,
+                                                            @RequestParam(name = "size", defaultValue = "3") int size) {
+        try {
+            Page<TripDTO> trip = tripService.getAllTrips(page, size);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("trips", trip);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();

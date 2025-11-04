@@ -51,7 +51,7 @@
                 </span>
                 <span class="btn-text">Nearby Stations</span>
               </button>
-              <button class="action-btn secondary">
+              <button class="action-btn secondary" @click="showRideHistory">
                 <span class="btn-icon">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18 20V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -71,6 +71,14 @@
               :stations="stations" 
               :loading="loading" 
               @bikeReserved="handleBikeReserved"
+            />
+          </section>
+
+
+          <!-- Ride History -->
+          <section v-if="showRideHistoryList" class="ride-history">
+            <RideHistory 
+              :user="user" 
             />
           </section>
 
@@ -228,10 +236,12 @@ import { useRouter } from 'vue-router'
 import ThemeToggle from '../components/ThemeToggle.vue'
 import StationsMap from '../components/StationsMap.vue'
 import apiClient from '../lib/api'
+import RideHistory from '@/components/RideHistory.vue'
 
 const router = useRouter()
 const user = ref(null)
 const showStationsList = ref(false)
+const showRideHistoryList = ref(false)
 const stations = ref([])
 const loading = ref(false)
 const currentReservation = ref(null)
@@ -283,6 +293,12 @@ const showStations = () => {
     loadStations()
   }
 }
+
+const showRideHistory = () => {
+  // Toggle stations visibility and load data if needed
+  showRideHistoryList.value = !showRideHistoryList.value
+}
+
 
     // Manual reservation check - only called when needed
     const checkActiveReservation = async () => {
