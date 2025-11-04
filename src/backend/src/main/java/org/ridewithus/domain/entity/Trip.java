@@ -45,8 +45,9 @@ public class Trip {
 
     @Column(name = "end_time")
     private LocalDateTime endTime;
-    
-    @Column(name = "user_id")
-    private Long userId;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 
 }

@@ -128,6 +128,14 @@
                 </span>
                 <span class="btn-text">View Analytics</span>
               </button>
+              <button @click="showDockManagement = true" class="action-btn secondary">
+                <span class="btn-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+                <span class="btn-text">Dock Maintenance</span>
+              </button>
             </div>
           </section>
 
@@ -189,7 +197,7 @@
                   </div>
                   <div class="station-summary">
                     <div class="bike-count">
-                      <span class="count-number">{{ station.count }}</span>
+                      <span class="count-number">{{ getAvailableBikesCount(station) }}</span>
                       <span class="count-total">/{{ station.capacity }}</span>
                       <span class="count-label">bikes</span>
                     </div>
@@ -335,6 +343,38 @@
         </div>
       </div>
     </div>
+    <!-- Dock Management Modal -->
+    <div v-if="showDockManagement" class="modal-overlay" @click="showDockManagement = false">
+      <div class="modal-content large" @click.stop>
+        <div class="modal-header">
+          <h3>Dock Management</h3>
+          <button @click="showDockManagement = false" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="bikes-management">
+            <div v-for="station in stations" :key="station.id" class="station-bikes">
+              <h4>{{ station.name }}</h4>
+              <div class="bikes-list">
+                <div v-for="dock in station.dockIds" :key="dock.id" class="bike-item">
+                  <div class="bike-info">
+                    <span>Dock #{{ dock.id }}</span>
+                    <span class="dock-status" :class="(dock.status).toLowerCase().replace('_', '-')">{{dock.status }}</span>
+                  </div>
+                  <div v-if="dock.id" class="bike-actions">
+                    <button 
+                      @click="toggleDockStatus(dock.id)" 
+                      class="action-btn small"
+                    >
+                      Toggle Status
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -357,6 +397,7 @@ export default {
     const showRebalanceModal = ref(false)
     const showStationManagement = ref(false)
     const showBikeManagement = ref(false)
+    const showDockManagement = ref(false)
     const rebalanceForm = ref({
       sourceStationId: '',
       destinationStationId: '',
@@ -502,6 +543,21 @@ export default {
       return 'available'
     }
 
+    const toggleDockStatus = async (dockIds) => {
+      try {
+        const result = await apiClient.toggleDock(dockIds, user.value.id)
+        if (result.success) {
+          alert(result.message || 'Dock status updated successfully')
+          // Reload stations to get the latest data from backend
+          await loadStations()
+        } else {
+          alert(result.message || 'Failed to toggle dock status')
+        }
+      } catch (error) {
+        alert('Failed to toggle dock status: ' + error.message)
+      }
+    }
+
     return {
       user,
       handleLogout,
@@ -510,6 +566,7 @@ export default {
       showRebalanceModal,
       showStationManagement,
       showBikeManagement,
+      showDockManagement,
       rebalanceForm,
       systemStats,
       getAvailableBikesCount,
@@ -517,6 +574,7 @@ export default {
       executeRebalance,
       toggleStationStatus,
       toggleBikeStatus,
+      toggleDockStatus,
       getStationStatusClass,
       getDockStatusClass,
       getBikeStatusClass

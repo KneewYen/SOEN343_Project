@@ -64,7 +64,28 @@ public class OperatorService {
 
         String oldStatus = dock.getStatus().toString();
 
-        dock.setStatus(dock.getStatus() == Dock.DockStatus.EMPTY ? Dock.DockStatus.OUT_OF_SERVICE : Dock.DockStatus.EMPTY);
+
+        switch (dock.getStatus()) {
+
+            case OCCUPIED:
+                dock.setStatus(Dock.DockStatus.OUT_OF_SERVICE);
+                break;
+
+            case OUT_OF_SERVICE:
+                // if dock has a bike, go back to OCCUPIED
+                if (dock.getBike() != null) {
+                    dock.setStatus(Dock.DockStatus.OCCUPIED);
+                } else {
+                    // no bike, make it EMPTY
+                    dock.setStatus(Dock.DockStatus.EMPTY);
+                }
+                break;
+
+            case EMPTY:
+                dock.setStatus(Dock.DockStatus.OUT_OF_SERVICE);
+                break;
+        }
+
         dockRepository.save(dock);
 
         String newStatus = dock.getStatus().toString();
