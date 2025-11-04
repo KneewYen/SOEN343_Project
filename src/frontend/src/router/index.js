@@ -5,6 +5,7 @@ import RegisterView from '../views/RegisterView.vue'
 import DashboardView from '../views/DashboardView.vue'
 import RiderDashboard from '../views/RiderDashboard.vue'
 import OperatorDashboard from '../views/OperatorDashboard.vue'
+import GuestDashboard from '../views/GuestDashboard.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -41,6 +42,12 @@ const router = createRouter({
       name: 'operator-dashboard',
       component: OperatorDashboard,
       meta: { requiresAuth: true, role: 'operator' }
+    },
+    {
+      path: '/dashboard/guest',
+      name: 'guest-dashboard',
+      component: GuestDashboard,
+      meta: { requiresAuth: false }
     }
   ]
 })
@@ -49,6 +56,12 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const user = JSON.parse(localStorage.getItem('user') || 'null')
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+
+  // Allow guest dashboard access without authentication
+  if (to.name === 'guest-dashboard') {
+    next()
+    return
+  }
 
   if (requiresAuth && !user) {
     // Redirect to login if authentication is required

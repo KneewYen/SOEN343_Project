@@ -34,10 +34,13 @@
               <p><strong>Available Bikes:</strong> {{ getAvailableBikesCount(station) }}</p>
               <p><strong>Free Docks:</strong> {{ getFreeDocksCount(station) }}</p>
               <p><strong>Status:</strong> {{ station.status }}</p>
-              <div v-if="canReserveBike(station)" class="reservation-actions">
+              <div v-if="canReserveBike(station) && !guestMode" class="reservation-actions">
                 <button @click="showBikeSelection(station)" class="reserve-btn">
                   Reserve Bike
                 </button>
+              </div>
+              <div v-if="canReserveBike(station) && guestMode" class="reservation-actions">
+                <p class="guest-notice">Login to reserve bikes</p>
               </div>
             </div>
           </GMapInfoWindow>
@@ -94,10 +97,13 @@
               </div>
             </div>
             
-            <div v-if="canReserveBike(station)" class="station-actions">
+            <div v-if="canReserveBike(station) && !guestMode" class="station-actions">
               <button @click="showBikeSelection(station)" class="reserve-btn">
                 Reserve Bike
               </button>
+            </div>
+            <div v-if="canReserveBike(station) && guestMode" class="station-actions">
+              <p class="guest-notice">Login to reserve bikes</p>
             </div>
           </div>
         </div>
@@ -146,6 +152,10 @@ const props = defineProps({
     default: () => []
   },
   loading: {
+    type: Boolean,
+    default: false
+  },
+  guestMode: {
     type: Boolean,
     default: false
   }
@@ -460,6 +470,17 @@ onMounted(() => {
   background: #e55a8a;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
+}
+
+.guest-notice {
+  color: #64748b;
+  font-size: 14px;
+  font-style: italic;
+  text-align: center;
+  padding: 8px;
+  background: #f1f5f9;
+  border-radius: 6px;
+  margin: 8px 0;
 }
 
 /* Modal Styles */
