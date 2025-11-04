@@ -31,7 +31,7 @@
           <section class="quick-actions">
             <h2 class="section-title">Quick Actions</h2>
             <div class="action-buttons">
-              <button class="action-btn primary">
+              <button class="action-btn secondary" @click="showPricing" :class="{ selected: showPricingList }">
                 <span class="btn-icon">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
@@ -40,9 +40,9 @@
                     <circle cx="16" cy="16" r="2" stroke="currentColor" stroke-width="2"/>
                   </svg>
                 </span>
-                <span class="btn-text">Find Bike</span>
+                <span class="btn-text">Pricing</span>
               </button>
-              <button class="action-btn secondary" @click="showStations">
+              <button class="action-btn secondary" @click="showStations" :class="{ selected: showStationsList }">
                 <span class="btn-icon">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -51,7 +51,7 @@
                 </span>
                 <span class="btn-text">Nearby Stations</span>
               </button>
-              <button class="action-btn secondary" @click="showRideHistory">
+              <button class="action-btn secondary" @click="showRideHistory" :class="{ selected: showRideHistoryList }">
                 <span class="btn-icon">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18 20V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -59,14 +59,13 @@
                     <path d="M6 20v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </span>
-                <span class="btn-text">My Trips</span>
+                <span class="btn-text">Ride History</span>
               </button>
             </div>
           </section>
 
           <!-- Nearby Stations -->
           <section v-if="showStationsList" class="nearby-stations">
-            <h2 class="section-title">Nearby Stations</h2>
             <StationsMap 
               :stations="stations" 
               :loading="loading" 
@@ -287,18 +286,30 @@ const loadStations = async () => {
 }
 
 const showStations = () => {
-  // Toggle stations visibility and load data if needed
+  // toggle stations and ensure ride history is closed
   showStationsList.value = !showStationsList.value
-  if (showStationsList.value && stations.value.length === 0) {
-    loadStations()
+  if (showStationsList.value) {
+    showRideHistoryList.value = false
+    if (stations.value.length === 0) loadStations()
   }
 }
 
 const showRideHistory = () => {
-  // Toggle stations visibility and load data if needed
+  // toggle ride history and ensure stations list is closed
   showRideHistoryList.value = !showRideHistoryList.value
+  if (showRideHistoryList.value) {
+    showStationsList.value = false
+  }
 }
 
+const showPricing = () => {
+  // toggle pricing and ensure other sections are closed
+  showPricingList.value = !showPricingList.value
+  if (showPricingList.value) {
+    showStationsList.value = false
+    showRideHistoryList.value = false
+  }
+}
 
     // Manual reservation check - only called when needed
     const checkActiveReservation = async () => {
@@ -683,11 +694,33 @@ const showRideHistory = () => {
   background: var(--surface-hover);
   color: var(--text);
   border: 2px solid var(--border);
+  transition: all 0.25s ease;
 }
+
+.action-btn.secondary.selected {
+  background: var(--gradient);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+}
+
+.action-btn.secondary.selected .btn-icon,
+.action-btn.secondary.selected svg {
+  color: white;
+  stroke: currentColor;
+  fill: none;
+}
+
 
 .action-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.action-btn.secondary:not(.selected):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
 }
 
 .btn-icon {
@@ -993,10 +1026,7 @@ const showRideHistory = () => {
   }
 }
 
-/* Nearby Stations */
-.nearby-stations {
-  margin-top: 2rem;
-}
+
 
 .stations-grid {
   display: grid;

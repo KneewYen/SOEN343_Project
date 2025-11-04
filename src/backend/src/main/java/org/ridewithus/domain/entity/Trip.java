@@ -50,4 +50,8 @@ public class Trip {
     @JoinColumn(name = "user_id")
     private User user;
 
+    @ManyToOne
+    @JoinColumn(name = "bike_id")
+    private Bike bike;
+
 }

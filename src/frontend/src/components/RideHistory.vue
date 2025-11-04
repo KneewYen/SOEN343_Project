@@ -54,12 +54,13 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="ride in filteredRides" :key="ride.tripId">
+          <tr v-for="ride in filteredRides" :key="ride.tripId"
+          class="ride-row"@click="openRide(ride)"tabindex="0"@keydown.enter="openRide(ride)">
             <td>{{ ride.tripId }}</td>
             <td>{{ ride.userName }}</td>
             <td>{{ ride.startStationName }} → {{ ride.endStationName }}</td>
             <td>{{ ride.bikeType }}</td>
-            <td>{{ 0 }}</td>
+            <td>{{ formatCurrency(getTripCost(ride).total) }}</td>
           </tr>
         </tbody>
       </table>
@@ -84,6 +85,13 @@
     <section v-else class="no-results">
       <p>No rides found. Try clearing filters or adjusting your search.</p>
     </section>
+
+    <!-- Ride details -->
+    <RideHistoryDetails
+      v-if="selectedRide"
+      :ride="selectedRide"
+      @close="closeModal"
+    />
   </div>
 </template>
 
@@ -91,6 +99,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import apiClient from '../lib/api'
 import ThemeToggle from './ThemeToggle.vue'
+import RideHistoryDetails from './RideHistoryDetails.vue'
 
 const props = defineProps({
   user: {
@@ -107,6 +116,7 @@ const searchId = ref('')
 const startDate = ref('')
 const endDate = ref('')
 const bikeType = ref('')
+const selectedRide = ref(null)
 
 const clearFilters = () => {
   searchId.value = ''
@@ -135,6 +145,39 @@ const filteredRides = computed(() => {
 const currentPage = ref(0)
 const pageSize = 3
 const hasMore = ref(true)
+
+// Change this to connect with backend when Pricing is implemented
+//Start Here
+const BASE_FEE = 1.0
+const PER_MINUTE = 0.15
+const EBIKE_SURCHARGE_PER_MINUTE = 0.10
+
+function getDurationMinutes(ride) {
+  try {
+    if (!ride.startTime || !ride.endTime) return 0
+    const start = new Date(ride.startTime)
+    const end = new Date(ride.endTime)
+    const mins = Math.max(0, Math.round((end - start) / 60000))
+    return mins
+  } catch (e) {
+    return 0
+  }
+}
+
+function getTripCost(ride) {
+  const duration = getDurationMinutes(ride)
+  const base = BASE_FEE
+  const perMin = +(duration * PER_MINUTE).toFixed(2)
+  const ebike = ride.bikeType === 'e-bike' ? +(duration * EBIKE_SURCHARGE_PER_MINUTE).toFixed(2) : 0
+  const total = +(base + perMin + ebike).toFixed(2)
+  return { base, perMin, ebike, total, duration }
+}
+
+function formatCurrency(val) {
+  return typeof val === 'number' ? val.toFixed(2) : val
+}
+
+//End here
 
 const loadRides = async () => {
   try {
@@ -190,13 +233,22 @@ const validateFilters = () => {
 
 watch([searchId, startDate, endDate], validateFilters)
 
+// open/close ride details
+const openRide = (ride) => {
+  selectedRide.value = ride
+}
+
+const closeModal = () => {
+  selectedRide.value = null
+}
+
 </script>
 
 <style scoped>
 .ride-history {
   padding: 2rem;
   border-radius: 16px;             
-  background: var(--bg-primary);
+  background: var(--surface);
   min-height: 100vh;
   color: var(--text-primary);
 }
@@ -220,12 +272,13 @@ watch([searchId, startDate, endDate], validateFilters)
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  background: white;
+  background: var(--surface);
   padding: 20px;
   border-radius: 16px;                 
-  border: 1px solid #e2e8f0;           
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--border-color);           
+  box-shadow: var(--card-shadow);
   margin-bottom: 1.5rem;
+  color: var(--text-primary);
 }
 
 .search-input {
@@ -234,6 +287,11 @@ watch([searchId, startDate, endDate], validateFilters)
   border: 1px solid var(--border-color);
   background: var(--surface);
   color: var(--text-primary);
+}
+
+.search-input::placeholder {
+  color: var(--text-secondary);
+  opacity: 1;
 }
 
 .filter-row {
@@ -265,7 +323,7 @@ watch([searchId, startDate, endDate], validateFilters)
 
 .filter-btn {
   align-self: flex-end;
-  background: var(--accent-color);
+  background: var(--primary);
   color: white;
   border: none;
   padding: 0.6rem 1rem;
@@ -277,6 +335,7 @@ watch([searchId, startDate, endDate], validateFilters)
 .filter-btn:hover {
   background: var(--accent-hover);
 }
+
 
 .results {
   background: var(--surface);
@@ -303,6 +362,24 @@ watch([searchId, startDate, endDate], validateFilters)
   text-transform: uppercase;
   font-size: 0.85rem;
 }
+
+.rides-table tbody .ride-row {
+  cursor: pointer;
+  transition: transform 180ms cubic-bezier(.2,.9,.2,1), box-shadow 180ms ease, background-color 160ms;
+  transform: translateY(0);
+  will-change: transform, box-shadow, background-color;
+  position: relative;
+  z-index: 0;
+}
+
+.rides-table tbody .ride-row:hover,
+.rides-table tbody .ride-row:focus {
+  transform: translateY(-6px);
+  box-shadow: 0 8px 24px rgba(2,6,23,0.12);
+  background: rgba(0,0,0,0.02); 
+  z-index: 2;
+}
+
 
 .pagination {
   display: flex;

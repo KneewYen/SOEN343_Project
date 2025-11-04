@@ -1,6 +1,6 @@
 <template>
   <div class="map-container">
-    <h3>Station Locations</h3>
+    <h3 class="section-title">Station Locations</h3>
     <div v-if="loading" class="map-loading">Loading map...</div>
     <div v-else-if="error" class="map-fallback">
       <div class="fallback-content">
@@ -703,4 +703,12 @@ onMounted(() => {
   margin-top: 2px;
   display: inline-block;
 }
+
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 16px 0;
+}
+
 </style>
