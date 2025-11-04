@@ -367,10 +367,10 @@ const showStations = () => {
           alert('Bike reserved successfully!')
           // Set the current reservation state
           currentReservation.value = { 
-            id: response.reservationId || response.id, 
-            bikeId: bikeId,
-            stationName: 'Station', // We'll get this from the station data
-            expiryTime: new Date(Date.now() + 15 * 60000) // 15 minutes from now
+            id: response.reservationId, 
+            bikeId: response.bike.id,
+            stationName: response.station, 
+            expiryTime: response.expiryDateTime 
           }
           await loadStations() // Refresh stations
         } else {

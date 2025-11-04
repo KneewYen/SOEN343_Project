@@ -33,6 +33,9 @@ public class TripService {
     @Autowired
     private ReservationRepository reservationRepository;
 
+    @Autowired
+    private DomainEventService eventService;
+
     @Transactional
     public Long startTrip(Long reservationId) throws Exception {
         Reservation reservation = reservationRepository.findByReservationId(reservationId);
@@ -58,7 +61,11 @@ public class TripService {
 
         dockRepository.save(reservation.getBike().getDock());
 
+        String oldStatus = reservation.getBike().getStatus().toString();
+
         reservation.getBike().checkOut();
+
+        String newStatus = reservation.getBike().getStatus().toString();
 
         bikeRepository.save(reservation.getBike());
 
@@ -67,11 +74,13 @@ public class TripService {
         Trip trip = Trip.builder()
                 .startStation(station)
                 .reservation(reservation)
-                .userId(reservation.getUser().getId())
+                .user(reservation.getUser())
                 .startTime(LocalDateTime.now())
                 .build();
 
         tripRepository.save(trip);
+
+        eventService.emitEvent(trip.getReservation().getUser(),"TRIP_STARTED", String.format("Trip %d started - Bike %d: %s -> %s", trip.getTripId(), reservation.getBike().getId(), oldStatus, newStatus));
 
         return trip.getTripId();
 
@@ -102,6 +111,8 @@ public class TripService {
 
         trip.getReservation().getBike().setDock(docks.getFirst());
 
+        String oldStatus = trip.getReservation().getBike().getStatus().toString();
+
         trip.getReservation().getBike().returnBike();
 
         dockRepository.save(trip.getReservation().getBike().getDock());
@@ -114,17 +125,24 @@ public class TripService {
         trip.setEndStation(station.get());
         trip.setTripComplete(true);
 
+        //Store user for event before deleting reservation
+        User user = trip.getReservation().getUser();
+
         // Store reservation reference before clearing it
         Reservation reservation = trip.getReservation();
-        
+
         // Clear the reservation reference from the trip to avoid cascade delete
         trip.setReservation(null);
-        
+
         tripRepository.save(trip);
 
         // Clean up the reservation when trip ends (as per BikeShare requirements)
         // Reservations should not remain for record-keeping
         reservationRepository.delete(reservation);
+
+        String newStatus = reservation.getBike().getStatus().toString();
+
+        eventService.emitEvent(user,"TRIP_ENDED", String.format("Trip %d ended - Bike %d: %s -> %s", trip.getTripId(), reservation.getBike().getId(), oldStatus, newStatus));
 
         return trip.getTripId();
 
