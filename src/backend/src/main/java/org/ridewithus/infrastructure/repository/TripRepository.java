@@ -1,10 +1,11 @@
 package org.ridewithus.infrastructure.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.ridewithus.domain.entity.Trip;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
 import java.util.List;
 
 public interface TripRepository extends JpaRepository<Trip, Long> {
@@ -17,5 +18,9 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     List<Trip> findByReservationUserId(@Param("userId") Long userId);
     
     List<Trip> findByUserId(Long userId);
+
+    Page<Trip> findAll(Pageable pageable);
+
+    Page<Trip> findByUserId(Long userId, Pageable pageable);
 
 }

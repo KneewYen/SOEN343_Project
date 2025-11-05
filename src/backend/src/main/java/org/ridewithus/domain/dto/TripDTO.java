@@ -13,10 +13,14 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class TripDTO {
     private Long tripId;
+    private String userName;
+    private String bikeType;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private boolean tripComplete;
     private Long startStationId;
     private Long endStationId;
     private Long reservationId;
+    private String startStationName;
+    private String endStationName;
 }

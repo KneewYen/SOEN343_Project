@@ -31,7 +31,7 @@
           <section class="quick-actions">
             <h2 class="section-title">Quick Actions</h2>
             <div class="action-buttons">
-              <button class="action-btn primary">
+              <button class="action-btn secondary" @click="showPricing" :class="{ selected: showPricingList }">
                 <span class="btn-icon">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
@@ -40,9 +40,9 @@
                     <circle cx="16" cy="16" r="2" stroke="currentColor" stroke-width="2"/>
                   </svg>
                 </span>
-                <span class="btn-text">Find Bike</span>
+                <span class="btn-text">Pricing</span>
               </button>
-              <button class="action-btn secondary" @click="showStations">
+              <button class="action-btn secondary" @click="showStations" :class="{ selected: showStationsList }">
                 <span class="btn-icon">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -51,7 +51,7 @@
                 </span>
                 <span class="btn-text">Nearby Stations</span>
               </button>
-              <button class="action-btn secondary">
+              <button class="action-btn secondary" @click="showRideHistory" :class="{ selected: showRideHistoryList }">
                 <span class="btn-icon">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18 20V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -59,18 +59,25 @@
                     <path d="M6 20v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </span>
-                <span class="btn-text">My Trips</span>
+                <span class="btn-text">Ride History</span>
               </button>
             </div>
           </section>
 
           <!-- Nearby Stations -->
           <section v-if="showStationsList" class="nearby-stations">
-            <h2 class="section-title">Nearby Stations</h2>
             <StationsMap 
               :stations="stations" 
               :loading="loading" 
               @bikeReserved="handleBikeReserved"
+            />
+          </section>
+
+
+          <!-- Ride History -->
+          <section v-if="showRideHistoryList" class="ride-history">
+            <RideHistory 
+              :user="user" 
             />
           </section>
 
@@ -228,10 +235,12 @@ import { useRouter } from 'vue-router'
 import ThemeToggle from '../components/ThemeToggle.vue'
 import StationsMap from '../components/StationsMap.vue'
 import apiClient from '../lib/api'
+import RideHistory from '@/components/RideHistory.vue'
 
 const router = useRouter()
 const user = ref(null)
 const showStationsList = ref(false)
+const showRideHistoryList = ref(false)
 const stations = ref([])
 const loading = ref(false)
 const currentReservation = ref(null)
@@ -277,10 +286,28 @@ const loadStations = async () => {
 }
 
 const showStations = () => {
-  // Toggle stations visibility and load data if needed
+  // toggle stations and ensure ride history is closed
   showStationsList.value = !showStationsList.value
-  if (showStationsList.value && stations.value.length === 0) {
-    loadStations()
+  if (showStationsList.value) {
+    showRideHistoryList.value = false
+    if (stations.value.length === 0) loadStations()
+  }
+}
+
+const showRideHistory = () => {
+  // toggle ride history and ensure stations list is closed
+  showRideHistoryList.value = !showRideHistoryList.value
+  if (showRideHistoryList.value) {
+    showStationsList.value = false
+  }
+}
+
+const showPricing = () => {
+  // toggle pricing and ensure other sections are closed
+  showPricingList.value = !showPricingList.value
+  if (showPricingList.value) {
+    showStationsList.value = false
+    showRideHistoryList.value = false
   }
 }
 
@@ -367,10 +394,10 @@ const showStations = () => {
           alert('Bike reserved successfully!')
           // Set the current reservation state
           currentReservation.value = { 
-            id: response.reservationId || response.id, 
-            bikeId: bikeId,
-            stationName: 'Station', // We'll get this from the station data
-            expiryTime: new Date(Date.now() + 15 * 60000) // 15 minutes from now
+            id: response.reservationId, 
+            bikeId: response.bike.id,
+            stationName: response.station, 
+            expiryTime: response.expiryDateTime 
           }
           await loadStations() // Refresh stations
         } else {
@@ -667,11 +694,33 @@ const showStations = () => {
   background: var(--surface-hover);
   color: var(--text);
   border: 2px solid var(--border);
+  transition: all 0.25s ease;
 }
+
+.action-btn.secondary.selected {
+  background: var(--gradient);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+}
+
+.action-btn.secondary.selected .btn-icon,
+.action-btn.secondary.selected svg {
+  color: white;
+  stroke: currentColor;
+  fill: none;
+}
+
 
 .action-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.action-btn.secondary:not(.selected):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
 }
 
 .btn-icon {
@@ -977,10 +1026,7 @@ const showStations = () => {
   }
 }
 
-/* Nearby Stations */
-.nearby-stations {
-  margin-top: 2rem;
-}
+
 
 .stations-grid {
   display: grid;

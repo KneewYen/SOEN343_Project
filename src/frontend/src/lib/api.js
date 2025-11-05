@@ -195,6 +195,14 @@ class ApiClient {
     return this.request(`/trip/user/${userId}`)
   }
 
+  async getAllTrips(page = 0, size = 3) {
+    return this.request(`/trip/AllTrips?page=${page}&size=${size}`)
+  }
+  
+  async getUserTrips(userId, page = 0, size = 3) {
+    return this.request(`/trip/paginate/user/${userId}?page=${page}&size=${size}`)
+  }
+
   async startTrip(reservationId) {
     return this.request(`/trip/${reservationId}`, {
       method: 'POST'

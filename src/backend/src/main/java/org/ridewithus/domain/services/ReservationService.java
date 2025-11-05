@@ -39,6 +39,9 @@ public class ReservationService {
     @Autowired
     private ReservationRepository reservationRepository;
 
+    @Autowired
+    private DomainEventService eventService;
+
     public ReservationDTO getReservation(Long reservationId) {
         Reservation reservation = reservationRepository.findByReservationId(reservationId);
         return mapToDTO(reservation);
@@ -79,6 +82,8 @@ public class ReservationService {
             throw new Exception("Bike not found");
         }
 
+        String oldStatus = bike.get().getStatus().toString();
+
         bike.get().reserve();
 
         bikeRepository.save(bike.get());
@@ -86,6 +91,10 @@ public class ReservationService {
         Reservation reservation = Reservation.builder().bike(bike.get()).user(user.get()).build();
 
         reservationRepository.save(reservation);
+
+        String newStatus = bike.get().getStatus().toString();
+
+        eventService.emitEvent(user.get(),"RESERVATION_CREATED", String.format("Reservation %d created - Bike %d: %s -> %s", reservation.getReservationId(),bike.get().getId(), oldStatus, newStatus));
 
         return reservation.getReservationId();
 
@@ -105,9 +114,15 @@ public class ReservationService {
             throw new Exception("Reservation not found");
         }
 
+        String oldStatus = reservation.getBike().getStatus().toString();
+
         reservation.getBike().returnBike();
 
         bikeRepository.save(reservation.getBike());
+
+        String newStatus = reservation.getBike().getStatus().toString();
+
+        eventService.emitEvent(reservation.getUser(),"RESERVATION_DELETED", String.format("Reservation %d deleted - Bike %d: %s -> %s", reservation.getReservationId(), reservation.getBike().getId(), oldStatus, newStatus));
 
         reservationRepository.deleteById(reservationId);
     }

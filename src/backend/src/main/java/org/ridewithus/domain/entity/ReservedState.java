@@ -18,5 +18,6 @@ public class ReservedState implements BikeState {
     public void returnBike(Bike bike) {
         bike.setStatus(BikeStatus.AVAILABLE);
         bike.changeState(new AvailableState());
+        //in case you want to delete the reservation before you checkout and within time
     }
 }
