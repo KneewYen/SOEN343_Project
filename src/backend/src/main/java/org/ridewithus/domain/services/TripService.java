@@ -80,6 +80,7 @@ public class TripService {
                 .startStation(station)
                 .reservation(reservation)
                 .user(reservation.getUser())
+                .bike(reservation.getBike())
                 .startTime(LocalDateTime.now())
                 .build();
 
@@ -182,8 +183,8 @@ public class TripService {
                 .startTime(trip.getStartTime())
                 .endTime(trip.getEndTime())
                 .tripComplete(trip.isTripComplete())
-                .bikeType(trip.getReservation().getBike().getType())
-                .userName(trip.getReservation().getUser().getUserName())
+                .bikeType(trip.getBike().getType())
+                .userName(trip.getUser().getUserName())
                 .startStationName(trip.getStartStation() != null ? trip.getStartStation().getName() : null)
                 .endStationName(trip.getEndStation() != null ? trip.getEndStation().getName() : null)
                 .startStationId(trip.getStartStation() != null ? trip.getStartStation().getId() : null)
