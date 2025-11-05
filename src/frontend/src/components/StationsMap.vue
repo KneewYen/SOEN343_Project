@@ -1,6 +1,6 @@
 <template>
   <div class="map-container">
-    <h3 class="section-title">Station Locations</h3>
+    <h3 class="section-title">Nearby Stations</h3>
     <div v-if="loading" class="map-loading">Loading map...</div>
     <div v-else-if="error" class="map-fallback">
       <div class="fallback-content">
@@ -294,20 +294,26 @@ const selectBike = (bike) => {
   closeBikeModal()
 }
 
-const getBikeStatusClass = (bike) => {
-  if (bike.status === 'AVAILABLE') return 'available'
-  if (bike.status === 'RESERVED') return 'reserved'
-  if (bike.status === 'ON_TRIP') return 'on-trip'
-  if (bike.status === 'MAINTENANCE') return 'maintenance'
-  return 'unknown'
+const normalizeStatus = (s) => String(s || '').toLowerCase()
+
+// returns user-friendly text
+const getBikeStatusText = (bike) => {
+  const s = normalizeStatus(bike.status)
+  if (s === 'available') return 'Available'
+  if (s === 'reserved') return 'Reserved'
+  if (s === 'on-trip' || s === 'ontrip') return 'On Trip'
+  if (s === 'maintenance' || s === 'maint') return 'Maintenance'
+  return 'Unknown'
 }
 
-const getBikeStatusText = (bike) => {
-  if (bike.status === 'AVAILABLE') return 'Available'
-  if (bike.status === 'RESERVED') return 'Reserved'
-  if (bike.status === 'ON_TRIP') return 'On Trip'
-  if (bike.status === 'MAINTENANCE') return 'Maintenance'
-  return 'Unknown'
+// returns a css-friendly class 
+const getBikeStatusClass = (bike) => {
+  const s = normalizeStatus(bike.status)
+  if (s === 'available') return 'available'
+  if (s === 'reserved') return 'reserved'
+  if (s === 'on-trip' || s === 'ontrip') return 'on-trip'
+  if (s === 'maintenance' || s === 'maint') return 'maintenance'
+  return 'unknown'
 }
 
 const getDockStatusClass = (dock) => {
