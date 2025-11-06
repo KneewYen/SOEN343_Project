@@ -178,7 +178,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             user.getUserName(),
             user.getEmail(),
             user.getRole(),
-            user.getAddress()
+            user.getAddress(),
+            user.getPricingPlan()
         );
     }
 }

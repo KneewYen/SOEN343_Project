@@ -7,11 +7,15 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.Setter;
 
+@Setter
 @Getter
 @Entity
 @Table(name = "users")
+@AllArgsConstructor
 public class User {
     
     @Id //primary key 
@@ -27,7 +31,7 @@ public class User {
 
     //ADD PAYMENT INFO OR CREATE A NEW TABLE??
     @ManyToOne
-    @JoinColumn(name = "pricing_plan_id", nullable = false)
+    @JoinColumn(name = "pricing_plan_id", nullable = true)
     private PricingPlan pricingPlan;
 
     public User() {}
@@ -69,5 +73,8 @@ public class User {
     }
     public void setRole(String role){
         this.role = role;
+    }
+    public void setPricingPlan(PricingPlan plan){
+        this.pricingPlan = plan;
     }
 }

@@ -1,5 +1,7 @@
 package org.ridewithus.domain.dto;
 
+import org.ridewithus.domain.entity.PricingPlan;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,5 +18,6 @@ public class UserDTO {
     private String email;
     private String role;
     private String address;
+    private PricingPlan pricingPlan;
 }
 

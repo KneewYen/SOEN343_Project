@@ -1,7 +1,6 @@
 package org.ridewithus.infrastructure.repository;
 
 import org.ridewithus.domain.entity.Station;
-import org.ridewithus.domain.entity.Trip;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.ridewithus.domain.entity.Bike;
@@ -12,7 +11,7 @@ public interface BikeRepository extends JpaRepository<Bike, Long> {
 
     List<Bike> findByDock_StationAndStatusIn(Station station, List<String> statuses);
 
-    Bike findByBikeId(Long bikeId);
+    // Bike findByBikeId(Long bikeId);
 
     
 }
