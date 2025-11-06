@@ -351,7 +351,8 @@ const checkActiveTrip = async () => {
 }
 
  // Poll reservations and clear expired ones
-    const checkActiveReservation = async () => {
+    const checkActiveReservation = async () => {  
+      
       try {
         if (!user.value?.id) return
 
@@ -371,7 +372,7 @@ const checkActiveTrip = async () => {
           }
           return
         }
-
+        
         const reservation = response.reservations[0]
         const reservationId = reservation.reservationId || reservation.id
         const expiryRaw = reservation.expiryDateTime || reservation.expiryTime
@@ -390,12 +391,12 @@ const checkActiveTrip = async () => {
           loadStations().catch(e => console.warn('Failed to reload stations after expiry:', e))
           return
         }
-
+        
         // still valid -> set reservation state
         currentReservation.value = {
           id: reservationId,
           bikeId: reservation.bike?.id || reservation.bikeId,
-          stationName: reservation.station?.name || reservation.stationName || 'Station',
+          stationName: reservation.station?.name || reservation.stationName || currentReservation.value?.stationName || 'Station',
           expiryTime: expiryRaw
         }
       } catch (error) {
