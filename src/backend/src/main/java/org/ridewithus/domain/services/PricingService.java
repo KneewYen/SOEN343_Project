@@ -63,8 +63,10 @@ public class PricingService {
                 break;
         }
         
-        Long bikeId = trip.getBikeId();
-        Bike bike = bikeRepository.findByBikeId(bikeId);
+        // Long bikeId = trip.getBikeId();
+        // Bike bike = bikeRepository.findByBikeId(bikeId);
+
+        Bike bike = trip.getBike();
 
         // if an e-bike, add the ebike surcharge decorator
         if(bike.getType().equals("e-bike")){
