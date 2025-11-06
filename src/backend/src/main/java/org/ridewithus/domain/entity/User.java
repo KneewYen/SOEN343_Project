@@ -4,6 +4,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 
@@ -24,6 +26,9 @@ public class User {
     private String password ;
 
     //ADD PAYMENT INFO OR CREATE A NEW TABLE??
+    @ManyToOne
+    @JoinColumn(name = "pricing_plan_id", nullable = false)
+    private PricingPlan pricingPlan;
 
     public User() {}
 

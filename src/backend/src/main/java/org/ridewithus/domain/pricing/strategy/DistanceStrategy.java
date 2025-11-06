@@ -32,4 +32,12 @@ public class DistanceStrategy implements PricingStrategy{
     double haversine(double val) {
         return Math.pow(Math.sin(val / 2), 2);
     }
+
+    public String getName(){
+        return "Base plan";
+    }
+
+    public String getDescription(){
+        return "Per-distance plan (0.02$/meter)";
+    }
 }

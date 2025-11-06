@@ -46,7 +46,14 @@ public class Trip {
     @Column(name = "end_time")
     private LocalDateTime endTime;
     
-    @Column(name = "user_id")
-    private Long userId;
+    // @Column(name = "user_id")
+    // private Long userId;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    @Column(name="bike_id")
+    private Long bikeId;
 
 }

@@ -67,7 +67,7 @@ public class TripService {
         Trip trip = Trip.builder()
                 .startStation(station)
                 .reservation(reservation)
-                .userId(reservation.getUser().getId())
+                .user(reservation.getUser())
                 .startTime(LocalDateTime.now())
                 .build();
 
