@@ -1,6 +1,6 @@
 <template>
   <div class="map-container">
-    <h3>Station Locations</h3>
+    <h3 class="section-title">Nearby Stations</h3>
     <div v-if="loading" class="map-loading">Loading map...</div>
     <div v-else-if="error" class="map-fallback">
       <div class="fallback-content">
@@ -26,6 +26,7 @@
           :position="{ lat: station.latitude, lng: station.longitude }"
           :clickable="true"
           @click="selectStation(station)"
+          :icon="markerIcon(getFullnessColor(station))"
         >
           <GMapInfoWindow v-if="selectedStation?.id === station.id">
             <div class="info-window">
@@ -43,6 +44,12 @@
           </GMapInfoWindow>
         </GMapMarker>
       </GMapMap>
+    </div>
+     <!-- Legend -->
+    <div class="map-legend">
+      <div class="legend-item"><span class="dot red"></span> Empty / Full (0% or 100%)</div>
+      <div class="legend-item"><span class="dot yellow"></span> At-risk (<25% or >85%)</div>
+      <div class="legend-item"><span class="dot green"></span> Balanced</div>
     </div>
     
     <!-- Station List Under Map -->
@@ -86,9 +93,9 @@
                     <span class="dock-number">Dock {{ dock.id }}</span>
                     <span class="dock-status">{{ getDockStatusText(dock) }}</span>
                   </div>
-                  <div v-if="dock.bikeId" class="bike-info">
-                    <span class="bike-id">Bike #{{ dock.bikeId }}</span>
-                    <span class="bike-status" :class="getBikeStatusClass(dock)">{{ getBikeStatusText(dock) }}</span>
+                  <div v-if="dock.bike" class="bike-info">
+                    <span class="bike-id">Bike #{{ dock.bike.id }}</span>
+                    <span class="bike-status" :class="dock.bike.status.toLowerCase()">{{ dock.bike.status }}</span>
                   </div>
                 </div>
               </div>
@@ -207,7 +214,57 @@ const getFreeDocksCount = (station) => {
 
 const getAvailableBikesCount = (station) => {
   if (!station.dockIds) return 0
-  return station.dockIds.filter(dock => dock.status === 'OCCUPIED' && dock.bikeId).length
+  return station.dockIds.filter(dock => dock.status === 'OCCUPIED' && dock.bike.id).length
+}
+
+const getFullnessPercent = (station) => {
+  if (!station.dockIds || station.dockIds.length === 0) return 0
+  const total = station.dockIds.length
+  const available = getAvailableBikesCount(station)
+  return Math.round((available / total) * 100)
+}
+
+const getFullnessColor = (station) => {
+  const pct = getFullnessPercent(station)
+  // thresholds:
+  // red at 0 or 100%
+  // yellow <25% or >85%
+  // else green
+  if (pct === 0 || pct === 100) return '#ef4444' // red
+  if (pct < 25 || pct > 85) return '#f59e0b' // yellow
+ return '#10b981' // green
+}
+
+const markerIcon = (color) => {
+  const w = 36
+  const h = 48
+  const svg = `
+    <svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}' viewBox='0 0 24 32'>
+      <defs>
+        <filter id='ds' x='-50%' y='-50%' width='200%' height='200%'>
+          <feDropShadow dx='0' dy='1' stdDeviation='1' flood-color='#000' flood-opacity='0.25'/>
+        </filter>
+      </defs>
+      <!-- pin shape -->
+      <path d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z'
+            fill='${color}' stroke='%23ffffff' stroke-width='1.5' filter='url(#ds)'/>
+      <!-- inner circle for contrast -->
+      <circle cx='12' cy='9' r='3.2' fill='rgba(255,255,255,0.95)'/>
+    </svg>
+  `
+  const url = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`
+
+  // prefer object with sizes if Google maps is available (keeps crisp scaling & anchor)
+  if (typeof window !== 'undefined' && window.google && window.google.maps) {
+    return {
+      url,
+      scaledSize: new window.google.maps.Size(w, h),
+      anchor: new window.google.maps.Point(Math.round(w/2), h)
+    }
+  }
+
+  // fallback: raw data URL
+  return url
 }
 
 const canReserveBike = (station) => {
@@ -237,33 +294,39 @@ const selectBike = (bike) => {
   closeBikeModal()
 }
 
-const getBikeStatusClass = (bike) => {
-  if (bike.status === 'AVAILABLE') return 'available'
-  if (bike.status === 'RESERVED') return 'reserved'
-  if (bike.status === 'ON_TRIP') return 'on-trip'
-  if (bike.status === 'MAINTENANCE') return 'maintenance'
-  return 'unknown'
+const normalizeStatus = (s) => String(s || '').toLowerCase()
+
+// returns user-friendly text
+const getBikeStatusText = (bike) => {
+  const s = normalizeStatus(bike.status)
+  if (s === 'available') return 'Available'
+  if (s === 'reserved') return 'Reserved'
+  if (s === 'on-trip' || s === 'ontrip') return 'On Trip'
+  if (s === 'maintenance' || s === 'maint') return 'Maintenance'
+  return 'Unknown'
 }
 
-const getBikeStatusText = (bike) => {
-  if (bike.status === 'AVAILABLE') return 'Available'
-  if (bike.status === 'RESERVED') return 'Reserved'
-  if (bike.status === 'ON_TRIP') return 'On Trip'
-  if (bike.status === 'MAINTENANCE') return 'Maintenance'
-  return 'Unknown'
+// returns a css-friendly class 
+const getBikeStatusClass = (bike) => {
+  const s = normalizeStatus(bike.status)
+  if (s === 'available') return 'available'
+  if (s === 'reserved') return 'reserved'
+  if (s === 'on-trip' || s === 'ontrip') return 'on-trip'
+  if (s === 'maintenance' || s === 'maint') return 'maintenance'
+  return 'unknown'
 }
 
 const getDockStatusClass = (dock) => {
   if (dock.status === 'EMPTY') return 'empty'
   if (dock.status === 'OCCUPIED') return 'occupied'
-  if (dock.status === 'MAINTENANCE') return 'maintenance'
+  if (dock.status === 'OUT_OF_SERVICE') return 'out-of-service'
   return 'unknown'
 }
 
 const getDockStatusText = (dock) => {
   if (dock.status === 'EMPTY') return 'Empty'
   if (dock.status === 'OCCUPIED') return 'Occupied'
-  if (dock.status === 'MAINTENANCE') return 'Maintenance'
+  if (dock.status === 'OUT_OF_SERVICE') return 'Out of Service'
   return 'Unknown'
 }
 
@@ -290,6 +353,31 @@ onMounted(() => {
   box-shadow: 0 10px 30px rgba(255, 107, 157, 0.1);
   margin-bottom: 20px;
 }
+
+.map-legend {
+  display:flex;
+  gap:12px;
+  margin: 8px 0 16px;
+  align-items: center;
+  font-size: 13px;
+  color: #374151;
+}
+.legend-item {
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+.legend-item .dot {
+  width:12px;
+  height:12px;
+  border-radius:50%;
+  display:inline-block;
+  border:2px solid #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+}
+.legend-item .dot.red { background: #ef4444 }
+.legend-item .dot.yellow { background: #f59e0b }
+.legend-item .dot.green { background: #10b981 }
 
 .map-container h3 {
   color: #333;
@@ -703,4 +791,12 @@ onMounted(() => {
   margin-top: 2px;
   display: inline-block;
 }
+
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 16px 0;
+}
+
 </style>

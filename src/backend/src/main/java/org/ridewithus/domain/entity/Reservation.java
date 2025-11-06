@@ -30,6 +30,6 @@ public class Reservation {
 
     @Builder.Default
     @Column(name = "expiry_date_time")
-    private LocalDateTime expiryDateTime = LocalDateTime.now().plusMinutes(30); //Time till user can no longer use this reservation
+    private LocalDateTime expiryDateTime = LocalDateTime.now().plusMinutes(5); //Time till user can no longer use this reservation
 
 }

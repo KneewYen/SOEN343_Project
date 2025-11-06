@@ -3,9 +3,13 @@ package org.ridewithus.domain.services;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.ridewithus.domain.entity.*;
 import org.ridewithus.infrastructure.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -33,6 +37,9 @@ public class TripService {
     @Autowired
     private ReservationRepository reservationRepository;
 
+    @Autowired
+    private DomainEventService eventService;
+
     @Transactional
     public Long startTrip(Long reservationId) throws Exception {
         Reservation reservation = reservationRepository.findByReservationId(reservationId);
@@ -46,19 +53,24 @@ public class TripService {
             throw new Exception("Operators cannot start trips. Only riders can use bikes.");
         }
 
+        //Finds the station where the bike currently sits
         Station station = reservation.getBike().getDock().getStation();
 
         if (station == null) {
             throw new Exception("Station does not Exists");
         }
-
+        //Decrements available bikes at that station and marks the dock as empty
         station.setCount(station.getCount() - 1);
 
         reservation.getBike().getDock().setStatus(Dock.DockStatus.EMPTY);
 
         dockRepository.save(reservation.getBike().getDock());
 
+        String oldStatus = reservation.getBike().getStatus().toString();
+
         reservation.getBike().checkOut();
+
+        String newStatus = reservation.getBike().getStatus().toString();
 
         bikeRepository.save(reservation.getBike());
 
@@ -68,10 +80,13 @@ public class TripService {
                 .startStation(station)
                 .reservation(reservation)
                 .user(reservation.getUser())
+                .bike(reservation.getBike())
                 .startTime(LocalDateTime.now())
                 .build();
 
         tripRepository.save(trip);
+
+        eventService.emitEvent(trip.getReservation().getUser(),"TRIP_STARTED", String.format("Trip %d started - Bike %d: %s -> %s", trip.getTripId(), reservation.getBike().getId(), oldStatus, newStatus));
 
         return trip.getTripId();
 
@@ -98,9 +113,13 @@ public class TripService {
             throw new Exception("No empty places available to Dock");
         }
 
+        //increment available bikes at station
+        //Marks one more bike as present at the station and assigns the bike to an empty dock.
         station.get().setCount(station.get().getCount() + 1);
 
         trip.getReservation().getBike().setDock(docks.getFirst());
+
+        String oldStatus = trip.getReservation().getBike().getStatus().toString();
 
         trip.getReservation().getBike().returnBike();
 
@@ -114,17 +133,24 @@ public class TripService {
         trip.setEndStation(station.get());
         trip.setTripComplete(true);
 
+        //Store user for event before deleting reservation
+        User user = trip.getReservation().getUser();
+
         // Store reservation reference before clearing it
         Reservation reservation = trip.getReservation();
-        
+
         // Clear the reservation reference from the trip to avoid cascade delete
         trip.setReservation(null);
-        
+
         tripRepository.save(trip);
 
         // Clean up the reservation when trip ends (as per BikeShare requirements)
         // Reservations should not remain for record-keeping
         reservationRepository.delete(reservation);
+
+        String newStatus = reservation.getBike().getStatus().toString();
+
+        eventService.emitEvent(user,"TRIP_ENDED", String.format("Trip %d ended - Bike %d: %s -> %s", trip.getTripId(), reservation.getBike().getId(), oldStatus, newStatus));
 
         return trip.getTripId();
 
@@ -137,12 +163,30 @@ public class TripService {
                 .toList();
     }
 
+    public Page<TripDTO> getAllTrips(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("endTime").descending());
+        Page<Trip> trips = tripRepository.findAll(pageable);
+
+        return trips.map(this::mapToDTO);
+    }
+
+    public Page<TripDTO> getUserTrips(Long userId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("endTime").descending());
+        Page<Trip> trips = tripRepository.findByUserId(userId, pageable);
+
+        return trips.map(this::mapToDTO);
+    }
+
     private TripDTO mapToDTO(Trip trip) {
         return TripDTO.builder()
                 .tripId(trip.getTripId())
                 .startTime(trip.getStartTime())
                 .endTime(trip.getEndTime())
                 .tripComplete(trip.isTripComplete())
+                .bikeType(trip.getBike().getType())
+                .userName(trip.getUser().getUserName())
+                .startStationName(trip.getStartStation() != null ? trip.getStartStation().getName() : null)
+                .endStationName(trip.getEndStation() != null ? trip.getEndStation().getName() : null)
                 .startStationId(trip.getStartStation() != null ? trip.getStartStation().getId() : null)
                 .endStationId(trip.getEndStation() != null ? trip.getEndStation().getId() : null)
                 .reservationId(trip.getReservation() != null ? trip.getReservation().getReservationId() : null)

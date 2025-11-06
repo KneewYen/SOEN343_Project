@@ -17,7 +17,7 @@ public class DockDTO {
 
     private Long stationId;
 
-    private Long bikeId;
+    private BikeDTO bike;
 
     private BikeStatus bikeStatus;
 

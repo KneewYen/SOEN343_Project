@@ -128,6 +128,14 @@
                 </span>
                 <span class="btn-text">View Analytics</span>
               </button>
+              <button @click="showDockManagement = true" class="action-btn secondary">
+                <span class="btn-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+                <span class="btn-text">Dock Maintenance</span>
+              </button>
             </div>
           </section>
 
@@ -189,7 +197,7 @@
                   </div>
                   <div class="station-summary">
                     <div class="bike-count">
-                      <span class="count-number">{{ station.count }}</span>
+                      <span class="count-number">{{ getAvailableBikesCount(station) }}</span>
                       <span class="count-total">/{{ station.capacity }}</span>
                       <span class="count-label">bikes</span>
                     </div>
@@ -205,10 +213,10 @@
                       <span class="dock-id">Dock {{ dock.id }}</span>
                       <span class="dock-status">{{ dock.status }}</span>
                     </div>
-                    <div v-if="dock.bikeId" class="bike-info">
-                      <span class="bike-id">Bike #{{ dock.bikeId }}</span>
-                      <span class="bike-status" :class="getBikeStatusClass(dock.bikeStatus)">
-                        {{ dock.bikeStatus || 'N/A' }}
+                    <div v-if="dock.bike" class="bike-info">
+                      <span class="bike-id">Bike #{{ dock.bike.id }}</span>
+                      <span class="bike-status" :class="getBikeStatusClass(dock.bike.status)">
+                        {{ dock.bike.status || 'N/A' }}
                       </span>
                     </div>
                     <div v-else class="empty-dock">
@@ -316,13 +324,45 @@
               <div class="bikes-list">
                 <div v-for="dock in station.dockIds" :key="dock.id" class="bike-item">
                   <div class="bike-info">
-                    <span v-if="dock.bikeId">Bike #{{ dock.bikeId }}</span>
+                    <span v-if="dock.bike">Bike #{{ dock.bike.id }}</span>
                     <span v-else>Empty Dock</span>
-                    <span class="dock-status" :class="(dock.bikeStatus || dock.status).toLowerCase().replace('_', '-')">{{ dock.bikeStatus || dock.status }}</span>
+                    <span class="dock-status" :class="(dock.bike?.status || dock.status).toLowerCase().replace('_', '-')">{{ dock.bike?.status || dock.status }}</span>
                   </div>
-                  <div v-if="dock.bikeId" class="bike-actions">
+                  <div v-if="dock.bike" class="bike-actions">
                     <button 
-                      @click="toggleBikeStatus(dock.bikeId)" 
+                      @click="toggleBikeStatus(dock.bike.id)" 
+                      class="action-btn small"
+                    >
+                      Toggle Status
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Dock Management Modal -->
+    <div v-if="showDockManagement" class="modal-overlay" @click="showDockManagement = false">
+      <div class="modal-content large" @click.stop>
+        <div class="modal-header">
+          <h3>Dock Management</h3>
+          <button @click="showDockManagement = false" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="bikes-management">
+            <div v-for="station in stations" :key="station.id" class="station-bikes">
+              <h4>{{ station.name }}</h4>
+              <div class="bikes-list">
+                <div v-for="dock in station.dockIds" :key="dock.id" class="bike-item">
+                  <div class="bike-info">
+                    <span>Dock #{{ dock.id }}</span>
+                    <span class="dock-status" :class="(dock.status).toLowerCase().replace('_', '-')">{{dock.status }}</span>
+                  </div>
+                  <div v-if="dock.id" class="bike-actions">
+                    <button 
+                      @click="toggleDockStatus(dock.id)" 
                       class="action-btn small"
                     >
                       Toggle Status
@@ -357,6 +397,7 @@ export default {
     const showRebalanceModal = ref(false)
     const showStationManagement = ref(false)
     const showBikeManagement = ref(false)
+    const showDockManagement = ref(false)
     const rebalanceForm = ref({
       sourceStationId: '',
       destinationStationId: '',
@@ -405,14 +446,16 @@ export default {
       let activeStations = 0
       let maintenance = 0
 
-      stations.value.forEach(station => {
-        if (station.status === 'ACTIVE') {
-          activeStations++
-          availableBikes += station.count
-        } else {
-          maintenance++
-        }
-      })
+       stations.value.forEach(station => {
+    if (station.status === 'ACTIVE') {
+      activeStations++
+      availableBikes += station.dockIds.filter(
+        d => d.bike && d.status === 'OCCUPIED'
+      ).length
+    } else {
+      maintenance++
+    }
+  })
 
       systemStats.value = {
         availableBikes,
@@ -424,7 +467,7 @@ export default {
 
     const getAvailableBikesCount = (station) => {
       if (!station.dockIds) return 0
-      return station.dockIds.filter(dock => dock.bikeId && dock.status === 'OCCUPIED').length
+      return station.dockIds.filter(dock => dock.bike?.id && dock.status === 'OCCUPIED').length
     }
 
     const getFreeDocksCount = (station) => {
@@ -502,6 +545,21 @@ export default {
       return 'available'
     }
 
+    const toggleDockStatus = async (dockIds) => {
+      try {
+        const result = await apiClient.toggleDock(dockIds, user.value.id)
+        if (result.success) {
+          alert(result.message || 'Dock status updated successfully')
+          // Reload stations to get the latest data from backend
+          await loadStations()
+        } else {
+          alert(result.message || 'Failed to toggle dock status')
+        }
+      } catch (error) {
+        alert('Failed to toggle dock status: ' + error.message)
+      }
+    }
+
     return {
       user,
       handleLogout,
@@ -510,6 +568,7 @@ export default {
       showRebalanceModal,
       showStationManagement,
       showBikeManagement,
+      showDockManagement,
       rebalanceForm,
       systemStats,
       getAvailableBikesCount,
@@ -517,6 +576,7 @@ export default {
       executeRebalance,
       toggleStationStatus,
       toggleBikeStatus,
+      toggleDockStatus,
       getStationStatusClass,
       getDockStatusClass,
       getBikeStatusClass
