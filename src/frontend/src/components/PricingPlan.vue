@@ -87,9 +87,9 @@ export default {
 
         console.log('user', this.user)
         // Set userPlan only if user has a plan
-        if (this.user && this.user.pricingPlan) {
+        if (this.user && this.user.pricingPlan && this.user.pricingPlan.pricingPlanId) {
         this.userPlan = {
-            id: this.user.pricingPlan.id,
+            id: this.user.pricingPlan.pricingPlanId,
             name: this.user.pricingPlan.name,
             description: this.user.pricingPlan.description
         }
