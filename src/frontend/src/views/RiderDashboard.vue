@@ -311,6 +311,7 @@ const showStations = () => {
   showStationsList.value = !showStationsList.value
   if (showStationsList.value) {
     showRideHistoryList.value = false
+    showPricingList.value = false
     if (stations.value.length === 0) loadStations()
   }
 }
@@ -320,6 +321,7 @@ const showRideHistory = () => {
   showRideHistoryList.value = !showRideHistoryList.value
   if (showRideHistoryList.value) {
     showStationsList.value = false
+    showPricingList.value = false
   }
 }
 
@@ -358,60 +360,97 @@ const checkActiveTrip = async () => {
   }
 }
 
- // Poll reservations and clear expired ones
-    const checkActiveReservation = async () => {  
-      
-      try {
-        if (!user.value?.id) return
+// Poll reservations and clear expired ones
+const checkActiveReservation = async () => {  
+    
+    try {
+      if (!user.value?.id) return
 
-        const response = await apiClient.getUserReservations(user.value.id)
-        const hasReservations = response && response.success && response.reservations && response.reservations.length > 0
+      const response = await apiClient.getUserReservations(user.value.id)
+      const hasReservations = response && response.success && response.reservations && response.reservations.length > 0
 
-        // Backend removed reservation (expired) — notify user
-        if (!hasReservations) {
-          if (prevReservationId.value) {
-            prevReservationId.value = null
-            currentReservation.value = null
-            console.log('Reservation expired (backend removed it) — notifying user')
-            alert('Your bike reservation has expired.')
-            await loadStations()
-          } else {
-            currentReservation.value = null
-          }
-          return
-        }
-        
-        const reservation = response.reservations[0]
-        const reservationId = reservation.reservationId || reservation.id
-        const expiryRaw = reservation.expiryDateTime || reservation.expiryTime
-        const expiry = expiryRaw ? new Date(expiryRaw) : null
-        const now = new Date()
-
-        // remember this reservation so we can detect deletion next poll
-        prevReservationId.value = reservationId
-
-        // If expiry present and passed — expired locally
-        if (expiry && expiry <= now) {
+      // Backend removed reservation (expired) — notify user
+      if (!hasReservations) {
+        if (prevReservationId.value) {
           prevReservationId.value = null
           currentReservation.value = null
-          console.log('Reservation expired locally — notifying user')
+          console.log('Reservation expired (backend removed it) — notifying user')
           alert('Your bike reservation has expired.')
-          loadStations().catch(e => console.warn('Failed to reload stations after expiry:', e))
-          return
+          await loadStations()
+        } else {
+          currentReservation.value = null
         }
-        
-        // still valid -> set reservation state
-        currentReservation.value = {
-          id: reservationId,
-          bikeId: reservation.bike?.id || reservation.bikeId,
-          stationName: reservation.station?.name || reservation.stationName || currentReservation.value?.stationName || 'Station',
-          expiryTime: expiryRaw
-        }
-      } catch (error) {
-        console.error('Error checking reservations:', error)
+        return
+      }
+      
+      const reservation = response.reservations[0]
+      const reservationId = reservation.reservationId || reservation.id
+      const expiryRaw = reservation.expiryDateTime || reservation.expiryTime
+      const expiry = expiryRaw ? new Date(expiryRaw) : null
+      const now = new Date()
+
+      // remember this reservation so we can detect deletion next poll
+      prevReservationId.value = reservationId
+
+      // If expiry present and passed — expired locally
+      if (expiry && expiry <= now) {
+        prevReservationId.value = null
         currentReservation.value = null
+        console.log('Reservation expired locally — notifying user')
+        alert('Your bike reservation has expired.')
+        loadStations().catch(e => console.warn('Failed to reload stations after expiry:', e))
+        return
+      }
+      
+      let stationName = null
+      if (reservation.station) {
+        stationName = reservation.station.name || reservation.stationName || null
+      } else {
+        const full = await fetchReservationDetails(reservationId, user.value?.id)
+        stationName = resolveStationNameFromFullReservation(full) || resolveStationNameFromReservation(reservation) || currentReservation.value?.stationName || 'Station'
+      }
+
+      currentReservation.value = {
+        id: reservationId,
+        bikeId: reservation.bike?.id || reservation.bikeId,
+        stationName,
+        expiryTime: expiryRaw
+      }
+    } catch (error) {
+      console.error('Error checking reservations:', error)
+      currentReservation.value = null
+    }
+  }
+
+  const fetchReservationDetails = async (reservationId, userId) => {
+    try {
+      if (reservationId && apiClient.getReservation) {
+        const full = await apiClient.getReservation(reservationId)
+        if (full) return full
+      }
+    } catch (e) {
+      console.warn('getReservation failed:', e)
+    }
+    return null
+  }
+
+  const resolveStationNameFromFullReservation = (reservation) => {
+    if (!reservation) return null
+    if (reservation.station && typeof reservation.station === 'object') {
+      return reservation.station.name || reservation.station.stationName || null
+    }
+    if (reservation.stationName) return reservation.stationName
+    const dockId = reservation.bike?.dockId ?? reservation.dockId ?? reservation.bike?.dock
+    if (dockId != null) {
+      // map dockId -> station using loaded stations
+      for (const s of stations.value || []) {
+        if ((s.dockIds || []).some(d => String(d.id) === String(dockId) || String(d.dockId) === String(dockId))) {
+          return s.name
+        }
       }
     }
+    return null
+}
 
     const reserveBike = async (bikeId) => {
       try {

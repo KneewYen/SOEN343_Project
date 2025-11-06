@@ -90,7 +90,7 @@
           <section class="quick-actions">
             <h2 class="section-title">Quick Actions</h2>
             <div class="action-buttons">
-              <button @click="showRebalanceModal = true" class="action-btn primary">
+              <button @click="showRebalanceModal = true" class="action-btn secondary">
                 <span class="btn-icon">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18 20V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -143,47 +143,16 @@
           <section class="recent-activity">
             <h2 class="section-title">Recent Activity</h2>
             <div class="activity-list">
-              <div class="activity-item">
-                <div class="activity-icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                    <path d="M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    <circle cx="8" cy="16" r="2" stroke="currentColor" stroke-width="2"/>
-                    <circle cx="16" cy="16" r="2" stroke="currentColor" stroke-width="2"/>
-                  </svg>
-                </div>
+              <div class="activity-item" v-for="event in events" :key="event.id">
+                <!-- <div class="activity-icon">Add icons here</div> -->
                 <div class="activity-content">
-                  <div class="activity-title">Bike #123 returned to Station A</div>
-                  <div class="activity-time">2 minutes ago</div>
-                </div>
-              </div>
-              <div class="activity-item">
-                <div class="activity-icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-                <div class="activity-content">
-                  <div class="activity-title">Bike #456 requires maintenance</div>
-                  <div class="activity-time">15 minutes ago</div>
-                </div>
-              </div>
-              <div class="activity-item">
-                <div class="activity-icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
-                  </svg>
-                </div>
-                <div class="activity-content">
-                  <div class="activity-title">New user registration</div>
-                  <div class="activity-time">1 hour ago</div>
+                  <div class="activity-title">{{ event.description }}</div>
+                  <div class="activity-time">{{ formatTimestamp(event.timestamp) }}</div>
                 </div>
               </div>
             </div>
           </section>
+
 
           <!-- Station Status -->
           <section class="station-status">
@@ -398,6 +367,7 @@ export default {
     const showStationManagement = ref(false)
     const showBikeManagement = ref(false)
     const showDockManagement = ref(false)
+    const events = ref([])
     const rebalanceForm = ref({
       sourceStationId: '',
       destinationStationId: '',
@@ -409,7 +379,9 @@ export default {
       availableBikes: 0,
       activeStations: 0,
       activeUsers: 0,
-      maintenance: 0
+      stationsInMaintenance: 0,
+      bikesInMaintenance: 0,
+      docksOutOfService: 0
     })
 
     onMounted(() => {
@@ -420,6 +392,7 @@ export default {
       }
       // Load stations data
       loadStations()
+      loadEvents()
     })
 
     const handleLogout = () => {
@@ -441,27 +414,75 @@ export default {
       }
     }
 
+    const normalize = (s) => String(s || '').toLowerCase().replace(/[_\s]+/g, '-')
+
     const calculateSystemStats = () => {
       let availableBikes = 0
       let activeStations = 0
       let maintenance = 0
 
-       stations.value.forEach(station => {
-    if (station.status === 'ACTIVE') {
-      activeStations++
-      availableBikes += station.dockIds.filter(
-        d => d.bike && d.status === 'OCCUPIED'
-      ).length
-    } else {
-      maintenance++
+      for (const station of stations.value || []) {
+        const stationStatus = normalize(station.status)
+        if (stationStatus === 'active') {
+          activeStations++
+        } else {
+          maintenance++
+        }
+
+        const docks = station.dockIds || []
+        for (const d of docks) {
+          const dockStatus = normalize(d.status)
+          if (dockStatus === 'out-of-service' || dockStatus === 'maintenance') {
+            maintenance++
+          }
+
+          if (d.bike && (d.bike.id || d.bike.id === 0)) {
+            // count available bikes by dock.status === 'OCCUPIED'
+            if (normalize(d.status) === 'occupied') availableBikes++
+
+            const bikeStatus = normalize(d.bike.status)
+            if (bikeStatus === 'maintenance' || bikeStatus.includes('maint')) {
+              maintenance++
+            }
+          }
+        }
     }
-  })
 
       systemStats.value = {
         availableBikes,
         activeStations,
         activeUsers: 2, // Hardcoded for now - in real app would fetch from API
         maintenance
+      }
+    }
+    
+    const loadEvents = async () => {
+      try {
+        const resp = await apiClient.getRecentEvents()
+
+        let items = []
+        if (!resp) {
+          items = []
+        } else if (Array.isArray(resp)) {
+          items = resp
+        } else if (Array.isArray(resp.events)) {
+          items = resp.events
+        } else if (Array.isArray(resp.data)) {
+          items = resp.data
+        } else if (resp.event) {
+          items = [resp.event]
+        } else {
+          items = [resp]
+        }
+
+        events.value = items.map(e => ({
+          id: e.id ?? e.eventId ?? e._id ?? Math.random().toString(36).slice(2),
+          description: e.description ?? e.message ?? e.msg ?? JSON.stringify(e),
+          timestamp: e.timestamp ?? e.time ?? e.createdAt ?? e.date ?? null
+        }))
+      } catch(e) {
+        console.error('Failed loading events:', e)
+        events.value = []
       }
     }
 
@@ -493,6 +514,7 @@ export default {
         }
         // Reload stations to reflect changes
         await loadStations()
+        await loadEvents()
       } catch (error) {
         alert('Failed to rebalance bikes: ' + error.message)
       } finally {
@@ -505,6 +527,7 @@ export default {
         const result = await apiClient.toggleStation(stationId, user.value.id)
         alert(result.message || result)
         await loadStations()
+        await loadEvents()
       } catch (error) {
         alert('Failed to toggle station status: ' + error.message)
       }
@@ -517,6 +540,7 @@ export default {
           alert(result.message || 'Bike status updated successfully')
           // Reload stations to get the latest data from backend
           await loadStations()
+          await loadEvents()
         } else {
           alert(result.message || 'Failed to toggle bike status')
         }
@@ -552,12 +576,23 @@ export default {
           alert(result.message || 'Dock status updated successfully')
           // Reload stations to get the latest data from backend
           await loadStations()
+          await loadEvents()
         } else {
           alert(result.message || 'Failed to toggle dock status')
         }
       } catch (error) {
         alert('Failed to toggle dock status: ' + error.message)
       }
+    }
+
+    const formatTimestamp = (ts) => {
+      if (!ts) return ''
+      const d = new Date(ts)
+      if (Number.isNaN(d.getTime())) return String(ts)
+      return new Intl.DateTimeFormat(undefined, {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      }).format(d)
     }
 
     return {
@@ -571,6 +606,8 @@ export default {
       showDockManagement,
       rebalanceForm,
       systemStats,
+      events,
+      formatTimestamp,
       getAvailableBikesCount,
       getFreeDocksCount,
       executeRebalance,

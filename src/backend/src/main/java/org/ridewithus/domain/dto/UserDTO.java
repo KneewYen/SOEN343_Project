@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.ridewithus.domain.entity.User;
 
 @Data
 @Builder
@@ -18,6 +19,13 @@ public class UserDTO {
     private String email;
     private String role;
     private String address;
+
+    public static UserDTO fromEntity(User u) {
+        return UserDTO.builder()
+                .id(u.getId())
+                .userName(u.getUserName())
+                .build();
+    }
     private PricingPlan pricingPlan;
 }
 
