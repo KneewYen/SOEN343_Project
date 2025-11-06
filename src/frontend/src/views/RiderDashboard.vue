@@ -311,6 +311,7 @@ const showStations = () => {
   showStationsList.value = !showStationsList.value
   if (showStationsList.value) {
     showRideHistoryList.value = false
+    showPricingList.value = false
     if (stations.value.length === 0) loadStations()
   }
 }
@@ -320,6 +321,7 @@ const showRideHistory = () => {
   showRideHistoryList.value = !showRideHistoryList.value
   if (showRideHistoryList.value) {
     showStationsList.value = false
+    showPricingList.value = false
   }
 }
 
