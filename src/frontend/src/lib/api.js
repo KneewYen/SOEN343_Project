@@ -272,6 +272,25 @@ class ApiClient {
       return { success: false, message: error.message }
     }
   }
+
+  // PRICING
+  async getAllPricingPlans() {
+    try {
+      return await this.request('/pricing/plans', {
+        method: 'GET'
+      })
+    } catch (error) {
+      console.error('Error loading pricing plans:', error)
+      throw new Error('Failed to load pricing plans')
+    }
+  }
+
+  async selectPricingPlan(userId, planId) {
+    return this.request(`/pricing/select/${userId}/${planId}` ,{
+      method: 'POST'
+    })
+  }
+
 }
 
 const apiClient = new ApiClient()
