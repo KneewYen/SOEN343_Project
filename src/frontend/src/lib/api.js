@@ -258,6 +258,15 @@ class ApiClient {
     })
   }
 
+  //Event API methods
+  async getRecentEvents() {
+  return this.request('/events/recent', {
+    method: 'GET'
+  })
+}
+
+
+
   // Health check
   async healthCheck() {
     return this.request('/users/health')
