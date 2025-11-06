@@ -230,7 +230,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import ThemeToggle from '../components/ThemeToggle.vue'
 import StationsMap from '../components/StationsMap.vue'
@@ -246,6 +246,8 @@ const loading = ref(false)
 const currentReservation = ref(null)
 const currentTrip = ref(null)
 const selectedReturnStation = ref('')
+let reservationInterval = null
+const prevReservationId = ref(null)
 
 onMounted(() => {
   // Load user data from localStorage
@@ -259,6 +261,16 @@ onMounted(() => {
   // Load stations and check for active trip only
   loadStations()
   checkActiveTrip()
+  // start polling reservations so UI stays in sync with backend expiry
+  checkActiveReservation()
+  reservationInterval = setInterval(checkActiveReservation, 15000) // every 15s
+})
+
+onBeforeUnmount(() => {
+  if (reservationInterval) {
+    clearInterval(reservationInterval)
+    reservationInterval = null
+  }
 })
 
 const handleLogout = () => {
@@ -269,6 +281,7 @@ const handleLogout = () => {
   // Use replace instead of push to avoid navigation guard issues
   router.replace('/login')
 }
+
 
 const loadStations = async () => {
   try {
@@ -310,65 +323,85 @@ const showPricing = () => {
     showRideHistoryList.value = false
   }
 }
+// check if user currently has an incomplete trip and populate currentTrip
+const checkActiveTrip = async () => {
+  try {
+    if (!user.value?.id) return
+    if (!apiClient.getUserTrips) {
+      currentTrip.value = null
+      return
+    }
+    const resp = await apiClient.getUserTrips(user.value.id)
+    if (resp && resp.success && Array.isArray(resp.trips)) {
+      const incomplete = resp.trips.find(t => !t.tripComplete)
+      if (incomplete) {
+        currentTrip.value = {
+          id: incomplete.tripId || incomplete.id,
+          bikeId: incomplete.bikeId || incomplete.bike?.id,
+          startTime: incomplete.startTime || incomplete.startDateTime
+        }
+        return
+      }
+    }
+    currentTrip.value = null
+  } catch (err) {
+    console.error('Error checking active trip:', err)
+    currentTrip.value = null
+  }
+}
 
-    // Manual reservation check - only called when needed
-    const checkActiveReservation = async () => {
+ // Poll reservations and clear expired ones
+    const checkActiveReservation = async () => {  
+      
       try {
         if (!user.value?.id) return
-        
-        // First check if there's an active trip - if so, don't show reservation
-        const tripResponse = await apiClient.getUserTrips(user.value.id)
-        if (tripResponse.success && tripResponse.trips && tripResponse.trips.length > 0) {
-          const incompleteTrip = tripResponse.trips.find(trip => !trip.tripComplete)
-          if (incompleteTrip) {
+
+        const response = await apiClient.getUserReservations(user.value.id)
+        const hasReservations = response && response.success && response.reservations && response.reservations.length > 0
+
+        // Backend removed reservation (expired) — notify user
+        if (!hasReservations) {
+          if (prevReservationId.value) {
+            prevReservationId.value = null
             currentReservation.value = null
-            return
+            console.log('Reservation expired (backend removed it) — notifying user')
+            alert('Your bike reservation has expired.')
+            await loadStations()
+          } else {
+            currentReservation.value = null
           }
+          return
         }
         
-        const response = await apiClient.getUserReservations(user.value.id)
-        if (response.success && response.reservations && response.reservations.length > 0) {
-          const reservation = response.reservations[0]
-          currentReservation.value = {
-            id: reservation.reservationId || reservation.id,
-            bikeId: reservation.bike?.id || reservation.bikeId,
-            stationName: reservation.station?.name || 'Station',
-            expiryTime: reservation.expiryDateTime || reservation.expiryTime
-          }
-        } else {
+        const reservation = response.reservations[0]
+        const reservationId = reservation.reservationId || reservation.id
+        const expiryRaw = reservation.expiryDateTime || reservation.expiryTime
+        const expiry = expiryRaw ? new Date(expiryRaw) : null
+        const now = new Date()
+
+        // remember this reservation so we can detect deletion next poll
+        prevReservationId.value = reservationId
+
+        // If expiry present and passed — expired locally
+        if (expiry && expiry <= now) {
+          prevReservationId.value = null
           currentReservation.value = null
+          console.log('Reservation expired locally — notifying user')
+          alert('Your bike reservation has expired.')
+          loadStations().catch(e => console.warn('Failed to reload stations after expiry:', e))
+          return
+        }
+        
+        // still valid -> set reservation state
+        currentReservation.value = {
+          id: reservationId,
+          bikeId: reservation.bike?.id || reservation.bikeId,
+          stationName: reservation.station?.name || reservation.stationName || currentReservation.value?.stationName || 'Station',
+          expiryTime: expiryRaw
         }
       } catch (error) {
         console.error('Error checking reservations:', error)
         currentReservation.value = null
-      }
-    }
-
-    const checkActiveTrip = async () => {
-      try {
-        if (!user.value?.id) return
-        const response = await apiClient.getUserTrips(user.value.id)
-        if (response.success && response.trips && response.trips.length > 0) {
-          // Find incomplete trip
-          const incompleteTrip = response.trips.find(trip => !trip.tripComplete)
-          if (incompleteTrip) {
-            currentTrip.value = {
-              id: incompleteTrip.tripId || incompleteTrip.id,
-              bikeId: incompleteTrip.bikeId || 'Bike',
-              startTime: incompleteTrip.startTime,
-              startStationId: incompleteTrip.startStationId
-            }
-            // Clear any reservation since we have an active trip
-            currentReservation.value = null
-          } else {
-            currentTrip.value = null
-          }
-        } else {
-          currentTrip.value = null
-        }
-      } catch (error) {
-        console.error('Error checking trips:', error)
-        currentTrip.value = null
       }
     }
 

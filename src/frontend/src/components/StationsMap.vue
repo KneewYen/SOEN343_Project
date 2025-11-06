@@ -93,9 +93,9 @@
                     <span class="dock-number">Dock {{ dock.id }}</span>
                     <span class="dock-status">{{ getDockStatusText(dock) }}</span>
                   </div>
-                  <div v-if="dock.bikeId" class="bike-info">
-                    <span class="bike-id">Bike #{{ dock.bikeId }}</span>
-                    <span class="bike-status" :class="getBikeStatusClass(dock)">{{ getBikeStatusText(dock) }}</span>
+                  <div v-if="dock.bike" class="bike-info">
+                    <span class="bike-id">Bike #{{ dock.bike.id }}</span>
+                    <span class="bike-status" :class="dock.bike.status.toLowerCase()">{{ dock.bike.status }}</span>
                   </div>
                 </div>
               </div>
@@ -214,7 +214,7 @@ const getFreeDocksCount = (station) => {
 
 const getAvailableBikesCount = (station) => {
   if (!station.dockIds) return 0
-  return station.dockIds.filter(dock => dock.status === 'OCCUPIED' && dock.bikeId).length
+  return station.dockIds.filter(dock => dock.status === 'OCCUPIED' && dock.bike.id).length
 }
 
 const getFullnessPercent = (station) => {
@@ -319,14 +319,14 @@ const getBikeStatusClass = (bike) => {
 const getDockStatusClass = (dock) => {
   if (dock.status === 'EMPTY') return 'empty'
   if (dock.status === 'OCCUPIED') return 'occupied'
-  if (dock.status === 'MAINTENANCE') return 'maintenance'
+  if (dock.status === 'OUT_OF_SERVICE') return 'out-of-service'
   return 'unknown'
 }
 
 const getDockStatusText = (dock) => {
   if (dock.status === 'EMPTY') return 'Empty'
   if (dock.status === 'OCCUPIED') return 'Occupied'
-  if (dock.status === 'MAINTENANCE') return 'Maintenance'
+  if (dock.status === 'OUT_OF_SERVICE') return 'Out of Service'
   return 'Unknown'
 }
 

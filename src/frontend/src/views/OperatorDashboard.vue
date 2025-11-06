@@ -213,10 +213,10 @@
                       <span class="dock-id">Dock {{ dock.id }}</span>
                       <span class="dock-status">{{ dock.status }}</span>
                     </div>
-                    <div v-if="dock.bikeId" class="bike-info">
-                      <span class="bike-id">Bike #{{ dock.bikeId }}</span>
-                      <span class="bike-status" :class="getBikeStatusClass(dock.bikeStatus)">
-                        {{ dock.bikeStatus || 'N/A' }}
+                    <div v-if="dock.bike" class="bike-info">
+                      <span class="bike-id">Bike #{{ dock.bike.id }}</span>
+                      <span class="bike-status" :class="getBikeStatusClass(dock.bike.status)">
+                        {{ dock.bike.status || 'N/A' }}
                       </span>
                     </div>
                     <div v-else class="empty-dock">
@@ -324,13 +324,13 @@
               <div class="bikes-list">
                 <div v-for="dock in station.dockIds" :key="dock.id" class="bike-item">
                   <div class="bike-info">
-                    <span v-if="dock.bikeId">Bike #{{ dock.bikeId }}</span>
+                    <span v-if="dock.bike">Bike #{{ dock.bike.id }}</span>
                     <span v-else>Empty Dock</span>
-                    <span class="dock-status" :class="(dock.bikeStatus || dock.status).toLowerCase().replace('_', '-')">{{ dock.bikeStatus || dock.status }}</span>
+                    <span class="dock-status" :class="(dock.bike?.status || dock.status).toLowerCase().replace('_', '-')">{{ dock.bike?.status || dock.status }}</span>
                   </div>
-                  <div v-if="dock.bikeId" class="bike-actions">
+                  <div v-if="dock.bike" class="bike-actions">
                     <button 
-                      @click="toggleBikeStatus(dock.bikeId)" 
+                      @click="toggleBikeStatus(dock.bike.id)" 
                       class="action-btn small"
                     >
                       Toggle Status
@@ -446,14 +446,16 @@ export default {
       let activeStations = 0
       let maintenance = 0
 
-      stations.value.forEach(station => {
-        if (station.status === 'ACTIVE') {
-          activeStations++
-          availableBikes += station.count
-        } else {
-          maintenance++
-        }
-      })
+       stations.value.forEach(station => {
+    if (station.status === 'ACTIVE') {
+      activeStations++
+      availableBikes += station.dockIds.filter(
+        d => d.bike && d.status === 'OCCUPIED'
+      ).length
+    } else {
+      maintenance++
+    }
+  })
 
       systemStats.value = {
         availableBikes,
@@ -465,7 +467,7 @@ export default {
 
     const getAvailableBikesCount = (station) => {
       if (!station.dockIds) return 0
-      return station.dockIds.filter(dock => dock.bikeId && dock.status === 'OCCUPIED').length
+      return station.dockIds.filter(dock => dock.bike?.id && dock.status === 'OCCUPIED').length
     }
 
     const getFreeDocksCount = (station) => {
