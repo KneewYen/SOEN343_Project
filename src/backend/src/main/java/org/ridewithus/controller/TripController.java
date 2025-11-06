@@ -1,6 +1,7 @@
 package org.ridewithus.controller;
 
 import org.ridewithus.domain.dto.TripDTO;
+import org.ridewithus.domain.services.PricingService;
 import org.ridewithus.domain.services.TripService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -17,6 +18,8 @@ public class TripController {
 
     @Autowired
     private TripService tripService;
+    @Autowired
+    private PricingService pricingService;
 
     @PostMapping("/{reservationId}")
     public ResponseEntity<Map<String, Object>> startTrip(@PathVariable("reservationId") Long reservationId) {
@@ -94,6 +97,22 @@ public class TripController {
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("trips", trip);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    @GetMapping("/temporary")   
+    public ResponseEntity<Map<String, Object>> calculateTripPrice(@RequestBody Map<String, String> body, @PathVariable("tripId")Long tripId){
+        try {
+            String plan = body.get("pricingPlan");
+            double price = pricingService.calculatePricingPlan(tripId);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("price", price);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();

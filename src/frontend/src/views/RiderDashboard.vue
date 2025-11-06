@@ -59,9 +59,14 @@
                     <path d="M6 20v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </span>
-                <span class="btn-text">Ride History</span>
+                <span class="btn-text">Ride History
+                </span>
               </button>
             </div>
+          </section>
+
+          <section v-if="showPricingList" class="pricing-list">
+                    <PricingPlan :user="user" />
           </section>
 
           <!-- Nearby Stations -->
@@ -236,6 +241,8 @@ import ThemeToggle from '../components/ThemeToggle.vue'
 import StationsMap from '../components/StationsMap.vue'
 import apiClient from '../lib/api'
 import RideHistory from '@/components/RideHistory.vue'
+import PricingPlan from '@/components/PricingPlan.vue'
+
 
 const router = useRouter()
 const user = ref(null)
@@ -248,6 +255,7 @@ const currentTrip = ref(null)
 const selectedReturnStation = ref('')
 let reservationInterval = null
 const prevReservationId = ref(null)
+const showPricingList = ref(false)
 
 onMounted(() => {
   // Load user data from localStorage
