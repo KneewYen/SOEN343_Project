@@ -45,7 +45,7 @@
           <section class="quick-actions">
             <h2 class="section-title">Quick Actions</h2>
             <div class="action-buttons">
-              <button class="action-btn primary" disabled>
+               <button class="action-btn secondary" @click="showPricing" :class="{ selected: showPricingList }">
                 <span class="btn-icon">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
@@ -54,9 +54,9 @@
                     <circle cx="16" cy="16" r="2" stroke="currentColor" stroke-width="2"/>
                   </svg>
                 </span>
-                <span class="btn-text">Find Bike</span>
+                <span class="btn-text">Pricing</span>
               </button>
-              <button class="action-btn secondary" @click="showStations" :disabled="false">
+              <button class="action-btn secondary" @click="showStations" :class="{ selected: showStationsList }">
                 <span class="btn-icon">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -75,17 +75,6 @@
                 </span>
                 <span class="btn-text">My Trips</span>
               </button>
-              <button class="action-btn secondary" @click="showPricing" :class="{ selected: showPricingList }">
-                <span class="btn-icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                    <path d="M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    <circle cx="8" cy="16" r="2" stroke="currentColor" stroke-width="2"/>
-                    <circle cx="16" cy="16" r="2" stroke="currentColor" stroke-width="2"/>
-                  </svg>
-                </span>
-                <span class="btn-text">Pricing</span>
-              </button>
             </div>
           </section>
 
@@ -96,7 +85,6 @@
 
           <!-- Nearby Stations -->
           <section v-if="showStationsList" class="nearby-stations">
-            <h2 class="section-title">Nearby Stations</h2>
             <StationsMap 
               :stations="stations" 
               :loading="loading"
@@ -650,11 +638,6 @@ const showPricing = () => {
   }
 }
 
-/* Nearby Stations */
-.nearby-stations {
-  margin-top: 2rem;
-}
-
 /* Pricing List */
 .pricing-list {
   background: var(--surface);
@@ -662,7 +645,6 @@ const showPricing = () => {
   padding: 24px;
   border: 2px solid var(--border);
   box-shadow: var(--card-shadow);
-  margin-top: 2rem;
 }
 
 .action-btn.selected {

@@ -31,7 +31,7 @@
 
               <button
                 v-if="isLoggedIn"
-                class="action-btn secondary full-width"
+                class="guest-notice"
                 :class="{ selected: isPlanSelected(plan) }"
               >
                 {{
@@ -294,5 +294,12 @@ export default {
 .no-plan {
   color: #ef4444;
   font-weight: 600;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 16px 0;
 }
 </style>
