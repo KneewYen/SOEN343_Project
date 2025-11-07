@@ -1,30 +1,23 @@
 <template>
-  <div class="rider-dashboard">
-    <header class="dashboard-header">
-      <div class="header-content">
-        <div class="logo-section">
-          <i class="logo-icon fas fa-bicycle"></i>
-          <h1 class="app-title">RideWithUs</h1>
-        </div>
-        <div class="user-info">
-          <span class="welcome-text">Pricing Plans</span>
-        </div>
+  <div class="pricing-plan-container">
+    <section class="quick-actions">
+      <h2 class="section-title">Available Plans</h2>
+
+      <div v-if="loading" class="loading">Loading pricing plans...</div>
+      <div v-else-if="error" class="error-message">
+        <p>⚠️ Unable to load pricing plans. The backend service may be unavailable.</p>
+        <p style="font-size: 0.9rem; margin-top: 0.5rem;">Please check your connection or try again later.</p>
       </div>
-    </header>
-
-    <main class="dashboard-main">
-      <div class="dashboard-grid">
-        <section class="quick-actions">
-          <h2 class="section-title">Available Plans</h2>
-
-          <div v-if="loading" class="loading">Loading pricing plans...</div>
-          <div v-else class="plans-grid">
+      <div v-else-if="pricingPlans.length === 0" class="empty-message">
+        <p>No pricing plans available at this time.</p>
+      </div>
+      <div v-else class="plans-grid">
             <div
               v-for="plan in pricingPlans"
-              :key="plan.id"
+              :key="plan.pricingPlanId || plan.id"
               class="plan-card"
-              :class="{ selected: selectedPlan && selectedPlan.id === plan.id }"
-              @click="selectPlan(plan)"
+              :class="{ selected: isPlanSelected(plan), 'view-only': !isLoggedIn }"
+              @click="isLoggedIn ? selectPlan(plan) : null"
             >
               <div class="plan-header">
                 <h3 class="plan-name">{{ plan.name }}</h3>
@@ -39,14 +32,17 @@
               <button
                 v-if="isLoggedIn"
                 class="action-btn secondary full-width"
-                :class="{ selected: selectedPlan && selectedPlan.id === plan.id }"
+                :class="{ selected: isPlanSelected(plan) }"
               >
                 {{
-                  selectedPlan && selectedPlan.id === plan.id
+                  isPlanSelected(plan)
                     ? 'Select Plan'
                     : 'Choose Plan'
                 }}
               </button>
+              <div v-else class="guest-notice">
+                <p>Login to select this plan</p>
+              </div>
             </div>
           </div>
 
@@ -59,8 +55,6 @@
             <p v-else class="no-plan">You don’t have a plan yet. Please select one above.</p>
           </div>
         </section>
-      </div>
-    </main>
   </div>
 </template>
 
@@ -69,10 +63,17 @@ import apiClient from '../lib/api';
 
 export default {
   name: 'PricingPlans',
+  props: {
+    guestMode: {
+      type: Boolean,
+      default: false
+    }
+  },
   data() {
     return {
       pricingPlans: [],
       loading: true,
+      error: false,
       selectedPlan: null,
       userPlan: null,
       isLoggedIn: false,
@@ -81,9 +82,16 @@ export default {
   },
   async created() {
     try {
-        const response = await apiClient.getCurrentUser().catch(() => null)
-        this.isLoggedIn = !!response?.user
-        this.user = response?.user || null
+        // If in guest mode, explicitly set isLoggedIn to false
+        if (this.guestMode) {
+          this.isLoggedIn = false
+          this.user = null
+        } else {
+          // Try to get current user (will fail for guests, that's okay)
+          const response = await apiClient.getCurrentUser().catch(() => null)
+          this.isLoggedIn = !!response?.user
+          this.user = response?.user || null
+        }
 
         console.log('user', this.user)
         // Set userPlan only if user has a plan
@@ -96,37 +104,78 @@ export default {
         this.selectedPlan = this.userPlan // mark current plan as selected
         }
 
-        this.pricingPlans = await apiClient.getAllPricingPlans()
+        // Try to fetch pricing plans
+        try {
+          this.pricingPlans = await apiClient.getAllPricingPlans()
+          console.log('Pricing plans loaded:', this.pricingPlans)
+        } catch (planError) {
+          console.error('Error fetching pricing plans:', planError)
+          // Show error message for both guest and logged in users
+          this.error = true
+          this.pricingPlans = []
+        }
     } catch (err) {
-        console.error('Error fetching pricing plans:', err)
+        console.error('Error in pricing plan component:', err)
+        this.error = true
     } finally {
         this.loading = false
     }
   },
   methods: {
+    // Helper method to check if a plan is selected
+    // Handles both pricingPlanId (from API) and id (from userPlan)
+    isPlanSelected(plan) {
+      if (!this.selectedPlan || !plan) return false
+      const planId = plan.pricingPlanId || plan.id
+      const selectedId = this.selectedPlan.pricingPlanId || this.selectedPlan.id
+      return planId === selectedId
+    },
     async selectPlan(plan) {
+      // Prevent selection for guests (check both guestMode prop and isLoggedIn)
+      if (this.guestMode || !this.isLoggedIn) {
+        console.log('Guest users cannot select pricing plans')
+        return
+      }
+      
       const user = await apiClient.getCurrentUser().catch(() => null)
-      if (!this.isLoggedIn) return
+      if (!user || !this.isLoggedIn) {
+        console.log('User not authenticated')
+        return
+      }
+      
       this.selectedPlan = plan
       this.userPlan = plan
       console.log('Selected Plan:', plan)
-     console.log('Saving plan:', plan.pricingPlanId, 'for user:', this.user.id)
-     try {
-      // Call backend to save the selected plan
-      await apiClient.selectPricingPlan(this.user.id, plan.pricingPlanId)
-      console.log('Plan saved successfully')
-    } catch (err) {
-      console.error('Failed to save plan:', err)
-      // Optionally reset selection on failure
-      this.selectedPlan = this.userPlan
-    }
-
+      console.log('Saving plan:', plan.pricingPlanId, 'for user:', this.user.id)
+      try {
+        // Call backend to save the selected plan
+        await apiClient.selectPricingPlan(this.user.id, plan.pricingPlanId)
+        console.log('Plan saved successfully')
+      } catch (err) {
+        console.error('Failed to save plan:', err)
+        // Optionally reset selection on failure
+        this.selectedPlan = this.userPlan
+      }
     }
   }
 }
 </script>
 
 <style scoped>
+.pricing-plan-container {
+  width: 100%;
+}
+
+.loading, .error-message, .empty-message {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+}
+
+.error-message {
+  color: #ef4444;
+}
+
 .plans-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -155,6 +204,31 @@ export default {
   border-color: var(--primary);
   background: var(--surface-hover);
   box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.2);
+}
+
+.plan-card.view-only {
+  cursor: default;
+  opacity: 0.9;
+}
+
+.plan-card.view-only:hover {
+  transform: none;
+  box-shadow: var(--card-shadow);
+}
+
+.guest-notice {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.guest-notice p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-align: center;
 }
 
 .plan-header {

@@ -150,7 +150,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import apiClient from '../lib/api'
 
 const props = defineProps({
@@ -175,6 +175,7 @@ const error = ref(null)
 const showBikeModal = ref(false)
 const selectedStationForBike = ref(null)
 const availableBikes = ref([])
+const stationCounts = ref({}) // Cache for API counts
 
 // Map center on Montreal
 const mapCenter = computed(() => ({
@@ -217,14 +218,60 @@ const selectStation = (station) => {
   selectedStation.value = station
 }
 
+// Load station counts from API when stations change
+const loadStationCounts = async () => {
+  console.log('🔄 Loading station counts from API...')
+  for (const station of props.stations) {
+    if (station?.id && !stationCounts.value[station.id]) {
+      try {
+        console.log(`📡 API Call: Fetching counts for station ${station.id} (${station.name || 'Unknown'})`)
+        const [freeDocksResponse, availableBikesResponse] = await Promise.all([
+          apiClient.getNumberOfFreeDocks(station.id),
+          apiClient.getNumberOfAvailableBikes(station.id)
+        ])
+        // Handle both number response and object response
+        const freeDocks = typeof freeDocksResponse === 'number' ? freeDocksResponse : (freeDocksResponse?.count || freeDocksResponse || 0)
+        const availableBikes = typeof availableBikesResponse === 'number' ? availableBikesResponse : (availableBikesResponse?.count || availableBikesResponse || 0)
+        
+        stationCounts.value[station.id] = {
+          freeDocks: freeDocks,
+          availableBikes: availableBikes
+        }
+        console.log(`✅ API Success: Station ${station.id} - Bikes: ${availableBikes}, Docks: ${freeDocks} (from API)`)
+      } catch (error) {
+        console.error(`❌ API Error for station ${station.id}:`, error)
+        // Fallback to local calculation if API fails
+        const localFreeDocks = station.dockIds ? station.dockIds.filter(dock => dock.status === 'EMPTY').length : 0
+        const localAvailableBikes = station.dockIds ? station.dockIds.filter(dock => dock.status === 'OCCUPIED' && dock.bikeId).length : 0
+        stationCounts.value[station.id] = {
+          freeDocks: localFreeDocks,
+          availableBikes: localAvailableBikes
+        }
+        console.log(`⚠️ Using LOCAL calculation for station ${station.id} - Bikes: ${localAvailableBikes}, Docks: ${localFreeDocks} (fallback)`)
+      }
+    }
+  }
+  console.log('✅ Station counts loading complete')
+}
+
 const getFreeDocksCount = (station) => {
+  // Use API count if available, otherwise fallback to local calculation
+  if (stationCounts.value[station.id]) {
+    return stationCounts.value[station.id].freeDocks
+  }
+  // Fallback to local calculation
   if (!station.dockIds) return 0
   return station.dockIds.filter(dock => dock.status === 'EMPTY').length
 }
 
 const getAvailableBikesCount = (station) => {
+  // Use API count if available, otherwise fallback to local calculation
+  if (stationCounts.value[station.id]) {
+    return stationCounts.value[station.id].availableBikes
+  }
+  // Fallback to local calculation
   if (!station.dockIds) return 0
-  return station.dockIds.filter(dock => dock.status === 'OCCUPIED' && dock.bike.id).length
+  return station.dockIds.filter(dock => dock.status === 'OCCUPIED' && dock.bikeId).length
 }
 
 const getFullnessPercent = (station) => {
@@ -347,12 +394,25 @@ onMounted(() => {
     error.value = 'Google Maps API key not configured'
   }
   
+  // Load station counts from API
+  if (props.stations && props.stations.length > 0) {
+    loadStationCounts()
+  }
+  
   // Debug: Log station data
   console.log('Stations data:', props.stations)
   console.log('Stations with coordinates:', stationsWithCoords.value)
   console.log('Total stations:', props.stations.length)
   console.log('Stations with coords:', stationsWithCoords.value.length)
 })
+
+// Watch for stations changes and reload counts
+watch(() => props.stations, () => {
+  if (props.stations && props.stations.length > 0) {
+    stationCounts.value = {} // Reset cache
+    loadStationCounts()
+  }
+}, { deep: true })
 </script>
 
 <style scoped>
