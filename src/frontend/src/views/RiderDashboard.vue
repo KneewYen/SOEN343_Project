@@ -62,6 +62,14 @@
                 <span class="btn-text">Ride History
                 </span>
               </button>
+              <button class="action-btn secondary" @click="showBillingHistory" :class="{ selected: showBillingHistoryList }">
+                <span class="btn-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+                <span class="btn-text">Billing History</span>
+              </button>
             </div>
           </section>
 
@@ -82,6 +90,13 @@
           <!-- Ride History -->
           <section v-if="showRideHistoryList" class="ride-history">
             <RideHistory 
+              :user="user" 
+            />
+          </section>
+
+          <!-- Billing History -->
+          <section v-if="showBillingHistoryList" class="billing-history">
+            <BillingHistory 
               :user="user" 
             />
           </section>
@@ -241,6 +256,7 @@ import ThemeToggle from '../components/ThemeToggle.vue'
 import StationsMap from '../components/StationsMap.vue'
 import apiClient from '../lib/api'
 import RideHistory from '@/components/RideHistory.vue'
+import BillingHistory from '@/components/BillingHistory.vue'
 import PricingPlan from '@/components/PricingPlan.vue'
 
 
@@ -248,6 +264,7 @@ const router = useRouter()
 const user = ref(null)
 const showStationsList = ref(false)
 const showRideHistoryList = ref(false)
+const showBillingHistoryList = ref(false)
 const stations = ref([])
 const loading = ref(false)
 const currentReservation = ref(null)
@@ -344,6 +361,7 @@ const showStations = () => {
   if (showStationsList.value) {
     showRideHistoryList.value = false
     showPricingList.value = false
+    showBillingHistoryList.value = false
     if (stations.value.length === 0) loadStations()
   }
 }
@@ -354,6 +372,17 @@ const showRideHistory = () => {
   if (showRideHistoryList.value) {
     showStationsList.value = false
     showPricingList.value = false
+    showBillingHistoryList.value = false
+  }
+}
+
+const showBillingHistory = () => {
+  // toggle billing history and ensure other sections are closed
+  showBillingHistoryList.value = !showBillingHistoryList.value
+  if (showBillingHistoryList.value) {
+    showStationsList.value = false
+    showPricingList.value = false
+    showRideHistoryList.value = false
   }
 }
 
@@ -363,6 +392,7 @@ const showPricing = () => {
   if (showPricingList.value) {
     showStationsList.value = false
     showRideHistoryList.value = false
+    showBillingHistoryList.value = false
   }
 }
 // check if user currently has an incomplete trip and populate currentTrip

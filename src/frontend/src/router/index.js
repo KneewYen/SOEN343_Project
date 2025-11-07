@@ -6,6 +6,7 @@ import DashboardView from '../views/DashboardView.vue'
 import RiderDashboard from '../views/RiderDashboard.vue'
 import OperatorDashboard from '../views/OperatorDashboard.vue'
 import GuestDashboard from '../views/GuestDashboard.vue'
+import ExternalPaymentView from '../views/ExternalPaymentView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -48,6 +49,12 @@ const router = createRouter({
       name: 'guest-dashboard',
       component: GuestDashboard,
       meta: { requiresAuth: false }
+    },
+    {
+      path: '/payment/external/:tripId?',
+      name: 'external-payment',
+      component: ExternalPaymentView,
+      meta: { requiresAuth: true }
     }
   ]
 })

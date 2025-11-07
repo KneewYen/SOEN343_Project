@@ -300,6 +300,18 @@ class ApiClient {
     })
   }
 
+  // Payment API methods
+  async processPayment(paymentData) {
+    return this.request('/payment/process', {
+      method: 'POST',
+      body: JSON.stringify(paymentData)
+    })
+  }
+
+  async getPaymentStatus(tripId) {
+    return this.request(`/payment/status/${tripId}`)
+  }
+
 }
 
 const apiClient = new ApiClient()
