@@ -75,7 +75,23 @@
                 </span>
                 <span class="btn-text">My Trips</span>
               </button>
+              <button class="action-btn secondary" @click="showPricing" :class="{ selected: showPricingList }">
+                <span class="btn-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                    <path d="M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="8" cy="16" r="2" stroke="currentColor" stroke-width="2"/>
+                    <circle cx="16" cy="16" r="2" stroke="currentColor" stroke-width="2"/>
+                  </svg>
+                </span>
+                <span class="btn-text">Pricing</span>
+              </button>
             </div>
+          </section>
+
+          <!-- Pricing Plans (View Only) -->
+          <section v-if="showPricingList" class="pricing-list">
+            <PricingPlan :user="null" :guest-mode="true" />
           </section>
 
           <!-- Nearby Stations -->
@@ -147,10 +163,12 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import ThemeToggle from '../components/ThemeToggle.vue'
 import StationsMap from '../components/StationsMap.vue'
+import PricingPlan from '../components/PricingPlan.vue'
 import apiClient from '../lib/api'
 
 const router = useRouter()
 const showStationsList = ref(false)
+const showPricingList = ref(false)
 const stations = ref([])
 const loading = ref(false)
 
@@ -181,8 +199,19 @@ const loadStations = async () => {
 const showStations = () => {
   // Toggle stations visibility and load data if needed
   showStationsList.value = !showStationsList.value
-  if (showStationsList.value && stations.value.length === 0) {
-    loadStations()
+  if (showStationsList.value) {
+    showPricingList.value = false
+    if (stations.value.length === 0) {
+      loadStations()
+    }
+  }
+}
+
+const showPricing = () => {
+  // Toggle pricing visibility and ensure stations list is closed
+  showPricingList.value = !showPricingList.value
+  if (showPricingList.value) {
+    showStationsList.value = false
   }
 }
 </script>
@@ -624,5 +653,21 @@ const showStations = () => {
 /* Nearby Stations */
 .nearby-stations {
   margin-top: 2rem;
+}
+
+/* Pricing List */
+.pricing-list {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 24px;
+  border: 2px solid var(--border);
+  box-shadow: var(--card-shadow);
+  margin-top: 2rem;
+}
+
+.action-btn.selected {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
 }
 </style>

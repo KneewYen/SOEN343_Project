@@ -148,12 +148,45 @@ const handleLogout = () => {
   emit('logout')
 }
 
+// Load station counts from API
+const stationCounts = ref({})
+
+const loadStationCounts = async () => {
+  for (const station of stations.value) {
+    if (!stationCounts.value[station.id]) {
+      try {
+        const [freeDocksResponse, availableBikesResponse] = await Promise.all([
+          apiClient.getNumberOfFreeDocks(station.id),
+          apiClient.getNumberOfAvailableBikes(station.id)
+        ])
+        // Handle both number response and object response
+        const freeDocks = typeof freeDocksResponse === 'number' ? freeDocksResponse : (freeDocksResponse?.count || freeDocksResponse || 0)
+        const availableBikes = typeof availableBikesResponse === 'number' ? availableBikesResponse : (availableBikesResponse?.count || availableBikesResponse || 0)
+        
+        stationCounts.value[station.id] = {
+          freeDocks: freeDocks,
+          availableBikes: availableBikes
+        }
+      } catch (error) {
+        console.error(`Error loading counts for station ${station.id}:`, error)
+        // Fallback to local calculation if API fails
+        stationCounts.value[station.id] = {
+          freeDocks: station.dockIds ? station.dockIds.filter(dock => dock.status === 'EMPTY').length : 0,
+          availableBikes: station.dockIds ? station.dockIds.filter(dock => dock.status === 'OCCUPIED' && dock.bikeId).length : 0
+        }
+      }
+    }
+  }
+}
+
 const loadStations = async () => {
   try {
     loading.value = true
     const stationsData = await apiClient.getAllStations()
     stations.value = stationsData
     console.log('Loaded stations:', stationsData)
+    // Load station counts from API
+    await loadStationCounts()
   } catch (error) {
     console.error('Error loading stations:', error)
   } finally {
@@ -162,11 +195,21 @@ const loadStations = async () => {
 }
 
 const getFreeDocksCount = (station) => {
+  // Use API count if available, otherwise fallback to local calculation
+  if (stationCounts.value[station.id]) {
+    return stationCounts.value[station.id].freeDocks
+  }
+  // Fallback to local calculation
   if (!station.dockIds) return 0
   return station.dockIds.filter(dock => dock.status === 'EMPTY').length
 }
 
 const getAvailableBikesCount = (station) => {
+  // Use API count if available, otherwise fallback to local calculation
+  if (stationCounts.value[station.id]) {
+    return stationCounts.value[station.id].availableBikes
+  }
+  // Fallback to local calculation
   if (!station.dockIds) return 0
   return station.dockIds.filter(dock => dock.status === 'OCCUPIED' && dock.bikeId).length
 }
