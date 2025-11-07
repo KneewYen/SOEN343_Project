@@ -1208,6 +1208,15 @@ const checkActiveReservation = async () => {
   color: #64748b;
 }
 
+/* Pricing List */
+.pricing-list {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 24px;
+  border: 2px solid var(--border);
+  box-shadow: var(--card-shadow);
+}
+
 @media (max-width: 768px) {
   .stations-grid {
     grid-template-columns: 1fr;

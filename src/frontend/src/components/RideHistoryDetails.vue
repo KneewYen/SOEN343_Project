@@ -72,8 +72,8 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 // pricing must match the values used in RideHistory
-const BASE_FEE = 1.0
-const PER_MINUTE = 0.15
+const BASE_FEE = 5.0
+const PER_MINUTE = 1.00
 const EBIKE_SURCHARGE_PER_MINUTE = 0.10
 
 function safeDate(d) {
