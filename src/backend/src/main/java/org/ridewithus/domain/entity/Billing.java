@@ -22,7 +22,7 @@ import jakarta.persistence.Table;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "charges")
+@Table(name = "billing")
 public class Billing {
 
     @Id

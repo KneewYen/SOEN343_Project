@@ -58,9 +58,9 @@
           class="ride-row"@click="openRide(ride)"tabindex="0"@keydown.enter="openRide(ride)">
             <td>{{ ride.tripId }}</td>
             <td>{{ ride.userName }}</td>
-            <td>{{ ride.startStationName }} → {{ ride.endStationName }}</td>
+            <td>{{ ride.startStationId }} → {{ ride.endStationId }}</td>
             <td>{{ ride.bikeType }}</td>
-            <td>{{ formatCurrency(getTripCost(ride).total) }}</td>
+            <td>{{ ride.totalAmount }}</td>
           </tr>
         </tbody>
       </table>
@@ -138,7 +138,7 @@ const filteredRides = computed(() => {
     const matchesType = !bikeType.value || r.bikeType === bikeType.value
     const matchesStart = !startDate.value || r.startTime >= startDate.value
     const matchesEnd = !endDate.value || r.endTime <= endDate.value
-    return matchesTrip && matchesType && matchesStart && matchesEnd && r.tripComplete
+    return matchesTrip && matchesType && matchesStart && matchesEnd //&& r.tripComplete
   })
 })
 
@@ -191,7 +191,28 @@ const loadRides = async () => {
     const pageData = response.trips.content
     const lastPage = response.trips.last
 
-    rideHistory.value.push(...pageData)
+    const tripsWithBilling = await Promise.all(
+      pageData.map(async (trip) => {
+        try {
+          const billingResp = await apiClient.getBillingByTripId(trip.tripId);
+          if (billingResp.success && billingResp.billing) {
+            return {
+              ...trip,
+              charges: billingResp.billing.charges,
+              totalAmount: billingResp.billing.totalAmount,
+              startStationName: billingResp.billing.startStationName,
+              endStationName: billingResp.billing.endStationName,
+            };
+          }
+        } catch (e) {
+          console.error("Billing fetch failed for trip", trip.tripId, e);
+        }
+        return trip; // fallback to just trip if billing fails
+      })
+    );
+
+    rideHistory.value.push(...tripsWithBilling)
+    console.log(rideHistory)
 
     hasMore.value = !lastPage
 

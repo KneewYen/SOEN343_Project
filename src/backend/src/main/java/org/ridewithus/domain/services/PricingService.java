@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.ridewithus.domain.dto.BillingDTO;
 import org.ridewithus.domain.dto.ChargeBreakdownDTO;
 import org.ridewithus.domain.dto.ChargeDTO;
 import org.ridewithus.domain.entity.Bike;
@@ -52,7 +53,7 @@ public class PricingService {
     }
 
     @Transactional
-    public double calculatePricingPlan(Long tripId){
+    public BillingDTO calculatePricingPlan(Long tripId){
 
         PricingContext context = new PricingContext();
 
@@ -67,11 +68,11 @@ public class PricingService {
         
         PricingStrategy strategy;
         switch (plan) {
-            case "Standard Plan":
+            case "Standard plan":
                 strategy = new BaseRateStrategy();
                 items.add(new ChargeDTO(strategy.getName(), strategy.getDescription(), strategy.calculatePrice(trip)));
                 break;
-            case "Distance Plan":
+            case "Distance plan":
                 strategy = new DistanceStrategy();
                 items.add(new ChargeDTO(strategy.getName(), strategy.getDescription(), strategy.calculatePrice(trip)));
                 break;
@@ -88,6 +89,7 @@ public class PricingService {
 
         // if an e-bike, add the ebike surcharge decorator
         if(bike.getType().equals("e-bike")){
+            System.out.println("bikela"+bike.getType());
             strategy = new EbikeSurcharge(strategy);
             items.add(new ChargeDTO(strategy.getName(), strategy.getDescription(), ((EbikeSurcharge)strategy).getSurcharge() ));
         }
@@ -124,9 +126,18 @@ public class PricingService {
             billing.setCharges(charges);
             billing = billingRepository.save(billing);
         }
-
+        
         context.setStrategy(strategy);
-        return context.calculatePrice(trip);
+        double price = context.calculatePrice(trip);
+
+        BillingDTO billingDTO = BillingDTO.builder()
+            .billingId(billing.getBillingId())
+            .tripId(trip.getTripId())
+            .charges(items)
+            .totalAmount(price)
+            .build();
+
+        return billingDTO;
     }
 
     @Transactional

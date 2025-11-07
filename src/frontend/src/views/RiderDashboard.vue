@@ -105,6 +105,7 @@
           <section class="current-trip">
             <h2 class="section-title">Current Trip</h2>
             
+            
             <!-- Active Reservation -->
             <div v-if="currentReservation" class="trip-card reservation">
               <div class="trip-status">
@@ -203,6 +204,35 @@
             </div>
           </section>
 
+          <section v-if="tripSummary" class="trip-summary">
+              <TripSummary :trip="selectedTrip" />
+
+              <!-- Billing Information (added here) -->
+              <div v-if="billing" class="billing-info">
+                <h3 class="billing-title">Billing Summary</h3>
+
+                <div class="billing-details">
+                  <p><strong>Billing ID:</strong> {{ billing.billingId }}</p>
+                  <p><strong>Trip ID:</strong> {{ billing.tripId }}</p>
+                  <p><strong>Total Cost:</strong> ${{ billing.totalAmount.toFixed(2) }}</p>
+                </div>
+
+                <div class="billing-charges">
+                  <h4>Charges</h4>
+                  <ul>
+                    <li v-for="charge in billing.charges" :key="charge.name">
+                      <strong>{{ charge.name }}</strong> — {{ charge.description }}
+                      <span class="charge-cost">(${{ charge.cost.toFixed(2) }})</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div v-else class="no-billing">
+                <p>No billing information available for this trip.</p>
+              </div>
+            </section>
+
           <!-- Recent Trips -->
           <section class="recent-trips">
             <h2 class="section-title">Recent Trips</h2>
@@ -273,6 +303,8 @@ const selectedReturnStation = ref('')
 let reservationInterval = null
 const prevReservationId = ref(null)
 const showPricingList = ref(false)
+const tripSummary = ref(null)
+const billing = ref(null)
 
 onMounted(() => {
   // Load user data from localStorage
@@ -437,7 +469,7 @@ const checkActiveReservation = async () => {
           prevReservationId.value = null
           currentReservation.value = null
           console.log('Reservation expired (backend removed it) — notifying user')
-          alert('Your bike reservation has expired.')
+          //alert('Your bike reservation has expired.')
           await loadStations()
         } else {
           currentReservation.value = null
@@ -624,6 +656,12 @@ const checkActiveReservation = async () => {
         const response = await apiClient.endTrip(currentTrip.value.id, selectedReturnStation.value)
         if (response.success) {
           alert('Trip ended successfully!')
+
+          const res = await apiClient.calculatePrice(currentTrip.value.id)
+          console.log("Billing response:", res)
+          tripSummary.value = res.billing
+          billing.value = res.billing
+
           currentTrip.value = null
           selectedReturnStation.value = ''
           await loadStations() // Refresh stations

@@ -29,11 +29,11 @@
             </div>
             <div class="summary-row">
               <span class="summary-label">Origin Station:</span>
-              <span class="summary-value">{{ bill.startStationName || 'N/A' }}</span>
+              <span class="summary-value">{{ bill.startStationId || 'N/A' }}</span>
             </div>
             <div class="summary-row">
               <span class="summary-label">Destination Station:</span>
-              <span class="summary-value">{{ bill.endStationName || 'N/A' }}</span>
+              <span class="summary-value">{{ bill.endStationId || 'N/A' }}</span>
             </div>
             <div class="summary-row">
               <span class="summary-label">Duration:</span>
@@ -43,17 +43,12 @@
         </div>
 
         <h3>Summary of Charges</h3>
-        <div class="cost-row">
-          <span>Base Fee:</span><span>{{ formatCurrency(cost.base) }}</span>
-        </div>
-        <div class="cost-row">
-          <span>Per-minute ({{ cost.duration }} min):</span><span>{{ formatCurrency(cost.perMin) }}</span>
-        </div>
-        <div class="cost-row" v-if="cost.ebike > 0">
-          <span>E-bike surcharge:</span><span>{{ formatCurrency(cost.ebike) }}</span>
+       <div v-for="charge in bill.charges" :key="charge.name" class="cost-row">
+          <span>{{ charge.name }}:</span>
+          <span>{{ formatCurrency(charge.cost) }}</span>
         </div>
         <div class="cost-row total">
-          <strong>Total:</strong><strong>{{ formatCurrency(cost.total) }}</strong>
+          <strong>Total:</strong><strong>{{ formatCurrency(bill.totalAmount) }}</strong>
         </div>
 
         <h3>Event timeline</h3>
@@ -92,9 +87,8 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, watch } from 'vue'
+import { computed, ref } from 'vue'
 import PaymentService from './PaymentService.vue'
-import apiClient from '../lib/api'
 
 const props = defineProps({
   bill: { type: Object, required: true }
@@ -102,43 +96,11 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const showPayment = ref(false)
-const paymentStatus = ref('pending') // 'pending', 'processing', 'paid', 'failed'
 
-// Check payment status on mount and when bill changes
-async function checkPaymentStatus() {
-  try {
-    const response = await apiClient.getBillingByTripId(props.bill.tripId)
-    if (response.success && response.billing) {
-      paymentStatus.value = 'paid'
-    } else {
-      // Fall back to localStorage for backward compatibility
-      const paidTrips = JSON.parse(localStorage.getItem('paidTrips') || '[]')
-      if (paidTrips.includes(props.bill.tripId)) {
-        paymentStatus.value = 'paid'
-      } else {
-        paymentStatus.value = 'pending'
-      }
-    }
-  } catch (err) {
-    // Fall back to localStorage
-    const paidTrips = JSON.parse(localStorage.getItem('paidTrips') || '[]')
-    if (paidTrips.includes(props.bill.tripId)) {
-      paymentStatus.value = 'paid'
-    } else {
-      paymentStatus.value = 'pending'
-    }
-  }
-}
+// All bills start as pending
+const paymentStatus = ref('pending')
 
-onMounted(() => {
-  checkPaymentStatus()
-})
-
-watch(() => props.bill.tripId, () => {
-  checkPaymentStatus()
-})
-
-// pricing must match the values used in BillingHistory
+// Pricing must match BillingHistory
 const BASE_FEE = 1.0
 const PER_MINUTE = 0.15
 const EBIKE_SURCHARGE_PER_MINUTE = 0.10
@@ -154,7 +116,6 @@ function formatDateTime(d) {
 }
 
 function getBikeId(bill) {
-  // Get bikeId from the trip data
   if (bill.bikeId) return bill.bikeId
   if (bill.bike && bill.bike.id) return bill.bike.id
   return 'N/A'
@@ -193,17 +154,13 @@ function closePayment() {
 }
 
 function handlePaymentSuccess() {
-  // Mark the trip as paid in localStorage
-  const paidTrips = JSON.parse(localStorage.getItem('paidTrips') || '[]')
-  if (!paidTrips.includes(props.bill.tripId)) {
-    paidTrips.push(props.bill.tripId)
-    localStorage.setItem('paidTrips', JSON.stringify(paidTrips))
-  }
   paymentStatus.value = 'paid'
   showPayment.value = false
-  // Emit event to parent to refresh billing history if needed
+  // Notify parent to mark this trip as Paid
+  emit('payment-success', props.bill.tripId)
 }
 </script>
+
 
 <style scoped>
 .modal-backdrop {

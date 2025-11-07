@@ -300,6 +300,12 @@ class ApiClient {
     })
   }
 
+  async calculatePrice(tripId) {
+    return this.request(`/trip/calculate/${tripId}` ,{
+      method: 'POST'
+    })
+  }
+
   // Payment API methods
   async processPayment(paymentData) {
     return this.request('/payment/process', {

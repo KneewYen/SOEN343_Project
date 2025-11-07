@@ -79,7 +79,7 @@ public class BillingController {
     }
 
     @GetMapping("/trip/{tripId}")
-    public ResponseEntity<Map<String, Object>> getBillingByTripId(@PathVariable Long tripId) {
+    public ResponseEntity<Map<String, Object>> getBillingByTripId(@PathVariable("tripId") Long tripId) {
         try {
             Optional<Billing> billingOpt = billingRepository.findByTrip_TripId(tripId);
             

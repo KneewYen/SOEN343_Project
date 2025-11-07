@@ -17,7 +17,7 @@ public class EbikeSurcharge extends PricingDecorator {
 
     @Override
     public double calculatePrice(Trip trip){
-        return super.calculatePrice(null) + surcharge;
+        return super.calculatePrice(trip) + surcharge;
     }
 
     public String getName(){

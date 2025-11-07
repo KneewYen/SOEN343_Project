@@ -1,5 +1,6 @@
 package org.ridewithus.controller;
 
+import org.ridewithus.domain.dto.BillingDTO;
 import org.ridewithus.domain.dto.TripDTO;
 import org.ridewithus.domain.services.PricingService;
 import org.ridewithus.domain.services.TripService;
@@ -105,14 +106,13 @@ public class TripController {
             return ResponseEntity.badRequest().body(response);
         }
     }
-    @GetMapping("/temporary")   
-    public ResponseEntity<Map<String, Object>> calculateTripPrice(@RequestBody Map<String, String> body, @PathVariable("tripId")Long tripId){
+    @PostMapping("/calculate/{tripId}")  
+    public ResponseEntity<Map<String, Object>> calculateTripPrice(@PathVariable("tripId")Long tripId){
         try {
-            String plan = body.get("pricingPlan");
-            double price = pricingService.calculatePricingPlan(tripId);
+            BillingDTO billing = pricingService.calculatePricingPlan(tripId);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("price", price);
+            response.put("billing", billing);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();

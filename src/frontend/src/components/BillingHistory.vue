@@ -65,8 +65,8 @@
           class="bill-row" @click="openBill(bill)" tabindex="0" @keydown.enter="openBill(bill)">
             <td>{{ formatDateTime(bill.startTime) }}</td>
             <td>{{ getBikeId(bill) }}</td>
-            <td>{{ bill.startStationName || 'N/A' }}</td>
-            <td class="charge-amount">${{ formatCurrency(getTripCost(bill).total) }}</td>
+            <td>{{ bill.startStationId || 'N/A' }}</td>
+            <td class="charge-amount">${{ bill.totalAmount }}</td>
             <td>
               <span class="payment-status" :class="getPaymentStatusClass(bill)">
                 {{ getPaymentStatus(bill) }}
@@ -102,6 +102,7 @@
       v-if="selectedBill"
       :bill="selectedBill"
       @close="closeModal"
+      @payment-success="markBillPaid"
     />
   </div>
 </template>
@@ -149,7 +150,7 @@ const filteredBills = computed(() => {
     const matchesType = !bikeType.value || r.bikeType === bikeType.value
     const matchesStart = !startDate.value || r.startTime >= startDate.value
     const matchesEnd = !endDate.value || r.endTime <= endDate.value
-    return matchesTrip && matchesType && matchesStart && matchesEnd && r.tripComplete
+    return matchesTrip && matchesType && matchesStart && matchesEnd //&& r.tripComplete
   })
 })
 
@@ -167,7 +168,7 @@ async function loadPaymentStatuses() {
     try {
       const response = await apiClient.getBillingByTripId(bill.tripId)
       if (response.success && response.billing) {
-        paymentStatuses.value[bill.tripId] = 'Paid'
+        paymentStatuses.value[bill.tripId] = ''
       } else {
         paymentStatuses.value[bill.tripId] = 'Pending'
       }
@@ -261,7 +262,28 @@ const loadBills = async () => {
     const pageData = response.trips.content
     const lastPage = response.trips.last
 
-    billingHistory.value.push(...pageData)
+    const tripsWithBilling = await Promise.all(
+      pageData.map(async (trip) => {
+        try {
+          const billingResp = await apiClient.getBillingByTripId(trip.tripId);
+          if (billingResp.success && billingResp.billing) {
+            return {
+              ...trip,
+              charges: billingResp.billing.charges,
+              totalAmount: billingResp.billing.totalAmount,
+              startStationName: billingResp.billing.startStationName,
+              endStationName: billingResp.billing.endStationName,
+              paymentStatus: 'Pending'
+            };
+          }
+        } catch (e) {
+          console.error("Billing fetch failed for trip", trip.tripId, e);
+        }
+        return trip; // fallback to just trip if billing fails
+      })
+    );
+
+    billingHistory.value.push(...tripsWithBilling)
 
     hasMore.value = !lastPage
 
@@ -322,8 +344,42 @@ const validateFilters = () => {
 watch([searchId, startDate, endDate], validateFilters)
 
 // open/close bill details
-const openBill = (bill) => {
-  selectedBill.value = bill
+// const openBill = (bill) => {
+//   selectedBill.value = bill
+// }
+
+const openBill = async (bill) => {
+  try {
+    const response = await apiClient.getBillingByTripId(bill.tripId)
+    console.log(response)
+    if (response.success && response.billing) {
+      // merge billing DTO into bill
+      selectedBill.value = {
+        ...bill, // use the bill object passed from table
+        charges: response.billing.charges,
+        totalAmount: response.billing.totalAmount,
+        startStationName: response.billing.startStationName,
+        endStationName: response.billing.endStationName
+      }
+    } else {
+      selectedBill.value = bill
+    }
+  } catch (e) {
+    selectedBill.value = bill
+  }
+}
+
+const markBillPaid = (tripId) => {
+  // Update in the main billing history
+  const bill = billingHistory.value.find(b => b.tripId === tripId)
+  if (bill) {
+    bill.paymentStatus = 'Paid'
+  }
+
+  // Update the modal as well
+  if (selectedBill.value && selectedBill.value.tripId === tripId) {
+    selectedBill.value.paymentStatus = 'Paid'
+  }
 }
 
 const closeModal = () => {
