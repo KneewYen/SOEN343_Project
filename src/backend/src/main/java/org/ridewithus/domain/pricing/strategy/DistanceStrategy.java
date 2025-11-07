@@ -15,6 +15,9 @@ public class DistanceStrategy implements PricingStrategy{
         double end_lat = trip.getEndStation().getLatitude();
         double end_long = trip.getEndStation().getLongitude();
 
+        System.out.println("Startstation: " + start_lat + "," + start_long);
+        System.out.println("Endstation: " + end_lat + "," + end_long);
+
         double difference_lat = Math.toRadians(end_lat - start_lat);
         double difference_long = Math.toRadians(end_long - start_long);
 
@@ -26,6 +29,8 @@ public class DistanceStrategy implements PricingStrategy{
 
         double distanceMeter = EARTH_RADIUS * c * 1000;
 
+        System.out.println("distance"+distanceMeter);
+        System.out.println("price5"+distanceMeter*distanceRate);
         return distanceMeter * distanceRate;
     }
 

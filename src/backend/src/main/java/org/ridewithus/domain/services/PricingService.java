@@ -44,26 +44,34 @@ public class PricingService {
     }
 
     @Transactional
-    public double calculatePricingPlan(Long tripId){
+    public double calculatePricingPlan(Long tripId) throws Exception{
 
         PricingContext context = new PricingContext();
 
+        System.out.println("koko");
         // get user plan 
         Trip trip = tripRepository.findByTripId(tripId);
+        System.out.println("koko2");
+        if (trip == null) {
+            System.out.println("poopoo");
+            throw new RuntimeException("Trip not found with ID: " + tripId);
+        }
         User user = trip.getUser();
         PricingPlan pricingPlan = user.getPricingPlan();
         String plan = pricingPlan.getName();
+        System.out.println("planname"+plan);
+        
 
         List<ChargeDTO> items = new ArrayList<>();
         
         
         PricingStrategy strategy;
         switch (plan) {
-            case "Standard Plan":
+            case "Standard plan":
                 strategy = new BaseRateStrategy();
                 items.add(new ChargeDTO(strategy.getName(), strategy.getDescription(), strategy.calculatePrice(trip)));
                 break;
-            case "Distance Plan":
+            case "Distance plan":
                 strategy = new DistanceStrategy();
                 items.add(new ChargeDTO(strategy.getName(), strategy.getDescription(), strategy.calculatePrice(trip)));
                 break;
@@ -75,7 +83,9 @@ public class PricingService {
         // Long bikeId = trip.getBikeId();
         // Bike bike = bikeRepository.findByBikeId(bikeId);
 
+        System.out.println("koko3");
         Bike bike = trip.getBike();
+        System.out.println("koko33");
 
         // if an e-bike, add the ebike surcharge decorator
         if(bike.getType().equals("e-bike")){
@@ -84,6 +94,8 @@ public class PricingService {
         }
 
         context.setStrategy(strategy);
+        double result = context.calculatePrice(trip);
+        System.out.println("koko34"+result);
         return context.calculatePrice(trip);
     }
 

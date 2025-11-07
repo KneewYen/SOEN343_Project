@@ -89,6 +89,18 @@
           <!-- Current Trip -->
           <section class="current-trip">
             <h2 class="section-title">Current Trip</h2>
+
+            <section v-if="tripSummary" class="trip-summary">
+              <h2 class="section-title">Trip Summary</h2>
+              <div class="summary-card">
+                <p><strong>Bike:</strong> {{ tripSummary.bikeId }}</p>
+                <p><strong>Duration:</strong> {{ tripSummary.duration }}</p>
+                <p><strong>Distance:</strong> {{ tripSummary.distance }}</p>
+                <p><strong>Cost:</strong> {{ tripSummary.cost }}</p>
+                <p><strong>Returned To:</strong> {{ tripSummary.endStation }}</p>
+                <p><strong>Ended At:</strong> {{ tripSummary.endTime }}</p>
+              </div>
+            </section>
             
             <!-- Active Reservation -->
             <div v-if="currentReservation" class="trip-card reservation">
@@ -256,6 +268,7 @@ const selectedReturnStation = ref('')
 let reservationInterval = null
 const prevReservationId = ref(null)
 const showPricingList = ref(false)
+const tripSummary = ref(null)
 
 onMounted(() => {
   // Load user data from localStorage
@@ -523,6 +536,10 @@ const checkActiveTrip = async () => {
         const response = await apiClient.endTrip(currentTrip.value.id, selectedReturnStation.value)
         if (response.success) {
           alert('Trip ended successfully!')
+
+          const res = await apiClient.calculatePrice(currentTrip.value.id)
+          tripSummary.value = res
+          
           currentTrip.value = null
           selectedReturnStation.value = ''
           await loadStations() // Refresh stations
@@ -1131,5 +1148,24 @@ const checkActiveTrip = async () => {
   .stations-grid {
     grid-template-columns: 1fr;
   }
+}
+.trip-summary {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 24px;
+  border: 2px solid var(--border);
+  box-shadow: var(--card-shadow);
+  animation: fadeIn 0.4s ease-in-out;
+}
+
+.summary-card p {
+  margin: 0.25rem 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 </style>

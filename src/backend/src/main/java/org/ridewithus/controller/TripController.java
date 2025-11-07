@@ -105,10 +105,10 @@ public class TripController {
             return ResponseEntity.badRequest().body(response);
         }
     }
-    @GetMapping("/temporary")   
-    public ResponseEntity<Map<String, Object>> calculateTripPrice(@RequestBody Map<String, String> body, @PathVariable("tripId")Long tripId){
+    @PostMapping("/calculate/{tripId}")   
+    public ResponseEntity<Map<String, Object>> calculateTripPrice(@PathVariable("tripId")Long tripId){
         try {
-            String plan = body.get("pricingPlan");
+            System.out.println("hereee");
             double price = pricingService.calculatePricingPlan(tripId);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);

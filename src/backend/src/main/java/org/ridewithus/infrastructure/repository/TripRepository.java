@@ -23,4 +23,6 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
 
     Page<Trip> findByUserId(Long userId, Pageable pageable);
 
+    
+
 }

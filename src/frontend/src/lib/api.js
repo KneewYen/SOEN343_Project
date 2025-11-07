@@ -291,6 +291,12 @@ class ApiClient {
     })
   }
 
+  async calculatePrice(tripId) {
+    return this.request(`/trip/calculate/${tripId}` ,{
+      method: 'POST'
+    })
+  }
+
 }
 
 const apiClient = new ApiClient()
