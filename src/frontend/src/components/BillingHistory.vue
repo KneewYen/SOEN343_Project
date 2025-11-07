@@ -159,14 +159,34 @@ const totalAmount = computed(() => {
   }, 0)
 })
 
+const paymentStatuses = ref({}) // Map of tripId -> status
+
+async function loadPaymentStatuses() {
+  // Load payment statuses for all bills from database
+  for (const bill of billingHistory.value) {
+    try {
+      const response = await apiClient.getBillingByTripId(bill.tripId)
+      if (response.success && response.billing) {
+        paymentStatuses.value[bill.tripId] = 'Paid'
+      } else {
+        paymentStatuses.value[bill.tripId] = 'Pending'
+      }
+    } catch (err) {
+      paymentStatuses.value[bill.tripId] = 'Pending'
+    }
+  }
+}
+
 function getPaymentStatus(bill) {
-  // Check if payment has been processed
-  // First check localStorage for paid trips
+  // Check database status first
+  if (paymentStatuses.value[bill.tripId]) {
+    return paymentStatuses.value[bill.tripId]
+  }
+  // Fall back to localStorage for backward compatibility
   const paidTrips = JSON.parse(localStorage.getItem('paidTrips') || '[]')
   if (paidTrips.includes(bill.tripId)) {
     return 'Paid'
   }
-  // Fall back to bill's paymentStatus if available
   return bill.paymentStatus || 'Pending'
 }
 
@@ -244,6 +264,9 @@ const loadBills = async () => {
     billingHistory.value.push(...pageData)
 
     hasMore.value = !lastPage
+
+    // Load payment statuses for the new bills from database
+    await loadPaymentStatuses()
 
     console.log(billingHistory.value)
 
@@ -522,8 +545,8 @@ const closeModal = () => {
 }
 
 .payment-status.pending {
-  background: #fef3c7;
-  color: #92400e;
+  background: #dcfce7;
+  color: #166534;
 }
 
 .payment-status.failed {

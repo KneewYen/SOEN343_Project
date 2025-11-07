@@ -312,6 +312,21 @@ class ApiClient {
     return this.request(`/payment/status/${tripId}`)
   }
 
+  // Billing API methods
+  async createBilling(tripId) {
+    return this.request(`/billing/create/${tripId}`, {
+      method: 'POST'
+    })
+  }
+
+  async getBillingByTripId(tripId) {
+    return this.request(`/billing/trip/${tripId}`)
+  }
+
+  async getBillingsByUserId(userId) {
+    return this.request(`/billing/user/${userId}`)
+  }
+
 }
 
 const apiClient = new ApiClient()

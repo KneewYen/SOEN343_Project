@@ -70,8 +70,13 @@
         <button 
           class="paid-button" 
           @click="handlePaid"
+          :disabled="processing"
         >
-          ✓ Paid
+          <span v-if="!processing">✓ Paid</span>
+          <span v-else class="processing-text">
+            <div class="spinner-small"></div>
+            Processing...
+          </span>
         </button>
       </section>
     </div>
@@ -88,6 +93,7 @@ const router = useRouter()
 const route = useRoute()
 
 const bill = ref(null)
+const processing = ref(false)
 
 // Pricing constants
 const BASE_FEE = 1.0
@@ -172,17 +178,39 @@ function getBikeId(bill) {
   return 'N/A'
 }
 
-function handlePaid() {
-  // Mark the trip as paid in localStorage
-  if (bill.value && bill.value.tripId) {
-    const paidTrips = JSON.parse(localStorage.getItem('paidTrips') || '[]')
-    if (!paidTrips.includes(bill.value.tripId)) {
-      paidTrips.push(bill.value.tripId)
-      localStorage.setItem('paidTrips', JSON.stringify(paidTrips))
-    }
+async function handlePaid() {
+  if (!bill.value || !bill.value.tripId || processing.value) {
+    return
   }
-  // Navigate back to the previous page
-  router.go(-1)
+
+  processing.value = true
+
+  try {
+    // Create Billing and Charge objects in database
+    // This will change the status to "Paid" when billing history reads from database
+    const response = await apiClient.createBilling(bill.value.tripId)
+    
+    if (response.success) {
+      // Wait a moment to show success, then navigate back
+      setTimeout(() => {
+        router.go(-1)
+      }, 500)
+    } else {
+      console.error('Failed to create billing:', response.message)
+      processing.value = false
+      // Still navigate back even if there's an error
+      setTimeout(() => {
+        router.go(-1)
+      }, 1000)
+    }
+  } catch (err) {
+    console.error('Error creating billing:', err)
+    processing.value = false
+    // Still navigate back even if there's an error
+    setTimeout(() => {
+      router.go(-1)
+    }, 1000)
+  }
 }
 </script>
 
@@ -305,6 +333,31 @@ function handlePaid() {
   box-shadow: 0 6px 16px rgba(34, 197, 94, 0.4);
 }
 
+.paid-button:disabled {
+  background: #6b7280;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.processing-text {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.spinner-small {
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 
 @media (max-width: 768px) {
   .external-payment-page {

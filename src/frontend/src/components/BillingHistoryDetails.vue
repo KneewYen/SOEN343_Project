@@ -94,6 +94,7 @@
 <script setup>
 import { computed, ref, onMounted, watch } from 'vue'
 import PaymentService from './PaymentService.vue'
+import apiClient from '../lib/api'
 
 const props = defineProps({
   bill: { type: Object, required: true }
@@ -104,12 +105,28 @@ const showPayment = ref(false)
 const paymentStatus = ref('pending') // 'pending', 'processing', 'paid', 'failed'
 
 // Check payment status on mount and when bill changes
-function checkPaymentStatus() {
-  const paidTrips = JSON.parse(localStorage.getItem('paidTrips') || '[]')
-  if (paidTrips.includes(props.bill.tripId)) {
-    paymentStatus.value = 'paid'
-  } else {
-    paymentStatus.value = props.bill.paymentStatus || 'pending'
+async function checkPaymentStatus() {
+  try {
+    const response = await apiClient.getBillingByTripId(props.bill.tripId)
+    if (response.success && response.billing) {
+      paymentStatus.value = 'paid'
+    } else {
+      // Fall back to localStorage for backward compatibility
+      const paidTrips = JSON.parse(localStorage.getItem('paidTrips') || '[]')
+      if (paidTrips.includes(props.bill.tripId)) {
+        paymentStatus.value = 'paid'
+      } else {
+        paymentStatus.value = 'pending'
+      }
+    }
+  } catch (err) {
+    // Fall back to localStorage
+    const paidTrips = JSON.parse(localStorage.getItem('paidTrips') || '[]')
+    if (paidTrips.includes(props.bill.tripId)) {
+      paymentStatus.value = 'paid'
+    } else {
+      paymentStatus.value = 'pending'
+    }
   }
 }
 
