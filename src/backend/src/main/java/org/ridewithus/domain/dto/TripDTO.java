@@ -23,4 +23,5 @@ public class TripDTO {
     private Long reservationId;
     private String startStationName;
     private String endStationName;
+    private Long bikeId;
 }

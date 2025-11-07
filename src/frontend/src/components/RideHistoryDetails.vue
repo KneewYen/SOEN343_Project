@@ -30,18 +30,13 @@
         </div>
 
         <h3>Cost breakdown</h3>
-        <div class="cost-row">
-          <span>Base:</span><span>{{ formatCurrency(cost.base) }}</span>
-        </div>
-        <div class="cost-row">
-          <span>Per-minute ({{ cost.duration }} min):</span><span>{{ formatCurrency(cost.perMin) }}</span>
-        </div>
-        <div class="cost-row" v-if="cost.ebike > 0">
-          <span>E-bike surcharge:</span><span>{{ formatCurrency(cost.ebike) }}</span>
+        <!-- <div v-for="charge in bill.charges" :key="charge.name" class="cost-row">
+          <span>{{ charge.name }}:</span>
+          <span>{{ formatCurrency(charge.cost) }}</span>
         </div>
         <div class="cost-row total">
-          <strong>Total:</strong><strong>{{ formatCurrency(cost.total) }}</strong>
-        </div>
+          <strong>Total:</strong><strong>{{ formatCurrency(bill.totalAmount) }}</strong>
+        </div> -->
 
         <h3>Event timeline</h3>
         <ol class="timeline">

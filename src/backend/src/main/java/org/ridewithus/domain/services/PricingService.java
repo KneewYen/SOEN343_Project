@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.ridewithus.domain.dto.BillingDTO;
 import org.ridewithus.domain.dto.ChargeBreakdownDTO;
 import org.ridewithus.domain.dto.ChargeDTO;
 import org.ridewithus.domain.entity.Bike;
@@ -21,6 +22,10 @@ import org.ridewithus.infrastructure.repository.BikeRepository;
 import org.ridewithus.infrastructure.repository.PricingPlanRepository;
 import org.ridewithus.infrastructure.repository.TripRepository;
 import org.ridewithus.infrastructure.repository.UserRepository;
+import org.ridewithus.infrastructure.repository.BillingRepository;
+import org.ridewithus.infrastructure.repository.ChargeRepository;
+import org.ridewithus.domain.entity.Billing;
+import org.ridewithus.domain.entity.Charge;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -38,13 +43,17 @@ public class PricingService {
     private UserRepository userRepository;
     @Autowired
     private PricingPlanRepository pricingPlanRepository;
+    @Autowired
+    private BillingRepository billingRepository;
+    @Autowired
+    private ChargeRepository chargeRepository;
 
     public List<PricingPlan> getAllPlans() {
         return pricingPlanRepository.findAll();
     }
 
     @Transactional
-    public double calculatePricingPlan(Long tripId){
+    public BillingDTO calculatePricingPlan(Long tripId){
 
         PricingContext context = new PricingContext();
 
@@ -59,16 +68,17 @@ public class PricingService {
         
         PricingStrategy strategy;
         switch (plan) {
-            case "Standard Plan":
+            case "Standard plan":
                 strategy = new BaseRateStrategy();
                 items.add(new ChargeDTO(strategy.getName(), strategy.getDescription(), strategy.calculatePrice(trip)));
                 break;
-            case "Distance Plan":
+            case "Distance plan":
                 strategy = new DistanceStrategy();
                 items.add(new ChargeDTO(strategy.getName(), strategy.getDescription(), strategy.calculatePrice(trip)));
                 break;
             default:
                 strategy = new BaseRateStrategy();
+                items.add(new ChargeDTO(strategy.getName(), strategy.getDescription(), strategy.calculatePrice(trip)));
                 break;
         }
         
@@ -79,12 +89,55 @@ public class PricingService {
 
         // if an e-bike, add the ebike surcharge decorator
         if(bike.getType().equals("e-bike")){
+            System.out.println("bikela"+bike.getType());
             strategy = new EbikeSurcharge(strategy);
             items.add(new ChargeDTO(strategy.getName(), strategy.getDescription(), ((EbikeSurcharge)strategy).getSurcharge() ));
         }
-
+        
+        // Check if billing already exists for this trip
+        Billing billing = billingRepository.findByTrip(trip).orElse(null);
+        
+        if (billing == null) {
+            // Create Billing object
+            billing = Billing.builder()
+                    .trip(trip)
+                    .charges(new ArrayList<>())
+                    .build();
+            
+            // Save Billing to database first to get the ID
+            billing = billingRepository.save(billing);
+            
+            // Create Charge objects from ChargeDTOs and link them to Billing
+            List<Charge> charges = new ArrayList<>();
+            for (ChargeDTO chargeDTO : items) {
+                Charge charge = Charge.builder()
+                        .name(chargeDTO.getName())
+                        .description(chargeDTO.getDescription())
+                        .cost(chargeDTO.getCost())
+                        .billing(billing)
+                        .build();
+                charges.add(charge);
+            }
+            
+            // Save all Charge objects to database
+            charges = chargeRepository.saveAll(charges);
+            
+            // Update billing with charges and save again
+            billing.setCharges(charges);
+            billing = billingRepository.save(billing);
+        }
+        
         context.setStrategy(strategy);
-        return context.calculatePrice(trip);
+        double price = context.calculatePrice(trip);
+
+        BillingDTO billingDTO = BillingDTO.builder()
+            .billingId(billing.getBillingId())
+            .tripId(trip.getTripId())
+            .charges(items)
+            .totalAmount(price)
+            .build();
+
+        return billingDTO;
     }
 
     @Transactional

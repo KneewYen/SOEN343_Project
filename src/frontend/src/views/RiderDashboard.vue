@@ -62,6 +62,14 @@
                 <span class="btn-text">Ride History
                 </span>
               </button>
+              <button class="action-btn secondary" @click="showBillingHistory" :class="{ selected: showBillingHistoryList }">
+                <span class="btn-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+                <span class="btn-text">Billing History</span>
+              </button>
             </div>
           </section>
 
@@ -86,9 +94,17 @@
             />
           </section>
 
+          <!-- Billing History -->
+          <section v-if="showBillingHistoryList" class="billing-history">
+            <BillingHistory 
+              :user="user" 
+            />
+          </section>
+
           <!-- Current Trip -->
           <section class="current-trip">
             <h2 class="section-title">Current Trip</h2>
+            
             
             <!-- Active Reservation -->
             <div v-if="currentReservation" class="trip-card reservation">
@@ -188,6 +204,35 @@
             </div>
           </section>
 
+          <section v-if="tripSummary" class="trip-summary">
+              <TripSummary :trip="selectedTrip" />
+
+              <!-- Billing Information (added here) -->
+              <div v-if="billing" class="billing-info">
+                <h3 class="billing-title">Billing Summary</h3>
+
+                <div class="billing-details">
+                  <p><strong>Billing ID:</strong> {{ billing.billingId }}</p>
+                  <p><strong>Trip ID:</strong> {{ billing.tripId }}</p>
+                  <p><strong>Total Cost:</strong> ${{ billing.totalAmount.toFixed(2) }}</p>
+                </div>
+
+                <div class="billing-charges">
+                  <h4>Charges</h4>
+                  <ul>
+                    <li v-for="charge in billing.charges" :key="charge.name">
+                      <strong>{{ charge.name }}</strong> — {{ charge.description }}
+                      <span class="charge-cost">(${{ charge.cost.toFixed(2) }})</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div v-else class="no-billing">
+                <p>No billing information available for this trip.</p>
+              </div>
+            </section>
+
           <!-- Recent Trips -->
           <section class="recent-trips">
             <h2 class="section-title">Recent Trips</h2>
@@ -241,6 +286,7 @@ import ThemeToggle from '../components/ThemeToggle.vue'
 import StationsMap from '../components/StationsMap.vue'
 import apiClient from '../lib/api'
 import RideHistory from '@/components/RideHistory.vue'
+import BillingHistory from '@/components/BillingHistory.vue'
 import PricingPlan from '@/components/PricingPlan.vue'
 
 
@@ -248,6 +294,7 @@ const router = useRouter()
 const user = ref(null)
 const showStationsList = ref(false)
 const showRideHistoryList = ref(false)
+const showBillingHistoryList = ref(false)
 const stations = ref([])
 const loading = ref(false)
 const currentReservation = ref(null)
@@ -256,6 +303,8 @@ const selectedReturnStation = ref('')
 let reservationInterval = null
 const prevReservationId = ref(null)
 const showPricingList = ref(false)
+const tripSummary = ref(null)
+const billing = ref(null)
 
 onMounted(() => {
   // Load user data from localStorage
@@ -344,6 +393,7 @@ const showStations = () => {
   if (showStationsList.value) {
     showRideHistoryList.value = false
     showPricingList.value = false
+    showBillingHistoryList.value = false
     if (stations.value.length === 0) loadStations()
   }
 }
@@ -354,6 +404,17 @@ const showRideHistory = () => {
   if (showRideHistoryList.value) {
     showStationsList.value = false
     showPricingList.value = false
+    showBillingHistoryList.value = false
+  }
+}
+
+const showBillingHistory = () => {
+  // toggle billing history and ensure other sections are closed
+  showBillingHistoryList.value = !showBillingHistoryList.value
+  if (showBillingHistoryList.value) {
+    showStationsList.value = false
+    showPricingList.value = false
+    showRideHistoryList.value = false
   }
 }
 
@@ -363,6 +424,7 @@ const showPricing = () => {
   if (showPricingList.value) {
     showStationsList.value = false
     showRideHistoryList.value = false
+    showBillingHistoryList.value = false
   }
 }
 // check if user currently has an incomplete trip and populate currentTrip
@@ -407,7 +469,7 @@ const checkActiveReservation = async () => {
           prevReservationId.value = null
           currentReservation.value = null
           console.log('Reservation expired (backend removed it) — notifying user')
-          alert('Your bike reservation has expired.')
+          //alert('Your bike reservation has expired.')
           await loadStations()
         } else {
           currentReservation.value = null
@@ -594,6 +656,12 @@ const checkActiveReservation = async () => {
         const response = await apiClient.endTrip(currentTrip.value.id, selectedReturnStation.value)
         if (response.success) {
           alert('Trip ended successfully!')
+
+          const res = await apiClient.calculatePrice(currentTrip.value.id)
+          console.log("Billing response:", res)
+          tripSummary.value = res.billing
+          billing.value = res.billing
+
           currentTrip.value = null
           selectedReturnStation.value = ''
           await loadStations() // Refresh stations

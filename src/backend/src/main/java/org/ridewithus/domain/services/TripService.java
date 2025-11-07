@@ -190,6 +190,7 @@ public class TripService {
                 .startStationId(trip.getStartStation() != null ? trip.getStartStation().getId() : null)
                 .endStationId(trip.getEndStation() != null ? trip.getEndStation().getId() : null)
                 .reservationId(trip.getReservation() != null ? trip.getReservation().getReservationId() : null)
+                .bikeId(trip.getBike() != null ? trip.getBike().getId() : null)
                 .build();
     }
 

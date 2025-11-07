@@ -300,6 +300,39 @@ class ApiClient {
     })
   }
 
+  async calculatePrice(tripId) {
+    return this.request(`/trip/calculate/${tripId}` ,{
+      method: 'POST'
+    })
+  }
+
+  // Payment API methods
+  async processPayment(paymentData) {
+    return this.request('/payment/process', {
+      method: 'POST',
+      body: JSON.stringify(paymentData)
+    })
+  }
+
+  async getPaymentStatus(tripId) {
+    return this.request(`/payment/status/${tripId}`)
+  }
+
+  // Billing API methods
+  async createBilling(tripId) {
+    return this.request(`/billing/create/${tripId}`, {
+      method: 'POST'
+    })
+  }
+
+  async getBillingByTripId(tripId) {
+    return this.request(`/billing/trip/${tripId}`)
+  }
+
+  async getBillingsByUserId(userId) {
+    return this.request(`/billing/user/${userId}`)
+  }
+
 }
 
 const apiClient = new ApiClient()

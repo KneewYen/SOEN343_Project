@@ -1,12 +1,12 @@
 <template>
-  <div class="ride-history">
+  <div class="billing-history">
     <!-- Theme Toggle -->
     <ThemeToggle />
 
     <!-- Header -->
     <header class="header">
-      <h1>Ride History</h1>
-      <p class="subtitle">Find and review your past rides easily</p>
+      <h1>Billing History</h1>
+      <p class="subtitle">View your billing records and charges</p>
     </header>
 
     <!-- Search and Filters -->
@@ -41,26 +41,37 @@
       </div>
     </section>
 
-    <!-- Results -->
-    <section v-if="filteredRides.length" class="results">
-      <table class="rides-table">
+    <!-- Results - Ledger View -->
+    <section v-if="filteredBills.length" class="results">
+      <div class="ledger-header">
+        <h3>Billing Ledger</h3>
+        <div class="ledger-summary">
+          <span>Total Records: {{ filteredBills.length }}</span>
+          <span>Total Amount: ${{ formatCurrency(totalAmount) }}</span>
+        </div>
+      </div>
+      <table class="bills-table">
         <thead>
           <tr>
-            <th>Trip ID</th>
-            <th>Username</th>
-            <th>Route</th>
-            <th>Bike Type</th>
-            <th>Cost ($)</th>
+            <th>Date & Time</th>
+            <th>Bike ID</th>
+            <th>Origin Station</th>
+            <th>Charges</th>
+            <th>Status</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="ride in filteredRides" :key="ride.tripId"
-          class="ride-row"@click="openRide(ride)"tabindex="0"@keydown.enter="openRide(ride)">
-            <td>{{ ride.tripId }}</td>
-            <td>{{ ride.userName }}</td>
-            <td>{{ ride.startStationId }} → {{ ride.endStationId }}</td>
-            <td>{{ ride.bikeType }}</td>
-            <td>{{ ride.totalAmount }}</td>
+          <tr v-for="bill in filteredBills" :key="bill.tripId"
+          class="bill-row" @click="openBill(bill)" tabindex="0" @keydown.enter="openBill(bill)">
+            <td>{{ formatDateTime(bill.startTime) }}</td>
+            <td>{{ getBikeId(bill) }}</td>
+            <td>{{ bill.startStationId || 'N/A' }}</td>
+            <td class="charge-amount">${{ bill.totalAmount }}</td>
+            <td>
+              <span class="payment-status" :class="getPaymentStatusClass(bill)">
+                {{ getPaymentStatus(bill) }}
+              </span>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -83,23 +94,24 @@
     </section>
 
     <section v-else class="no-results">
-      <p>No rides found. Try clearing filters or adjusting your search.</p>
+      <p>No billing records found. Try clearing filters or adjusting your search.</p>
     </section>
 
-    <!-- Ride details -->
-    <RideHistoryDetails
-      v-if="selectedRide"
-      :ride="selectedRide"
+    <!-- Bill details -->
+    <BillingHistoryDetails
+      v-if="selectedBill"
+      :bill="selectedBill"
       @close="closeModal"
+      @payment-success="markBillPaid"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import apiClient from '../lib/api'
 import ThemeToggle from './ThemeToggle.vue'
-import RideHistoryDetails from './RideHistoryDetails.vue'
+import BillingHistoryDetails from './BillingHistoryDetails.vue'
 
 const props = defineProps({
   user: {
@@ -108,15 +120,15 @@ const props = defineProps({
   }
 })
 
-const rides = computed(() => rideHistory.value)
+const bills = computed(() => billingHistory.value)
 
-const rideHistory = ref([])
+const billingHistory = ref([])
 
 const searchId = ref('')
 const startDate = ref('')
 const endDate = ref('')
 const bikeType = ref('')
-const selectedRide = ref(null)
+const selectedBill = ref(null)
 
 const clearFilters = () => {
   searchId.value = ''
@@ -126,14 +138,14 @@ const clearFilters = () => {
   currentPage.value = 1
 }
 
-// Computed: Filtered rides
-const filteredRides = computed(() => {
+// Computed: Filtered bills
+const filteredBills = computed(() => {
 
   if (errors.value.date || errors.value.tripId) {
     return []
   }
 
-  return rides.value.filter((r) => {
+  return bills.value.filter((r) => {
     const matchesTrip = !searchId.value || String(r.tripId).trim() === String(searchId.value).trim()
     const matchesType = !bikeType.value || r.bikeType === bikeType.value
     const matchesStart = !startDate.value || r.startTime >= startDate.value
@@ -142,21 +154,65 @@ const filteredRides = computed(() => {
   })
 })
 
+const totalAmount = computed(() => {
+  return filteredBills.value.reduce((sum, bill) => {
+    return sum + getTripCost(bill).total
+  }, 0)
+})
+
+const paymentStatuses = ref({}) // Map of tripId -> status
+
+async function loadPaymentStatuses() {
+  // Load payment statuses for all bills from database
+  for (const bill of billingHistory.value) {
+    try {
+      const response = await apiClient.getBillingByTripId(bill.tripId)
+      if (response.success && response.billing) {
+        paymentStatuses.value[bill.tripId] = ''
+      } else {
+        paymentStatuses.value[bill.tripId] = 'Pending'
+      }
+    } catch (err) {
+      paymentStatuses.value[bill.tripId] = 'Pending'
+    }
+  }
+}
+
+function getPaymentStatus(bill) {
+  // Check database status first
+  if (paymentStatuses.value[bill.tripId]) {
+    return paymentStatuses.value[bill.tripId]
+  }
+  // Fall back to localStorage for backward compatibility
+  const paidTrips = JSON.parse(localStorage.getItem('paidTrips') || '[]')
+  if (paidTrips.includes(bill.tripId)) {
+    return 'Paid'
+  }
+  return bill.paymentStatus || 'Pending'
+}
+
+function getPaymentStatusClass(bill) {
+  const status = getPaymentStatus(bill).toLowerCase()
+  if (status === 'paid' || status === 'completed') return 'paid'
+  if (status === 'pending') return 'pending'
+  if (status === 'failed') return 'failed'
+  return 'pending'
+}
+
 const currentPage = ref(0)
 const pageSize = 3
 const hasMore = ref(true)
 
-// Change this to connect with backend when Pricing is implemented
-//Start Here
-const BASE_FEE = 5.0
-const PER_MINUTE = 1.00
+// Pricing calculation
+const BASE_FEE = 1.0
+const PER_MINUTE = 0.15
 const EBIKE_SURCHARGE_PER_MINUTE = 0.10
 
-function getDurationMinutes(ride) {
+function getDurationMinutes(bill) {
   try {
-    if (!ride.startTime || !ride.endTime) return 0
-    const start = new Date(ride.startTime)
-    const end = new Date(ride.endTime)
+    if (!bill.startTime || !bill.endTime) return 0
+    const start = new Date(bill.startTime)
+    const end = new Date(bill.endTime)
     const mins = Math.max(0, Math.round((end - start) / 60000))
     return mins
   } catch (e) {
@@ -164,11 +220,11 @@ function getDurationMinutes(ride) {
   }
 }
 
-function getTripCost(ride) {
-  const duration = getDurationMinutes(ride)
+function getTripCost(bill) {
+  const duration = getDurationMinutes(bill)
   const base = BASE_FEE
   const perMin = +(duration * PER_MINUTE).toFixed(2)
-  const ebike = ride.bikeType === 'e-bike' ? +(duration * EBIKE_SURCHARGE_PER_MINUTE).toFixed(2) : 0
+  const ebike = bill.bikeType === 'e-bike' ? +(duration * EBIKE_SURCHARGE_PER_MINUTE).toFixed(2) : 0
   const total = +(base + perMin + ebike).toFixed(2)
   return { base, perMin, ebike, total, duration }
 }
@@ -177,9 +233,24 @@ function formatCurrency(val) {
   return typeof val === 'number' ? val.toFixed(2) : val
 }
 
-//End here
+function formatDateTime(dateTime) {
+  if (!dateTime) return 'N/A'
+  try {
+    const date = new Date(dateTime)
+    return date.toLocaleString()
+  } catch (e) {
+    return 'N/A'
+  }
+}
 
-const loadRides = async () => {
+function getBikeId(bill) {
+  // Get bikeId from the trip data
+  if (bill.bikeId) return bill.bikeId
+  if (bill.bike && bill.bike.id) return bill.bike.id
+  return 'N/A'
+}
+
+const loadBills = async () => {
   try {
     let response;
     if (props.user.role === 'operator') {
@@ -202,6 +273,7 @@ const loadRides = async () => {
               totalAmount: billingResp.billing.totalAmount,
               startStationName: billingResp.billing.startStationName,
               endStationName: billingResp.billing.endStationName,
+              paymentStatus: 'Pending'
             };
           }
         } catch (e) {
@@ -211,25 +283,42 @@ const loadRides = async () => {
       })
     );
 
-    rideHistory.value.push(...tripsWithBilling)
-    console.log(rideHistory)
+    billingHistory.value.push(...tripsWithBilling)
 
     hasMore.value = !lastPage
 
-    console.log(rideHistory.value)
+    // Load payment statuses for the new bills from database
+    await loadPaymentStatuses()
+
+    console.log(billingHistory.value)
 
   } catch (error) {
-    console.error("Error loading ride history:", error)
+    console.error("Error loading billing history:", error)
   } 
 }
 
 onMounted(() => {
-  loadRides()
+  loadBills()
+  // Listen for storage changes to update payment status
+  window.addEventListener('storage', handleStorageChange)
+})
+
+// Handle storage changes (for cross-tab updates)
+function handleStorageChange(e) {
+  if (e.key === 'paidTrips') {
+    // Force reactivity update by triggering a re-render
+    // The computed properties will automatically pick up the new status
+  }
+}
+
+// Clean up event listener
+onBeforeUnmount(() => {
+  window.removeEventListener('storage', handleStorageChange)
 })
 
 const loadMore = () => {
   currentPage.value++;
-  loadRides();
+  loadBills();
 }
 
 const errors = ref({
@@ -254,19 +343,53 @@ const validateFilters = () => {
 
 watch([searchId, startDate, endDate], validateFilters)
 
-// open/close ride details
-const openRide = (ride) => {
-  selectedRide.value = ride
+// open/close bill details
+// const openBill = (bill) => {
+//   selectedBill.value = bill
+// }
+
+const openBill = async (bill) => {
+  try {
+    const response = await apiClient.getBillingByTripId(bill.tripId)
+    console.log(response)
+    if (response.success && response.billing) {
+      // merge billing DTO into bill
+      selectedBill.value = {
+        ...bill, // use the bill object passed from table
+        charges: response.billing.charges,
+        totalAmount: response.billing.totalAmount,
+        startStationName: response.billing.startStationName,
+        endStationName: response.billing.endStationName
+      }
+    } else {
+      selectedBill.value = bill
+    }
+  } catch (e) {
+    selectedBill.value = bill
+  }
+}
+
+const markBillPaid = (tripId) => {
+  // Update in the main billing history
+  const bill = billingHistory.value.find(b => b.tripId === tripId)
+  if (bill) {
+    bill.paymentStatus = 'Paid'
+  }
+
+  // Update the modal as well
+  if (selectedBill.value && selectedBill.value.tripId === tripId) {
+    selectedBill.value.paymentStatus = 'Paid'
+  }
 }
 
 const closeModal = () => {
-  selectedRide.value = null
+  selectedBill.value = null
 }
 
 </script>
 
 <style scoped>
-.ride-history {
+.billing-history {
   padding: 2rem;
   border-radius: 16px;             
   background: var(--surface);
@@ -365,26 +488,26 @@ const closeModal = () => {
   overflow-x: auto;
 }
 
-.rides-table {
+.bills-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.rides-table th,
-.rides-table td {
+.bills-table th,
+.bills-table td {
   padding: 0.8rem 1rem;
   text-align: left;
   border-bottom: 1px solid var(--border-color);
 }
 
-.rides-table th {
+.bills-table th {
   color: var(--text-secondary);
   font-weight: 600;
   text-transform: uppercase;
   font-size: 0.85rem;
 }
 
-.rides-table tbody .ride-row {
+.bills-table tbody .bill-row {
   cursor: pointer;
   transition: transform 180ms cubic-bezier(.2,.9,.2,1), box-shadow 180ms ease, background-color 160ms;
   transform: translateY(0);
@@ -393,8 +516,8 @@ const closeModal = () => {
   z-index: 0;
 }
 
-.rides-table tbody .ride-row:hover,
-.rides-table tbody .ride-row:focus {
+.bills-table tbody .bill-row:hover,
+.bills-table tbody .bill-row:focus {
   transform: translateY(-6px);
   box-shadow: 0 8px 24px rgba(2,6,23,0.12);
   background: rgba(0,0,0,0.02); 
@@ -436,4 +559,56 @@ const closeModal = () => {
   margin-top: -0.5rem;
 }
 
+.ledger-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: var(--surface-hover);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.ledger-header h3 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.ledger-summary {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.charge-amount {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.payment-status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.payment-status.paid {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.payment-status.pending {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.payment-status.failed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
 </style>
+
