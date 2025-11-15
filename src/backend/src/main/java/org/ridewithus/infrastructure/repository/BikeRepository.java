@@ -11,6 +11,7 @@ public interface BikeRepository extends JpaRepository<Bike, Long> {
 
     List<Bike> findByDock_StationAndStatusIn(Station station, List<String> statuses);
 
+    // Bike findByBikeId(Long bikeId);
 
     
 }

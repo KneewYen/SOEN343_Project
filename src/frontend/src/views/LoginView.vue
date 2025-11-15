@@ -93,6 +93,21 @@
             <span v-if="loading" class="spinner"></span>
             <span v-else>{{ 'Sign In' }}</span>
           </button>
+
+          <div class="divider">
+            <span class="divider-text">or</span>
+          </div>
+
+          <button type="button" @click="handleGuestLogin" class="guest-btn" :disabled="loading">
+            <span class="btn-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <polyline points="10,17 15,12 10,7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <line x1="15" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </span>
+            Continue as Guest
+          </button>
           
 
           <div v-if="error" class="error-message">
@@ -187,6 +202,10 @@ export default {
       showPassword.value = !showPassword.value
     }
 
+    const handleGuestLogin = () => {
+      router.push('/dashboard/guest')
+    }
+
     return {
       form,
       loading,
@@ -194,7 +213,8 @@ export default {
       success,
       showPassword,
       handleLogin,
-      togglePassword
+      togglePassword,
+      handleGuestLogin
     }
   }
 }
@@ -482,6 +502,60 @@ export default {
 .link-btn:hover {
   text-decoration: underline;
   color: var(--primary-hover);
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.divider-text {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.guest-btn {
+  background: var(--surface);
+  color: var(--text);
+  padding: 16px;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.guest-btn:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.guest-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.guest-btn .btn-icon {
+  font-size: 18px;
 }
 
 /* Mobile-first responsive design */

@@ -195,6 +195,14 @@ class ApiClient {
     return this.request(`/trip/user/${userId}`)
   }
 
+  async getAllTrips(page = 0, size = 3) {
+    return this.request(`/trip/AllTrips?page=${page}&size=${size}`)
+  }
+  
+  async getUserTrips(userId, page = 0, size = 3) {
+    return this.request(`/trip/paginate/user/${userId}?page=${page}&size=${size}`)
+  }
+
   async startTrip(reservationId) {
     return this.request(`/trip/${reservationId}`, {
       method: 'POST'
@@ -250,6 +258,15 @@ class ApiClient {
     })
   }
 
+  //Event API methods
+  async getRecentEvents() {
+  return this.request('/events/recent', {
+    method: 'GET'
+  })
+}
+
+
+
   // Health check
   async healthCheck() {
     return this.request('/users/health')
@@ -264,6 +281,58 @@ class ApiClient {
       return { success: false, message: error.message }
     }
   }
+
+  // PRICING
+  async getAllPricingPlans() {
+    try {
+      return await this.request('/pricing/plans', {
+        method: 'GET'
+      })
+    } catch (error) {
+      console.error('Error loading pricing plans:', error)
+      throw new Error('Failed to load pricing plans')
+    }
+  }
+
+  async selectPricingPlan(userId, planId) {
+    return this.request(`/pricing/select/${userId}/${planId}` ,{
+      method: 'POST'
+    })
+  }
+
+  async calculatePrice(tripId) {
+    return this.request(`/trip/calculate/${tripId}` ,{
+      method: 'POST'
+    })
+  }
+
+  // Payment API methods
+  async processPayment(paymentData) {
+    return this.request('/payment/process', {
+      method: 'POST',
+      body: JSON.stringify(paymentData)
+    })
+  }
+
+  async getPaymentStatus(tripId) {
+    return this.request(`/payment/status/${tripId}`)
+  }
+
+  // Billing API methods
+  async createBilling(tripId) {
+    return this.request(`/billing/create/${tripId}`, {
+      method: 'POST'
+    })
+  }
+
+  async getBillingByTripId(tripId) {
+    return this.request(`/billing/trip/${tripId}`)
+  }
+
+  async getBillingsByUserId(userId) {
+    return this.request(`/billing/user/${userId}`)
+  }
+
 }
 
 const apiClient = new ApiClient()

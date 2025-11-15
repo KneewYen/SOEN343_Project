@@ -31,7 +31,7 @@
           <section class="quick-actions">
             <h2 class="section-title">Quick Actions</h2>
             <div class="action-buttons">
-              <button class="action-btn primary">
+              <button class="action-btn secondary" @click="showPricing" :class="{ selected: showPricingList }">
                 <span class="btn-icon">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
@@ -40,9 +40,9 @@
                     <circle cx="16" cy="16" r="2" stroke="currentColor" stroke-width="2"/>
                   </svg>
                 </span>
-                <span class="btn-text">Find Bike</span>
+                <span class="btn-text">Pricing</span>
               </button>
-              <button class="action-btn secondary" @click="showStations">
+              <button class="action-btn secondary" @click="showStations" :class="{ selected: showStationsList }">
                 <span class="btn-icon">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -51,7 +51,7 @@
                 </span>
                 <span class="btn-text">Nearby Stations</span>
               </button>
-              <button class="action-btn secondary">
+              <button class="action-btn secondary" @click="showRideHistory" :class="{ selected: showRideHistoryList }">
                 <span class="btn-icon">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18 20V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -59,14 +59,26 @@
                     <path d="M6 20v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </span>
-                <span class="btn-text">My Trips</span>
+                <span class="btn-text">Ride History
+                </span>
+              </button>
+              <button class="action-btn secondary" @click="showBillingHistory" :class="{ selected: showBillingHistoryList }">
+                <span class="btn-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+                <span class="btn-text">Billing History</span>
               </button>
             </div>
           </section>
 
+          <section v-if="showPricingList" class="pricing-list">
+                    <PricingPlan :user="user" />
+          </section>
+
           <!-- Nearby Stations -->
           <section v-if="showStationsList" class="nearby-stations">
-            <h2 class="section-title">Nearby Stations</h2>
             <StationsMap 
               :stations="stations" 
               :loading="loading" 
@@ -74,9 +86,25 @@
             />
           </section>
 
+
+          <!-- Ride History -->
+          <section v-if="showRideHistoryList" class="ride-history">
+            <RideHistory 
+              :user="user" 
+            />
+          </section>
+
+          <!-- Billing History -->
+          <section v-if="showBillingHistoryList" class="billing-history">
+            <BillingHistory 
+              :user="user" 
+            />
+          </section>
+
           <!-- Current Trip -->
           <section class="current-trip">
             <h2 class="section-title">Current Trip</h2>
+            
             
             <!-- Active Reservation -->
             <div v-if="currentReservation" class="trip-card reservation">
@@ -176,6 +204,35 @@
             </div>
           </section>
 
+          <section v-if="tripSummary" class="trip-summary">
+              <TripSummary :trip="selectedTrip" />
+
+              <!-- Billing Information (added here) -->
+              <div v-if="billing" class="billing-info">
+                <h3 class="billing-title">Billing Summary</h3>
+
+                <div class="billing-details">
+                  <p><strong>Billing ID:</strong> {{ billing.billingId }}</p>
+                  <p><strong>Trip ID:</strong> {{ billing.tripId }}</p>
+                  <p><strong>Total Cost:</strong> ${{ billing.totalAmount.toFixed(2) }}</p>
+                </div>
+
+                <div class="billing-charges">
+                  <h4>Charges</h4>
+                  <ul>
+                    <li v-for="charge in billing.charges" :key="charge.name">
+                      <strong>{{ charge.name }}</strong> — {{ charge.description }}
+                      <span class="charge-cost">(${{ charge.cost.toFixed(2) }})</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div v-else class="no-billing">
+                <p>No billing information available for this trip.</p>
+              </div>
+            </section>
+
           <!-- Recent Trips -->
           <section class="recent-trips">
             <h2 class="section-title">Recent Trips</h2>
@@ -223,20 +280,31 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import ThemeToggle from '../components/ThemeToggle.vue'
 import StationsMap from '../components/StationsMap.vue'
 import apiClient from '../lib/api'
+import RideHistory from '@/components/RideHistory.vue'
+import BillingHistory from '@/components/BillingHistory.vue'
+import PricingPlan from '@/components/PricingPlan.vue'
+
 
 const router = useRouter()
 const user = ref(null)
 const showStationsList = ref(false)
+const showRideHistoryList = ref(false)
+const showBillingHistoryList = ref(false)
 const stations = ref([])
 const loading = ref(false)
 const currentReservation = ref(null)
 const currentTrip = ref(null)
 const selectedReturnStation = ref('')
+let reservationInterval = null
+const prevReservationId = ref(null)
+const showPricingList = ref(false)
+const tripSummary = ref(null)
+const billing = ref(null)
 
 onMounted(() => {
   // Load user data from localStorage
@@ -250,6 +318,16 @@ onMounted(() => {
   // Load stations and check for active trip only
   loadStations()
   checkActiveTrip()
+  // start polling reservations so UI stays in sync with backend expiry
+  checkActiveReservation()
+  reservationInterval = setInterval(checkActiveReservation, 15000) // every 15s
+})
+
+onBeforeUnmount(() => {
+  if (reservationInterval) {
+    clearInterval(reservationInterval)
+    reservationInterval = null
+  }
 })
 
 const handleLogout = () => {
@@ -261,6 +339,37 @@ const handleLogout = () => {
   router.replace('/login')
 }
 
+// Load station counts from API
+const stationCounts = ref({})
+
+const loadStationCounts = async () => {
+  for (const station of stations.value) {
+    if (!stationCounts.value[station.id]) {
+      try {
+        const [freeDocksResponse, availableBikesResponse] = await Promise.all([
+          apiClient.getNumberOfFreeDocks(station.id),
+          apiClient.getNumberOfAvailableBikes(station.id)
+        ])
+        // Handle both number response and object response
+        const freeDocks = typeof freeDocksResponse === 'number' ? freeDocksResponse : (freeDocksResponse?.count || freeDocksResponse || 0)
+        const availableBikes = typeof availableBikesResponse === 'number' ? availableBikesResponse : (availableBikesResponse?.count || availableBikesResponse || 0)
+        
+        stationCounts.value[station.id] = {
+          freeDocks: freeDocks,
+          availableBikes: availableBikes
+        }
+      } catch (error) {
+        console.error(`Error loading counts for station ${station.id}:`, error)
+        // Fallback to local calculation if API fails
+        stationCounts.value[station.id] = {
+          freeDocks: station.dockIds ? station.dockIds.filter(dock => dock.status === 'EMPTY').length : 0,
+          availableBikes: station.dockIds ? station.dockIds.filter(dock => dock.bikeId && dock.status === 'OCCUPIED').length : 0
+        }
+      }
+    }
+  }
+}
+
 const loadStations = async () => {
   try {
     console.log('loadStations called')
@@ -269,6 +378,8 @@ const loadStations = async () => {
     console.log('Stations data received:', stationsData)
     stations.value = stationsData
     console.log('Stations set to:', stations.value)
+    // Load station counts from API
+    await loadStationCounts()
   } catch (error) {
     console.error('Error loading stations:', error)
   } finally {
@@ -277,73 +388,163 @@ const loadStations = async () => {
 }
 
 const showStations = () => {
-  // Toggle stations visibility and load data if needed
+  // toggle stations and ensure ride history is closed
   showStationsList.value = !showStationsList.value
-  if (showStationsList.value && stations.value.length === 0) {
-    loadStations()
+  if (showStationsList.value) {
+    showRideHistoryList.value = false
+    showPricingList.value = false
+    showBillingHistoryList.value = false
+    if (stations.value.length === 0) loadStations()
   }
 }
 
-    // Manual reservation check - only called when needed
-    const checkActiveReservation = async () => {
-      try {
-        if (!user.value?.id) return
-        
-        // First check if there's an active trip - if so, don't show reservation
-        const tripResponse = await apiClient.getUserTrips(user.value.id)
-        if (tripResponse.success && tripResponse.trips && tripResponse.trips.length > 0) {
-          const incompleteTrip = tripResponse.trips.find(trip => !trip.tripComplete)
-          if (incompleteTrip) {
-            currentReservation.value = null
-            return
-          }
+const showRideHistory = () => {
+  // toggle ride history and ensure stations list is closed
+  showRideHistoryList.value = !showRideHistoryList.value
+  if (showRideHistoryList.value) {
+    showStationsList.value = false
+    showPricingList.value = false
+    showBillingHistoryList.value = false
+  }
+}
+
+const showBillingHistory = () => {
+  // toggle billing history and ensure other sections are closed
+  showBillingHistoryList.value = !showBillingHistoryList.value
+  if (showBillingHistoryList.value) {
+    showStationsList.value = false
+    showPricingList.value = false
+    showRideHistoryList.value = false
+  }
+}
+
+const showPricing = () => {
+  // toggle pricing and ensure other sections are closed
+  showPricingList.value = !showPricingList.value
+  if (showPricingList.value) {
+    showStationsList.value = false
+    showRideHistoryList.value = false
+    showBillingHistoryList.value = false
+  }
+}
+// check if user currently has an incomplete trip and populate currentTrip
+const checkActiveTrip = async () => {
+  try {
+    if (!user.value?.id) return
+    if (!apiClient.getUserTrips) {
+      currentTrip.value = null
+      return
+    }
+    const resp = await apiClient.getUserTrips(user.value.id)
+    if (resp && resp.success && Array.isArray(resp.trips)) {
+      const incomplete = resp.trips.find(t => !t.tripComplete)
+      if (incomplete) {
+        currentTrip.value = {
+          id: incomplete.tripId || incomplete.id,
+          bikeId: incomplete.bikeId || incomplete.bike?.id,
+          startTime: incomplete.startTime || incomplete.startDateTime
         }
-        
-        const response = await apiClient.getUserReservations(user.value.id)
-        if (response.success && response.reservations && response.reservations.length > 0) {
-          const reservation = response.reservations[0]
-          currentReservation.value = {
-            id: reservation.reservationId || reservation.id,
-            bikeId: reservation.bike?.id || reservation.bikeId,
-            stationName: reservation.station?.name || 'Station',
-            expiryTime: reservation.expiryDateTime || reservation.expiryTime
-          }
+        return
+      }
+    }
+    currentTrip.value = null
+  } catch (err) {
+    console.error('Error checking active trip:', err)
+    currentTrip.value = null
+  }
+}
+
+// Poll reservations and clear expired ones
+const checkActiveReservation = async () => {  
+    
+    try {
+      if (!user.value?.id) return
+
+      const response = await apiClient.getUserReservations(user.value.id)
+      const hasReservations = response && response.success && response.reservations && response.reservations.length > 0
+
+      // Backend removed reservation (expired) — notify user
+      if (!hasReservations) {
+        if (prevReservationId.value) {
+          prevReservationId.value = null
+          currentReservation.value = null
+          console.log('Reservation expired (backend removed it) — notifying user')
+          //alert('Your bike reservation has expired.')
+          await loadStations()
         } else {
           currentReservation.value = null
         }
-      } catch (error) {
-        console.error('Error checking reservations:', error)
-        currentReservation.value = null
+        return
       }
-    }
+      
+      const reservation = response.reservations[0]
+      const reservationId = reservation.reservationId || reservation.id
+      const expiryRaw = reservation.expiryDateTime || reservation.expiryTime
+      const expiry = expiryRaw ? new Date(expiryRaw) : null
+      const now = new Date()
 
-    const checkActiveTrip = async () => {
-      try {
-        if (!user.value?.id) return
-        const response = await apiClient.getUserTrips(user.value.id)
-        if (response.success && response.trips && response.trips.length > 0) {
-          // Find incomplete trip
-          const incompleteTrip = response.trips.find(trip => !trip.tripComplete)
-          if (incompleteTrip) {
-            currentTrip.value = {
-              id: incompleteTrip.tripId || incompleteTrip.id,
-              bikeId: incompleteTrip.bikeId || 'Bike',
-              startTime: incompleteTrip.startTime,
-              startStationId: incompleteTrip.startStationId
-            }
-            // Clear any reservation since we have an active trip
-            currentReservation.value = null
-          } else {
-            currentTrip.value = null
-          }
-        } else {
-          currentTrip.value = null
+      // remember this reservation so we can detect deletion next poll
+      prevReservationId.value = reservationId
+
+      // If expiry present and passed — expired locally
+      if (expiry && expiry <= now) {
+        prevReservationId.value = null
+        currentReservation.value = null
+        console.log('Reservation expired locally — notifying user')
+        alert('Your bike reservation has expired.')
+        loadStations().catch(e => console.warn('Failed to reload stations after expiry:', e))
+        return
+      }
+      
+      let stationName = null
+      if (reservation.station) {
+        stationName = reservation.station.name || reservation.stationName || null
+      } else {
+        const full = await fetchReservationDetails(reservationId, user.value?.id)
+        stationName = resolveStationNameFromFullReservation(full) || resolveStationNameFromReservation(reservation) || currentReservation.value?.stationName || 'Station'
+      }
+
+      currentReservation.value = {
+        id: reservationId,
+        bikeId: reservation.bike?.id || reservation.bikeId,
+        stationName,
+        expiryTime: expiryRaw
+      }
+    } catch (error) {
+      console.error('Error checking reservations:', error)
+      currentReservation.value = null
+    }
+  }
+
+  const fetchReservationDetails = async (reservationId, userId) => {
+    try {
+      if (reservationId && apiClient.getReservation) {
+        const full = await apiClient.getReservation(reservationId)
+        if (full) return full
+      }
+    } catch (e) {
+      console.warn('getReservation failed:', e)
+    }
+    return null
+  }
+
+  const resolveStationNameFromFullReservation = (reservation) => {
+    if (!reservation) return null
+    if (reservation.station && typeof reservation.station === 'object') {
+      return reservation.station.name || reservation.station.stationName || null
+    }
+    if (reservation.stationName) return reservation.stationName
+    const dockId = reservation.bike?.dockId ?? reservation.dockId ?? reservation.bike?.dock
+    if (dockId != null) {
+      // map dockId -> station using loaded stations
+      for (const s of stations.value || []) {
+        if ((s.dockIds || []).some(d => String(d.id) === String(dockId) || String(d.dockId) === String(dockId))) {
+          return s.name
         }
-      } catch (error) {
-        console.error('Error checking trips:', error)
-        currentTrip.value = null
       }
     }
+    return null
+}
 
     const reserveBike = async (bikeId) => {
       try {
@@ -367,10 +568,10 @@ const showStations = () => {
           alert('Bike reserved successfully!')
           // Set the current reservation state
           currentReservation.value = { 
-            id: response.reservationId || response.id, 
-            bikeId: bikeId,
-            stationName: 'Station', // We'll get this from the station data
-            expiryTime: new Date(Date.now() + 15 * 60000) // 15 minutes from now
+            id: response.reservationId, 
+            bikeId: response.bike.id,
+            stationName: response.station, 
+            expiryTime: response.expiryDateTime 
           }
           await loadStations() // Refresh stations
         } else {
@@ -455,6 +656,12 @@ const showStations = () => {
         const response = await apiClient.endTrip(currentTrip.value.id, selectedReturnStation.value)
         if (response.success) {
           alert('Trip ended successfully!')
+
+          const res = await apiClient.calculatePrice(currentTrip.value.id)
+          console.log("Billing response:", res)
+          tripSummary.value = res.billing
+          billing.value = res.billing
+
           currentTrip.value = null
           selectedReturnStation.value = ''
           await loadStations() // Refresh stations
@@ -503,11 +710,21 @@ const showStations = () => {
     }
 
     const getAvailableBikesCount = (station) => {
+      // Use API count if available, otherwise fallback to local calculation
+      if (stationCounts.value[station.id]) {
+        return stationCounts.value[station.id].availableBikes
+      }
+      // Fallback to local calculation
       if (!station.dockIds) return 0
       return station.dockIds.filter(dock => dock.bikeId && dock.status === 'OCCUPIED').length
     }
 
     const getFreeDocksCount = (station) => {
+      // Use API count if available, otherwise fallback to local calculation
+      if (stationCounts.value[station.id]) {
+        return stationCounts.value[station.id].freeDocks
+      }
+      // Fallback to local calculation
       if (!station.dockIds) return 0
       return station.dockIds.filter(dock => dock.status === 'EMPTY').length
     }
@@ -667,11 +884,33 @@ const showStations = () => {
   background: var(--surface-hover);
   color: var(--text);
   border: 2px solid var(--border);
+  transition: all 0.25s ease;
 }
+
+.action-btn.secondary.selected {
+  background: var(--gradient);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+}
+
+.action-btn.secondary.selected .btn-icon,
+.action-btn.secondary.selected svg {
+  color: white;
+  stroke: currentColor;
+  fill: none;
+}
+
 
 .action-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.action-btn.secondary:not(.selected):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
 }
 
 .btn-icon {
@@ -977,10 +1216,7 @@ const showStations = () => {
   }
 }
 
-/* Nearby Stations */
-.nearby-stations {
-  margin-top: 2rem;
-}
+
 
 .stations-grid {
   display: grid;
@@ -1038,6 +1274,15 @@ const showStations = () => {
   text-align: center;
   padding: 2rem;
   color: #64748b;
+}
+
+/* Pricing List */
+.pricing-list {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 24px;
+  border: 2px solid var(--border);
+  box-shadow: var(--card-shadow);
 }
 
 @media (max-width: 768px) {

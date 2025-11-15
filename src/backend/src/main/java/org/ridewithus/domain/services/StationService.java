@@ -83,7 +83,11 @@ public class StationService {
                         .id(dock.getId())
                         .status(dock.getStatus())
                         .stationId(dock.getStation().getId())
-                        .bikeId(dock.getBike() != null ? dock.getBike().getId() : null)
+                        .bike(dock.getBike() != null ? BikeDTO.builder()
+                                .id(dock.getBike().getId() != null ? dock.getBike().getId() : null)
+                                .type(dock.getBike().getType() != null ? dock.getBike().getType() : null)
+                                .status(dock.getBike().getStatus() != null ? dock.getBike().getStatus() : null)
+                                .build() : null)
                         .bikeStatus(dock.getBike() != null ? dock.getBike().getStatus() : null)
                         .build();
     }

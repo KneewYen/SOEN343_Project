@@ -90,7 +90,7 @@
           <section class="quick-actions">
             <h2 class="section-title">Quick Actions</h2>
             <div class="action-buttons">
-              <button @click="showRebalanceModal = true" class="action-btn primary">
+              <button @click="showRebalanceModal = true" class="action-btn secondary">
                 <span class="btn-icon">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18 20V10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -128,6 +128,14 @@
                 </span>
                 <span class="btn-text">View Analytics</span>
               </button>
+              <button @click="showDockManagement = true" class="action-btn secondary">
+                <span class="btn-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+                <span class="btn-text">Dock Maintenance</span>
+              </button>
             </div>
           </section>
 
@@ -135,47 +143,16 @@
           <section class="recent-activity">
             <h2 class="section-title">Recent Activity</h2>
             <div class="activity-list">
-              <div class="activity-item">
-                <div class="activity-icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                    <path d="M8 12h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                    <circle cx="8" cy="16" r="2" stroke="currentColor" stroke-width="2"/>
-                    <circle cx="16" cy="16" r="2" stroke="currentColor" stroke-width="2"/>
-                  </svg>
-                </div>
+              <div class="activity-item" v-for="event in events" :key="event.id">
+                <!-- <div class="activity-icon">Add icons here</div> -->
                 <div class="activity-content">
-                  <div class="activity-title">Bike #123 returned to Station A</div>
-                  <div class="activity-time">2 minutes ago</div>
-                </div>
-              </div>
-              <div class="activity-item">
-                <div class="activity-icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <line x1="12" y1="9" x2="12" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-                <div class="activity-content">
-                  <div class="activity-title">Bike #456 requires maintenance</div>
-                  <div class="activity-time">15 minutes ago</div>
-                </div>
-              </div>
-              <div class="activity-item">
-                <div class="activity-icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
-                  </svg>
-                </div>
-                <div class="activity-content">
-                  <div class="activity-title">New user registration</div>
-                  <div class="activity-time">1 hour ago</div>
+                  <div class="activity-title">{{ event.description }}</div>
+                  <div class="activity-time">{{ formatTimestamp(event.timestamp) }}</div>
                 </div>
               </div>
             </div>
           </section>
+
 
           <!-- Station Status -->
           <section class="station-status">
@@ -189,7 +166,7 @@
                   </div>
                   <div class="station-summary">
                     <div class="bike-count">
-                      <span class="count-number">{{ station.count }}</span>
+                      <span class="count-number">{{ getAvailableBikesCount(station) }}</span>
                       <span class="count-total">/{{ station.capacity }}</span>
                       <span class="count-label">bikes</span>
                     </div>
@@ -205,10 +182,10 @@
                       <span class="dock-id">Dock {{ dock.id }}</span>
                       <span class="dock-status">{{ dock.status }}</span>
                     </div>
-                    <div v-if="dock.bikeId" class="bike-info">
-                      <span class="bike-id">Bike #{{ dock.bikeId }}</span>
-                      <span class="bike-status" :class="getBikeStatusClass(dock.bikeStatus)">
-                        {{ dock.bikeStatus || 'N/A' }}
+                    <div v-if="dock.bike" class="bike-info">
+                      <span class="bike-id">Bike #{{ dock.bike.id }}</span>
+                      <span class="bike-status" :class="getBikeStatusClass(dock.bike.status)">
+                        {{ dock.bike.status || 'N/A' }}
                       </span>
                     </div>
                     <div v-else class="empty-dock">
@@ -316,13 +293,45 @@
               <div class="bikes-list">
                 <div v-for="dock in station.dockIds" :key="dock.id" class="bike-item">
                   <div class="bike-info">
-                    <span v-if="dock.bikeId">Bike #{{ dock.bikeId }}</span>
+                    <span v-if="dock.bike">Bike #{{ dock.bike.id }}</span>
                     <span v-else>Empty Dock</span>
-                    <span class="dock-status" :class="(dock.bikeStatus || dock.status).toLowerCase().replace('_', '-')">{{ dock.bikeStatus || dock.status }}</span>
+                    <span class="dock-status" :class="(dock.bike?.status || dock.status).toLowerCase().replace('_', '-')">{{ dock.bike?.status || dock.status }}</span>
                   </div>
-                  <div v-if="dock.bikeId" class="bike-actions">
+                  <div v-if="dock.bike" class="bike-actions">
                     <button 
-                      @click="toggleBikeStatus(dock.bikeId)" 
+                      @click="toggleBikeStatus(dock.bike.id)" 
+                      class="action-btn small"
+                    >
+                      Toggle Status
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Dock Management Modal -->
+    <div v-if="showDockManagement" class="modal-overlay" @click="showDockManagement = false">
+      <div class="modal-content large" @click.stop>
+        <div class="modal-header">
+          <h3>Dock Management</h3>
+          <button @click="showDockManagement = false" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="bikes-management">
+            <div v-for="station in stations" :key="station.id" class="station-bikes">
+              <h4>{{ station.name }}</h4>
+              <div class="bikes-list">
+                <div v-for="dock in station.dockIds" :key="dock.id" class="bike-item">
+                  <div class="bike-info">
+                    <span>Dock #{{ dock.id }}</span>
+                    <span class="dock-status" :class="(dock.status).toLowerCase().replace('_', '-')">{{dock.status }}</span>
+                  </div>
+                  <div v-if="dock.id" class="bike-actions">
+                    <button 
+                      @click="toggleDockStatus(dock.id)" 
                       class="action-btn small"
                     >
                       Toggle Status
@@ -357,6 +366,8 @@ export default {
     const showRebalanceModal = ref(false)
     const showStationManagement = ref(false)
     const showBikeManagement = ref(false)
+    const showDockManagement = ref(false)
+    const events = ref([])
     const rebalanceForm = ref({
       sourceStationId: '',
       destinationStationId: '',
@@ -368,7 +379,9 @@ export default {
       availableBikes: 0,
       activeStations: 0,
       activeUsers: 0,
-      maintenance: 0
+      stationsInMaintenance: 0,
+      bikesInMaintenance: 0,
+      docksOutOfService: 0
     })
 
     onMounted(() => {
@@ -379,6 +392,7 @@ export default {
       }
       // Load stations data
       loadStations()
+      loadEvents()
     })
 
     const handleLogout = () => {
@@ -387,11 +401,44 @@ export default {
       router.push('/login')
     }
 
+    // Load station counts from API
+    const stationCounts = ref({})
+
+    const loadStationCounts = async () => {
+      for (const station of stations.value) {
+        if (!stationCounts.value[station.id]) {
+          try {
+            const [freeDocksResponse, availableBikesResponse] = await Promise.all([
+              apiClient.getNumberOfFreeDocks(station.id),
+              apiClient.getNumberOfAvailableBikes(station.id)
+            ])
+            // Handle both number response and object response
+            const freeDocks = typeof freeDocksResponse === 'number' ? freeDocksResponse : (freeDocksResponse?.count || freeDocksResponse || 0)
+            const availableBikes = typeof availableBikesResponse === 'number' ? availableBikesResponse : (availableBikesResponse?.count || availableBikesResponse || 0)
+            
+            stationCounts.value[station.id] = {
+              freeDocks: freeDocks,
+              availableBikes: availableBikes
+            }
+          } catch (error) {
+            console.error(`Error loading counts for station ${station.id}:`, error)
+            // Fallback to local calculation if API fails
+            stationCounts.value[station.id] = {
+              freeDocks: station.dockIds ? station.dockIds.filter(dock => dock.status === 'EMPTY').length : 0,
+              availableBikes: station.dockIds ? station.dockIds.filter(dock => dock.bikeId && dock.status === 'OCCUPIED').length : 0
+            }
+          }
+        }
+      }
+    }
+
     const loadStations = async () => {
       try {
         loading.value = true
         const stationsData = await apiClient.getAllStations()
         stations.value = stationsData
+        // Load station counts from API
+        await loadStationCounts()
         calculateSystemStats()
       } catch (error) {
         console.error('Error loading stations:', error)
@@ -400,19 +447,39 @@ export default {
       }
     }
 
+    const normalize = (s) => String(s || '').toLowerCase().replace(/[_\s]+/g, '-')
+
     const calculateSystemStats = () => {
       let availableBikes = 0
       let activeStations = 0
       let maintenance = 0
 
-      stations.value.forEach(station => {
-        if (station.status === 'ACTIVE') {
+      for (const station of stations.value || []) {
+        const stationStatus = normalize(station.status)
+        if (stationStatus === 'active') {
           activeStations++
-          availableBikes += station.count
         } else {
           maintenance++
         }
-      })
+
+        const docks = station.dockIds || []
+        for (const d of docks) {
+          const dockStatus = normalize(d.status)
+          if (dockStatus === 'out-of-service' || dockStatus === 'maintenance') {
+            maintenance++
+          }
+
+          if (d.bike && (d.bike.id || d.bike.id === 0)) {
+            // count available bikes by dock.status === 'OCCUPIED'
+            if (normalize(d.status) === 'occupied') availableBikes++
+
+            const bikeStatus = normalize(d.bike.status)
+            if (bikeStatus === 'maintenance' || bikeStatus.includes('maint')) {
+              maintenance++
+            }
+          }
+        }
+    }
 
       systemStats.value = {
         availableBikes,
@@ -421,13 +488,53 @@ export default {
         maintenance
       }
     }
+    
+    const loadEvents = async () => {
+      try {
+        const resp = await apiClient.getRecentEvents()
+
+        let items = []
+        if (!resp) {
+          items = []
+        } else if (Array.isArray(resp)) {
+          items = resp
+        } else if (Array.isArray(resp.events)) {
+          items = resp.events
+        } else if (Array.isArray(resp.data)) {
+          items = resp.data
+        } else if (resp.event) {
+          items = [resp.event]
+        } else {
+          items = [resp]
+        }
+
+        events.value = items.map(e => ({
+          id: e.id ?? e.eventId ?? e._id ?? Math.random().toString(36).slice(2),
+          description: e.description ?? e.message ?? e.msg ?? JSON.stringify(e),
+          timestamp: e.timestamp ?? e.time ?? e.createdAt ?? e.date ?? null
+        }))
+      } catch(e) {
+        console.error('Failed loading events:', e)
+        events.value = []
+      }
+    }
 
     const getAvailableBikesCount = (station) => {
+      // Use API count if available, otherwise fallback to local calculation
+      if (stationCounts.value[station.id]) {
+        return stationCounts.value[station.id].availableBikes
+      }
+      // Fallback to local calculation
       if (!station.dockIds) return 0
-      return station.dockIds.filter(dock => dock.bikeId && dock.status === 'OCCUPIED').length
+      return station.dockIds.filter(dock => dock.bike?.id && dock.status === 'OCCUPIED').length
     }
 
     const getFreeDocksCount = (station) => {
+      // Use API count if available, otherwise fallback to local calculation
+      if (stationCounts.value[station.id]) {
+        return stationCounts.value[station.id].freeDocks
+      }
+      // Fallback to local calculation
       if (!station.dockIds) return 0
       return station.dockIds.filter(dock => dock.status === 'EMPTY').length
     }
@@ -450,6 +557,7 @@ export default {
         }
         // Reload stations to reflect changes
         await loadStations()
+        await loadEvents()
       } catch (error) {
         alert('Failed to rebalance bikes: ' + error.message)
       } finally {
@@ -462,6 +570,7 @@ export default {
         const result = await apiClient.toggleStation(stationId, user.value.id)
         alert(result.message || result)
         await loadStations()
+        await loadEvents()
       } catch (error) {
         alert('Failed to toggle station status: ' + error.message)
       }
@@ -474,6 +583,7 @@ export default {
           alert(result.message || 'Bike status updated successfully')
           // Reload stations to get the latest data from backend
           await loadStations()
+          await loadEvents()
         } else {
           alert(result.message || 'Failed to toggle bike status')
         }
@@ -502,6 +612,32 @@ export default {
       return 'available'
     }
 
+    const toggleDockStatus = async (dockIds) => {
+      try {
+        const result = await apiClient.toggleDock(dockIds, user.value.id)
+        if (result.success) {
+          alert(result.message || 'Dock status updated successfully')
+          // Reload stations to get the latest data from backend
+          await loadStations()
+          await loadEvents()
+        } else {
+          alert(result.message || 'Failed to toggle dock status')
+        }
+      } catch (error) {
+        alert('Failed to toggle dock status: ' + error.message)
+      }
+    }
+
+    const formatTimestamp = (ts) => {
+      if (!ts) return ''
+      const d = new Date(ts)
+      if (Number.isNaN(d.getTime())) return String(ts)
+      return new Intl.DateTimeFormat(undefined, {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      }).format(d)
+    }
+
     return {
       user,
       handleLogout,
@@ -510,13 +646,17 @@ export default {
       showRebalanceModal,
       showStationManagement,
       showBikeManagement,
+      showDockManagement,
       rebalanceForm,
       systemStats,
+      events,
+      formatTimestamp,
       getAvailableBikesCount,
       getFreeDocksCount,
       executeRebalance,
       toggleStationStatus,
       toggleBikeStatus,
+      toggleDockStatus,
       getStationStatusClass,
       getDockStatusClass,
       getBikeStatusClass

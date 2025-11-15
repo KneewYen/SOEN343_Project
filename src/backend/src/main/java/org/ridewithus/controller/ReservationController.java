@@ -1,7 +1,11 @@
 package org.ridewithus.controller;
 
+import org.apache.coyote.Response;
+import org.ridewithus.domain.dto.BikeDTO;
 import org.ridewithus.domain.dto.ReservationDTO;
+import org.ridewithus.domain.entity.Reservation;
 import org.ridewithus.domain.services.ReservationService;
+import org.ridewithus.infrastructure.repository.ReservationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +20,8 @@ public class ReservationController {
 
     @Autowired
     private ReservationService reservationService;
+    @Autowired
+    private ReservationRepository reservationRepository;
 
     @GetMapping("/{reservationId}")
     public ReservationDTO getReservation(@PathVariable("reservationId") Long reservationId) {
@@ -28,19 +34,27 @@ public class ReservationController {
     }
 
     @DeleteMapping("/delete/{reservationId}")
-    public void deleteReservation(@PathVariable("reservationId") Long reservationId) throws Exception{
+    public ResponseEntity<Map<String, Object>> deleteReservation(@PathVariable("reservationId") Long reservationId) throws Exception{
         reservationService.deleteReservation(reservationId);
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("success", true);
+        resp.put("message", "Reservation cancelled");
+
+        return ResponseEntity.ok(resp);
     }
 
     @PostMapping("/createReservation/{bikeId}/{userId}")
-    public ResponseEntity<Map<String, Object>> createReservation(@PathVariable("bikeId") Long bikeId, @PathVariable("userId")  Long userId) {
+    public ResponseEntity<?> createReservation(@PathVariable("bikeId") Long bikeId, @PathVariable("userId")  Long userId) {
         try {
             Long reservationId = reservationService.createReservation(bikeId, userId);
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("reservationId", reservationId);
-            response.put("message", "Reservation created successfully");
-            return ResponseEntity.ok(response);
+
+            Reservation reservation = reservationRepository.findById(reservationId).orElseThrow(() -> new RuntimeException("Reservation not found"));
+
+            ReservationDTO reservationDTO = ReservationDTO.fromEntity(reservation);
+
+            return ResponseEntity.ok(reservationDTO);
+
+
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);

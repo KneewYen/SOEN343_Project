@@ -24,7 +24,7 @@ public class Trip {
 
     @OneToOne
     @JoinColumn(name = "reservation_id")
-    @OnDelete(action = OnDeleteAction.CASCADE)
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private Reservation reservation;
 
     @ManyToOne
@@ -45,8 +45,13 @@ public class Trip {
 
     @Column(name = "end_time")
     private LocalDateTime endTime;
-    
-    @Column(name = "user_id")
-    private Long userId;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @ManyToOne
+    @JoinColumn(name = "bike_id")
+    private Bike bike;
 
 }
