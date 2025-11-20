@@ -34,6 +34,11 @@ public class ReservationExpiryService {
         for (Reservation reservation : expired) {
             Bike bike = reservation.getBike();
 
+            // If bike is currently on trip, skip deleting reservation
+            if (bike.getStatus() == BikeStatus.ON_TRIP) {
+                continue;
+            }
+
             String oldStatus = bike.getStatus().toString();
 
             bike.setStatus(BikeStatus.AVAILABLE);

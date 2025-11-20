@@ -136,6 +136,15 @@
                 </span>
                 <span class="btn-text">Dock Maintenance</span>
               </button>
+              <button @click="resetSystem" class="action-btn secondary">
+                <span class="btn-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                     <path d="M21 12a9 9 0 10-9 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++                    <path d="M21 3v6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+                <span class="btn-text">Reset System</span>
+              </button>
             </div>
           </section>
 
@@ -638,6 +647,26 @@ export default {
       }).format(d)
     }
 
+    const resetSystem = async () => {
+      if (!confirm('Are you sure you want to reset the entire system?')) {
+        return
+      }
+      try {
+        const result = await apiClient.resetSystem()
+        if(result.success){
+          alert(result.message || 'System has been reset successfully')
+          // Reload stations and events to reflect changes
+          await loadStations()
+          await loadEvents()
+        } else {
+          alert(result.message || 'Failed to reset system')
+        } 
+      } catch (error) {
+        alert('Failed to reset system: ' + error.message)
+      }
+  
+    }
+
     return {
       user,
       handleLogout,
@@ -659,7 +688,8 @@ export default {
       toggleDockStatus,
       getStationStatusClass,
       getDockStatusClass,
-      getBikeStatusClass
+      getBikeStatusClass,
+      resetSystem
     }
   }
 }
