@@ -7,6 +7,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -28,6 +29,43 @@ public class User {
     private String email;  
     private String role = "rider"; //user are automatically user unless specified otherwise
     private String password ;
+
+
+    @Column(name = "flex_dollar_balance", nullable = false)
+    private int flex_dollar_balance = 0 ;
+
+    // convenience helpers for working with flex dollars
+    public int getFlexDollars() {
+        return flex_dollar_balance;
+    }
+
+    public void setFlexDollars(int flexDollars) {
+        this.flex_dollar_balance = flexDollars;
+    }
+
+    /**
+     * Add flex dollars to the user's balance.
+     * @param amount the amount to add
+     * @return the amount actually added
+     */
+    public int addFlexDollars(int amount) {
+        if (amount <= 0) return 0;
+        this.flex_dollar_balance += amount;
+        return amount;
+    }
+
+    /**
+     * Apply (deduct) flex dollars from the user's balance.
+     * Will not go below zero.
+     * @param amount the amount to deduct
+     * @return the amount actually deducted
+     */
+    public int applyFlexDollars(int amount) {
+        if (amount <= 0) return 0;
+        int actualDeduction = Math.min(amount, this.flex_dollar_balance);
+        this.flex_dollar_balance -= actualDeduction;
+        return actualDeduction;
+    }
 
     //ADD PAYMENT INFO OR CREATE A NEW TABLE??
     @ManyToOne
