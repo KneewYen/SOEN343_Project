@@ -15,6 +15,7 @@ public class BillingDTO {
     private Long billingId;
     private Long tripId;
     private List<ChargeDTO> charges;
+    private int flexDollars;
     private Double totalAmount;
 }
 

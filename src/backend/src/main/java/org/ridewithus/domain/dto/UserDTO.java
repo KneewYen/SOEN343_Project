@@ -19,6 +19,18 @@ public class UserDTO {
     private String email;
     private String role;
     private String address;
+    private int flexdollarbalance;
+
+    public UserDTO(Long id, String fullName, String userName, String email, String role, String address, PricingPlan pricingPlan, int flexdollarbalance) {
+        this.id = id;
+        this.fullName = fullName;
+        this.userName = userName;
+        this.email = email;
+        this.role = role;
+        this.address = address;
+        this.pricingPlan = pricingPlan;
+        this.flexdollarbalance = flexdollarbalance;
+    }
 
     public static UserDTO fromEntity(User u) {
         return UserDTO.builder()
