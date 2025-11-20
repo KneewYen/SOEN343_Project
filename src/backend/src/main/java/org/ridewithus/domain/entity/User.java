@@ -1,6 +1,11 @@
 package org.ridewithus.domain.entity;
 
+import org.ridewithus.domain.loyaltyProgram.ChainOfR.Tier;
+
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -28,11 +33,16 @@ public class User {
     private String email;  
     private String role = "rider"; //user are automatically user unless specified otherwise
     private String password ;
+    
 
     //ADD PAYMENT INFO OR CREATE A NEW TABLE??
     @ManyToOne
     @JoinColumn(name = "pricing_plan_id", nullable = true)
     private PricingPlan pricingPlan;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "loyalty_tier")
+    private Tier loyaltyTier;
 
     public User() {}
 
