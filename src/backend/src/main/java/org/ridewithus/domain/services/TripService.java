@@ -133,20 +133,18 @@ public class TripService {
         trip.setEndStation(station.get());
         trip.setTripComplete(true);
 
-        //Store user for event before deleting reservation
+        //Store user for event 
         User user = trip.getReservation().getUser();
 
         // Store reservation reference before clearing it
         Reservation reservation = trip.getReservation();
 
-        // Clear the reservation reference from the trip to avoid cascade delete
-        trip.setReservation(null);
 
         tripRepository.save(trip);
 
-        // Clean up the reservation when trip ends (as per BikeShare requirements)
-        // Reservations should not remain for record-keeping
-        reservationRepository.delete(reservation);
+        reservation.setStatus(Reservation.ReservationStatus.COMPLETED);
+        reservationRepository.save(reservation);
+
 
         String newStatus = reservation.getBike().getStatus().toString();
 

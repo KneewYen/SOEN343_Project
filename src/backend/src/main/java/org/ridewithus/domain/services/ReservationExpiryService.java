@@ -34,21 +34,21 @@ public class ReservationExpiryService {
         for (Reservation reservation : expired) {
             Bike bike = reservation.getBike();
 
-            // If bike is currently on trip, skip deleting reservation
-            if (bike.getStatus() == BikeStatus.ON_TRIP) {
+            // If bike is currently on trip or reservation is not active, skip deleting reservation
+            if (bike.getStatus() == BikeStatus.ON_TRIP || reservation.getStatus() != Reservation.ReservationStatus.ACTIVE) {
                 continue;
             }
 
             String oldStatus = bike.getStatus().toString();
 
             bike.setStatus(BikeStatus.AVAILABLE);
+            reservation.setStatus(Reservation.ReservationStatus.EXPIRED);
             bikeRepository.save(bike);
+            reservationRepository.save(reservation);
 
             String newStatus = bike.getStatus().toString();
 
             eventService.emitEvent("RESERVATION_EXPIRED", String.format("Reservation %d expired - Bike %d: %s -> %s", reservation.getReservationId(), bike.getId(), oldStatus, newStatus));
-
-            reservationRepository.delete(reservation);
         }
     }
 }

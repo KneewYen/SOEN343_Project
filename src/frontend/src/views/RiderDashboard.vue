@@ -658,6 +658,9 @@ const checkActiveReservation = async () => {
         if (response.success) {
           alert('Trip ended successfully!')
 
+          prevReservationId.value = null
+          currentReservation.value = null
+
           const res = await apiClient.calculatePrice(currentTrip.value.id)
           console.log("Billing response:", res)
           tripSummary.value = res.billing
