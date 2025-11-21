@@ -205,6 +205,12 @@
               </div>
             </div>
           </section>
+
+            <!-- Ride History -->
+          <section class="station-status">
+            <RideHistory :user="user" />
+          </section>
+
         </div>
       </main>
     </div>
@@ -361,15 +367,17 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import ThemeToggle from '../components/ThemeToggle.vue'
 import apiClient from '../lib/api'
+import RideHistory from '@/components/RideHistory.vue'
 
 export default {
   name: 'OperatorDashboard',
   components: {
-    ThemeToggle
+    ThemeToggle,
+    RideHistory
   },
   setup() {
     const router = useRouter()
-    const user = ref(null)
+    const user = ref({ role: 'operator' })
     const stations = ref([])
     const loading = ref(false)
     const showRebalanceModal = ref(false)
@@ -392,12 +400,14 @@ export default {
       bikesInMaintenance: 0,
       docksOutOfService: 0
     })
+    
 
     onMounted(() => {
       // Load user data from localStorage
       const userData = localStorage.getItem('user')
       if (userData) {
         user.value = JSON.parse(userData)
+        console.log('Loaded user:', user.value)
       }
       // Load stations data
       loadStations()

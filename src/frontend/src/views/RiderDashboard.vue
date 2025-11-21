@@ -205,12 +205,12 @@
             </div>
           </section>
 
-          <section v-if="tripSummary" class="trip-summary">
+          <section v-if="tripSummary" class="recent-trips">
               <TripSummary :trip="selectedTrip" />
 
               <!-- Billing Information (added here) -->
               <div v-if="billing" class="billing-info">
-                <h3 class="billing-title">Billing Summary</h3>
+                <h3 class="section-title">Billing Summary</h3>
 
                 <div class="billing-details">
                   <p><strong>Billing ID:</strong> {{ billing.billingId }}</p>

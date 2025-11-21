@@ -66,7 +66,7 @@
             <td>{{ formatDateTime(bill.startTime) }}</td>
             <td>{{ getBikeId(bill) }}</td>
             <td>{{ bill.startStationId || 'N/A' }}</td>
-            <td class="charge-amount">${{ bill.totalAmount }}</td>
+            <td class="charge-amount">${{ bill.totalAmount.toFixed(2) }}</td>
             <td>
               <span class="payment-status" :class="getPaymentStatusClass(bill)">
                 {{ getPaymentStatus(bill) }}
