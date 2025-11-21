@@ -66,7 +66,7 @@
             <td>{{ formatDateTime(bill.startTime) }}</td>
             <td>{{ getBikeId(bill) }}</td>
             <td>{{ bill.startStationId || 'N/A' }}</td>
-            <td class="charge-amount">${{ bill.totalAmount.toFixed(2) }}</td>
+            <td class="charge-amount">${{ formatCurrency(bill.totalAmount) }}</td>
             <td>
               <span class="payment-status" :class="getPaymentStatusClass(bill)">
                 {{ getPaymentStatus(bill) }}
@@ -230,7 +230,7 @@ function getTripCost(bill) {
 }
 
 function formatCurrency(val) {
-  return typeof val === 'number' ? val.toFixed(2) : val
+  return typeof val === 'number' ? val.toFixed(2) : "-"
 }
 
 function formatDateTime(dateTime) {
