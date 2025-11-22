@@ -258,11 +258,17 @@ class ApiClient {
     })
   }
 
+  async resetSystem(){
+    return this.request('/import/reset', {
+      method: 'POST'
+    })
+  }
+
   //Event API methods
   async getRecentEvents() {
-  return this.request('/events/recent', {
-    method: 'GET'
-  })
+    return this.request('/events/recent', {
+      method: 'GET'
+    })
 }
 
 
