@@ -423,33 +423,46 @@ export default {
     // Load station counts from API
     const stationCounts = ref({})
 
-    const loadStationCounts = async () => {
-      for (const station of stations.value) {
-        if (!stationCounts.value[station.id]) {
-          try {
-            const [freeDocksResponse, availableBikesResponse] = await Promise.all([
-              apiClient.getNumberOfFreeDocks(station.id),
-              apiClient.getNumberOfAvailableBikes(station.id)
-            ])
-            // Handle both number response and object response
-            const freeDocks = typeof freeDocksResponse === 'number' ? freeDocksResponse : (freeDocksResponse?.count || freeDocksResponse || 0)
-            const availableBikes = typeof availableBikesResponse === 'number' ? availableBikesResponse : (availableBikesResponse?.count || availableBikesResponse || 0)
-            
-            stationCounts.value[station.id] = {
-              freeDocks: freeDocks,
-              availableBikes: availableBikes
-            }
-          } catch (error) {
-            console.error(`Error loading counts for station ${station.id}:`, error)
-            // Fallback to local calculation if API fails
-            stationCounts.value[station.id] = {
-              freeDocks: station.dockIds ? station.dockIds.filter(dock => dock.status === 'EMPTY').length : 0,
-              availableBikes: station.dockIds ? station.dockIds.filter(dock => dock.bikeId && dock.status === 'OCCUPIED').length : 0
-            }
-          }
+const loadStationCounts = async () => {
+  for (const station of stations.value) {
+
+    try {
+      const [freeDocksRes, availableBikesRes] = await Promise.all([
+        apiClient.getNumberOfFreeDocks(station.id),
+        apiClient.getNumberOfAvailableBikes(station.id)
+      ])
+
+      const freeDocks =
+        typeof freeDocksRes === 'number'
+          ? freeDocksRes
+          : freeDocksRes?.count ?? 0
+
+      const availableBikes =
+        typeof availableBikesRes === 'number'
+          ? availableBikesRes
+          : availableBikesRes?.count ?? 0
+
+      stationCounts.value[station.id] = {
+        freeDocks,
+        availableBikes
+      }
+
+    } catch (error) {
+      console.error(`Error loading counts for station ${station.id}:`, error)
+
+      // SAFER FALLBACK (station.docks must exist)
+      if (station.docks) {
+        stationCounts.value[station.id] = {
+          freeDocks: station.docks.filter(d => d.status?.toLowerCase() === 'empty').length,
+          availableBikes: station.docks.filter(d => d.bike != null).length
         }
+      } else {
+        stationCounts.value[station.id] = { freeDocks: 0, availableBikes: 0 }
       }
     }
+  }
+}
+
 
     const loadStations = async () => {
       try {

@@ -130,9 +130,9 @@ public class ReservationService {
     }
 
     public List<ReservationDTO> getUserReservations(Long userId) {
-        List<Reservation> reservations = reservationRepository.findByUserId(userId);
-        return reservations.stream()
-                .filter(res -> res.getStatus() == Reservation.ReservationStatus.ACTIVE)
+        return reservationRepository
+                .findByUserIdAndStatus(userId, Reservation.ReservationStatus.ACTIVE)
+                .stream()
                 .map(this::mapToDTO)
                 .toList();
     }

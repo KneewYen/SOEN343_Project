@@ -203,6 +203,10 @@ class ApiClient {
     return this.request(`/trip/paginate/user/${userId}?page=${page}&size=${size}`)
   }
 
+  async getIncompleteUserTrips(userId) {
+    return this.request(`/trip/incomplete/${userId}`)
+  }
+
   async startTrip(reservationId) {
     return this.request(`/trip/${reservationId}`, {
       method: 'POST'
