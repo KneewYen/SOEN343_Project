@@ -432,11 +432,11 @@ const showPricing = () => {
 const checkActiveTrip = async () => {
   try {
     if (!user.value?.id) return
-    if (!apiClient.getUserTrips) {
+    if (!apiClient.getIncompleteUserTrips) {
       currentTrip.value = null
       return
     }
-    const resp = await apiClient.getUserTrips(user.value.id)
+    const resp = await apiClient.getIncompleteUserTrips(user.value.id)
     if (resp && resp.success && Array.isArray(resp.trips)) {
       const incomplete = resp.trips.find(t => !t.tripComplete)
       if (incomplete) {

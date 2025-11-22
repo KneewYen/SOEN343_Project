@@ -169,6 +169,13 @@ public class TripService {
                 .toList();
     }
 
+    public List<TripDTO> getIncompleteUserTrips(Long userId) {
+        List<Trip> trips = tripRepository.findByUserIdAndTripComplete(userId, false);
+        return trips.stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
     public Page<TripDTO> getAllTrips(int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("endTime").descending());
         Page<Trip> trips = tripRepository.findAll(pageable);
