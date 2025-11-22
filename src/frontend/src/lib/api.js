@@ -203,6 +203,10 @@ class ApiClient {
     return this.request(`/trip/paginate/user/${userId}?page=${page}&size=${size}`)
   }
 
+  async getIncompleteUserTrips(userId) {
+    return this.request(`/trip/incomplete/${userId}`)
+  }
+
   async startTrip(reservationId) {
     return this.request(`/trip/${reservationId}`, {
       method: 'POST'
@@ -258,11 +262,17 @@ class ApiClient {
     })
   }
 
+  async resetSystem(){
+    return this.request('/import/reset', {
+      method: 'POST'
+    })
+  }
+
   //Event API methods
   async getRecentEvents() {
-  return this.request('/events/recent', {
-    method: 'GET'
-  })
+    return this.request('/events/recent', {
+      method: 'GET'
+    })
 }
 
 

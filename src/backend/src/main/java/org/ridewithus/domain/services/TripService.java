@@ -109,6 +109,7 @@ public class TripService {
 
         List<Dock> docks = dockRepository.findByStationAndStatus(station.get(), Dock.DockStatus.EMPTY);
 
+
         if (docks.isEmpty()) {
             throw new Exception("No empty places available to Dock");
         }
@@ -133,24 +134,29 @@ public class TripService {
         trip.setEndStation(station.get());
         trip.setTripComplete(true);
 
-        //Store user for event before deleting reservation
+        //Store user for event
         User user = trip.getReservation().getUser();
 
         // Store reservation reference before clearing it
         Reservation reservation = trip.getReservation();
 
-        // Clear the reservation reference from the trip to avoid cascade delete
-        trip.setReservation(null);
 
         tripRepository.save(trip);
 
-        // Clean up the reservation when trip ends (as per BikeShare requirements)
-        // Reservations should not remain for record-keeping
-        reservationRepository.delete(reservation);
+        reservation.setStatus(Reservation.ReservationStatus.COMPLETED);
+        reservationRepository.save(reservation);
+
 
         String newStatus = reservation.getBike().getStatus().toString();
 
         eventService.emitEvent(user,"TRIP_ENDED", String.format("Trip %d ended - Bike %d: %s -> %s", trip.getTripId(), reservation.getBike().getId(), oldStatus, newStatus));
+
+        // Get free docks at destination
+        List<Dock> freeDocks = dockRepository.findAllByStationAndStatus(station.get(), Dock.DockStatus.EMPTY);
+
+        if(freeDocks.isEmpty()){
+            eventService.emitEvent(user, "STATION_FULL", String.format("%s station is full", station.get().getName()));
+        }
 
         return trip.getTripId();
 
@@ -158,6 +164,13 @@ public class TripService {
 
     public List<TripDTO> getUserTrips(Long userId) {
         List<Trip> trips = tripRepository.findByUserId(userId);
+        return trips.stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
+    public List<TripDTO> getIncompleteUserTrips(Long userId) {
+        List<Trip> trips = tripRepository.findByUserIdAndTripComplete(userId, false);
         return trips.stream()
                 .map(this::mapToDTO)
                 .toList();

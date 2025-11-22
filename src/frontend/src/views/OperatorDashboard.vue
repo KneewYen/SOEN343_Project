@@ -136,6 +136,15 @@
                 </span>
                 <span class="btn-text">Dock Maintenance</span>
               </button>
+              <button @click="resetSystem" class="action-btn secondary">
+                <span class="btn-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                     <path d="M21 12a9 9 0 10-9 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++                    <path d="M21 3v6h-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+                <span class="btn-text">Reset System</span>
+              </button>
             </div>
           </section>
 
@@ -196,6 +205,12 @@
               </div>
             </div>
           </section>
+
+            <!-- Ride History -->
+          <section class="station-status">
+            <RideHistory :user="user" />
+          </section>
+
         </div>
       </main>
     </div>
@@ -352,15 +367,17 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import ThemeToggle from '../components/ThemeToggle.vue'
 import apiClient from '../lib/api'
+import RideHistory from '@/components/RideHistory.vue'
 
 export default {
   name: 'OperatorDashboard',
   components: {
-    ThemeToggle
+    ThemeToggle,
+    RideHistory
   },
   setup() {
     const router = useRouter()
-    const user = ref(null)
+    const user = ref({ role: 'operator' })
     const stations = ref([])
     const loading = ref(false)
     const showRebalanceModal = ref(false)
@@ -383,12 +400,14 @@ export default {
       bikesInMaintenance: 0,
       docksOutOfService: 0
     })
+    
 
     onMounted(() => {
       // Load user data from localStorage
       const userData = localStorage.getItem('user')
       if (userData) {
         user.value = JSON.parse(userData)
+        console.log('Loaded user:', user.value)
       }
       // Load stations data
       loadStations()
@@ -404,33 +423,46 @@ export default {
     // Load station counts from API
     const stationCounts = ref({})
 
-    const loadStationCounts = async () => {
-      for (const station of stations.value) {
-        if (!stationCounts.value[station.id]) {
-          try {
-            const [freeDocksResponse, availableBikesResponse] = await Promise.all([
-              apiClient.getNumberOfFreeDocks(station.id),
-              apiClient.getNumberOfAvailableBikes(station.id)
-            ])
-            // Handle both number response and object response
-            const freeDocks = typeof freeDocksResponse === 'number' ? freeDocksResponse : (freeDocksResponse?.count || freeDocksResponse || 0)
-            const availableBikes = typeof availableBikesResponse === 'number' ? availableBikesResponse : (availableBikesResponse?.count || availableBikesResponse || 0)
-            
-            stationCounts.value[station.id] = {
-              freeDocks: freeDocks,
-              availableBikes: availableBikes
-            }
-          } catch (error) {
-            console.error(`Error loading counts for station ${station.id}:`, error)
-            // Fallback to local calculation if API fails
-            stationCounts.value[station.id] = {
-              freeDocks: station.dockIds ? station.dockIds.filter(dock => dock.status === 'EMPTY').length : 0,
-              availableBikes: station.dockIds ? station.dockIds.filter(dock => dock.bikeId && dock.status === 'OCCUPIED').length : 0
-            }
-          }
+const loadStationCounts = async () => {
+  for (const station of stations.value) {
+
+    try {
+      const [freeDocksRes, availableBikesRes] = await Promise.all([
+        apiClient.getNumberOfFreeDocks(station.id),
+        apiClient.getNumberOfAvailableBikes(station.id)
+      ])
+
+      const freeDocks =
+        typeof freeDocksRes === 'number'
+          ? freeDocksRes
+          : freeDocksRes?.count ?? 0
+
+      const availableBikes =
+        typeof availableBikesRes === 'number'
+          ? availableBikesRes
+          : availableBikesRes?.count ?? 0
+
+      stationCounts.value[station.id] = {
+        freeDocks,
+        availableBikes
+      }
+
+    } catch (error) {
+      console.error(`Error loading counts for station ${station.id}:`, error)
+
+      // SAFER FALLBACK (station.docks must exist)
+      if (station.docks) {
+        stationCounts.value[station.id] = {
+          freeDocks: station.docks.filter(d => d.status?.toLowerCase() === 'empty').length,
+          availableBikes: station.docks.filter(d => d.bike != null).length
         }
+      } else {
+        stationCounts.value[station.id] = { freeDocks: 0, availableBikes: 0 }
       }
     }
+  }
+}
+
 
     const loadStations = async () => {
       try {
@@ -638,6 +670,26 @@ export default {
       }).format(d)
     }
 
+    const resetSystem = async () => {
+      if (!confirm('Are you sure you want to reset the entire system?')) {
+        return
+      }
+      try {
+        const result = await apiClient.resetSystem()
+        if(result.success){
+          alert(result.message || 'System has been reset successfully')
+          // Reload stations and events to reflect changes
+          await loadStations()
+          await loadEvents()
+        } else {
+          alert(result.message || 'Failed to reset system')
+        } 
+      } catch (error) {
+        alert('Failed to reset system: ' + error.message)
+      }
+  
+    }
+
     return {
       user,
       handleLogout,
@@ -659,7 +711,8 @@ export default {
       toggleDockStatus,
       getStationStatusClass,
       getDockStatusClass,
-      getBikeStatusClass
+      getBikeStatusClass,
+      resetSystem
     }
   }
 }
