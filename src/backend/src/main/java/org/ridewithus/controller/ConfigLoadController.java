@@ -1,5 +1,6 @@
 package org.ridewithus.controller;
 
+import jakarta.persistence.EntityManager;
 import org.ridewithus.domain.entity.Bike;
 import org.ridewithus.domain.entity.BikeStatus;
 import org.ridewithus.domain.entity.Dock;
@@ -35,13 +36,16 @@ public class ConfigLoadController {
     private DockRepository dockRepository;
     @Autowired
     private StationRepository stationRepository;
+    @Autowired
+    private EntityManager entityManager;
+
 
     @PostMapping("/core")
     @Transactional
     public String importOperators(){
         try{
             ObjectMapper mapper = new ObjectMapper();
-            InputStream inputStream = getClass().getClassLoader().getResourceAsStream("add_station.json");
+            InputStream inputStream = getClass().getClassLoader().getResourceAsStream("core.json");
 
 
             JsonNode stationNodes = mapper.readTree(inputStream).get("stations");
@@ -124,6 +128,10 @@ public class ConfigLoadController {
                 return ResponseEntity.badRequest().body(response);
             }
 
+            bikeRepository.clearAllDockAssignments();
+            entityManager.flush();
+            entityManager.clear();
+
             ObjectMapper mapper = new ObjectMapper();
             InputStream file = getClass().getClassLoader().getResourceAsStream("core.json");
             JsonNode root = mapper.readTree(file);
@@ -144,26 +152,21 @@ public class ConfigLoadController {
                 for (JsonNode dockNode : stationNode.get("docks")) {
 
                     Long dockId = dockNode.get("id").asLong();
-                    Dock dock = dockRepository.getReferenceById(dockId);
+                    Dock dock = dockRepository.findById(dockId).orElseThrow();
 
                     dock.setStatus(Dock.DockStatus.valueOf(dockNode.get("status").asText().toUpperCase()));
                     dockRepository.save(dock);
 
                     if (dockNode.has("bike") && !dockNode.get("bike").isNull()) {
-                        JsonNode bikeNode = dockNode.get("bike");
 
-                        Bike bike = bikeRepository.getReferenceById(bikeNode.get("id").asLong());
+                        JsonNode bikeNode = dockNode.get("bike");
+                        Bike bike = bikeRepository.findById(bikeNode.get("id").asLong());
+
                         bike.setType(bikeNode.get("type").asText());
                         bike.setStatus(BikeStatus.valueOf(bikeNode.get("status").asText().toUpperCase()));
                         bike.setDock(dock);
                         bikeRepository.save(bike);
 
-                    } else {
-                        // Remove any existing bike
-                        if (dock.getBike() != null) {
-                            dock.getBike().setDock(null);
-                            bikeRepository.save(dock.getBike());
-                        }
                     }
                 }
             }
