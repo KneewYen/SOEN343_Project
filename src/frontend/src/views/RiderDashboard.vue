@@ -19,6 +19,13 @@
             <span class="role-badge">Rider</span>
           </div>
           <div class="user-info">
+            <div class="flex-dollar-badge" v-if="user?.role === 'rider'">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <span>{{ user.flexDollars || 0 }} Flex $</span>
+            </div>
             <span class="welcome-text">Welcome, {{ user?.fullName || 'Rider' }}!</span>
             <button @click="handleLogout" class="logout-btn">Logout</button>
           </div>
@@ -312,6 +319,13 @@ onMounted(() => {
   const userData = localStorage.getItem('user')
   if (userData) {
     user.value = JSON.parse(userData)
+
+    // Initialize flexDollars if missing (for backward compatibility)
+    if (user.value && user.value.flexDollars === undefined) {
+      user.value.flexDollars = 0
+      localStorage.setItem('user', JSON.stringify(user.value))
+      console.log('Initialized flexDollars to 0')
+    }
   }
   // Initialize with clean state
   currentReservation.value = null
@@ -655,8 +669,30 @@ const checkActiveReservation = async () => {
           return
         }
         const response = await apiClient.endTrip(currentTrip.value.id, selectedReturnStation.value)
+
+        // Log the response for debugging
+        console.log('End trip response:', response)
+        console.log('Flex dollar awarded:', response.flexDollarAwarded)
+        console.log('Flex dollar balance:', response.flexDollarBalance)
+
         if (response.success) {
-          alert('Trip ended successfully!')
+          // Build success message
+          let message = 'Trip ended successfully!'
+
+          // Check if flex dollar was awarded
+          if (response.flexDollarAwarded) {
+            message += `\n\n🎉 You earned 1 Flex Dollar for returning to a low-capacity station!`
+            message += `\nYour Flex Dollar balance: ${response.flexDollarBalance}`
+
+            // Update user object with new balance
+            if (user.value) {
+              user.value.flexDollars = response.flexDollarBalance
+              localStorage.setItem('user', JSON.stringify(user.value))
+              console.log('Updated user flex dollars:', user.value.flexDollars)
+            }
+          }
+
+          alert(message)
 
           prevReservationId.value = null
           currentReservation.value = null
@@ -808,6 +844,23 @@ const checkActiveReservation = async () => {
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+.flex-dollar-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.flex-dollar-badge svg {
+  color: white;
 }
 
 .welcome-text {
