@@ -20,6 +20,17 @@
           </div>
           <div class="user-info">
             <span class="welcome-text">Welcome, {{ user?.fullName || 'Operator' }}!</span>
+            <button 
+              @click="showAccountDetails = true" 
+              class="account-btn" 
+              aria-label="Account Details" 
+              title="View Account Details"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </button>
             <button @click="handleLogout" class="logout-btn">Logout</button>
           </div>
         </div>
@@ -359,6 +370,13 @@
         </div>
       </div>
     </div>
+    
+    <!-- Account Details Modal -->
+    <AccountDetails 
+      :show="showAccountDetails" 
+      :user="user"
+      @close="showAccountDetails = false"
+    />
   </div>
 </template>
 
@@ -368,12 +386,14 @@ import { useRouter } from 'vue-router'
 import ThemeToggle from '../components/ThemeToggle.vue'
 import apiClient from '../lib/api'
 import RideHistory from '@/components/RideHistory.vue'
+import AccountDetails from '@/components/AccountDetails.vue'
 
 export default {
   name: 'OperatorDashboard',
   components: {
     ThemeToggle,
-    RideHistory
+    RideHistory,
+    AccountDetails
   },
   setup() {
     const router = useRouter()
@@ -384,6 +404,7 @@ export default {
     const showStationManagement = ref(false)
     const showBikeManagement = ref(false)
     const showDockManagement = ref(false)
+    const showAccountDetails = ref(false)
     const events = ref([])
     const rebalanceForm = ref({
       sourceStationId: '',
@@ -699,6 +720,7 @@ const loadStationCounts = async () => {
       showStationManagement,
       showBikeManagement,
       showDockManagement,
+      showAccountDetails,
       rebalanceForm,
       systemStats,
       events,
@@ -785,6 +807,54 @@ const loadStationCounts = async () => {
 .welcome-text {
   color: var(--text);
   font-weight: 600;
+}
+
+.account-btn {
+  background: var(--surface-hover, #f1f5f9);
+  color: var(--text, #1e293b);
+  border: 2px solid var(--border, #e2e8f0);
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.account-btn::after {
+  content: 'Account Details';
+  position: absolute;
+  bottom: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  z-index: 1000;
+}
+
+.account-btn:hover::after {
+  opacity: 1;
+}
+
+.account-btn:hover {
+  background: var(--primary, #ff6b9d);
+  color: white;
+  border-color: var(--primary, #ff6b9d);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
 }
 
 .logout-btn {
