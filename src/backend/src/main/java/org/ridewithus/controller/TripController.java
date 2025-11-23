@@ -42,10 +42,12 @@ public class TripController {
     @PutMapping("/{tripId}/{stationId}")
     public ResponseEntity<Map<String, Object>> endTrip(@PathVariable("tripId") Long tripId, @PathVariable("stationId") Long stationId) {
         try {
-            Long endTripId = tripService.endTrip(tripId, stationId);
+            Map<String, Object> tripResult = tripService.endTrip(tripId, stationId);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("tripId", endTripId);
+            response.put("tripId", tripResult.get("tripId"));
+            response.put("flexDollarBalance", tripResult.get("flexDollarBalance"));
+            response.put("flexDollarAwarded", tripResult.get("flexDollarAwarded"));
             response.put("message", "Trip ended successfully");
             return ResponseEntity.ok(response);
         } catch (Exception e) {

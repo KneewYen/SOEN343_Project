@@ -13,7 +13,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.ridewithus.domain.dto.TripDTO;
 
@@ -38,7 +40,13 @@ public class TripService {
     private ReservationRepository reservationRepository;
 
     @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private DomainEventService eventService;
+
+    @Autowired
+    private StationService stationService;
 
     @Transactional
     public Long startTrip(Long reservationId) throws Exception {
@@ -93,7 +101,7 @@ public class TripService {
     }
 
     @Transactional
-    public Long endTrip(Long tripId, Long endStationId) throws Exception {
+    public Map<String, Object> endTrip(Long tripId, Long endStationId) throws Exception {
 
         Trip trip = tripRepository.findByTripId(tripId);
 
@@ -146,6 +154,9 @@ public class TripService {
         reservation.setStatus(Reservation.ReservationStatus.COMPLETED);
         reservationRepository.save(reservation);
 
+        // Award 1 flex dollar if station is below minimum capacity (< 25%)
+        boolean flexDollarAwarded = awardFlexDollars(user, endStationId, station);
+
 
         String newStatus = reservation.getBike().getStatus().toString();
 
@@ -158,8 +169,34 @@ public class TripService {
             eventService.emitEvent(user, "STATION_FULL", String.format("%s station is full", station.get().getName()));
         }
 
-        return trip.getTripId();
+        // Prepare response with trip ID and flex dollar balance
+        Map<String, Object> result = new HashMap<>();
+        result.put("tripId", trip.getTripId());
+        result.put("flexDollarBalance", user.getFlexDollars());
+        result.put("flexDollarAwarded", flexDollarAwarded);
 
+        return result;
+
+    }
+
+    private boolean awardFlexDollars(User user, Long endStationId, Optional<Station> stationOpt) {
+        try {
+            if (stationService.minimumCapacityReached(endStationId)) {
+                // Directly increment user's flex dollar balance
+                user.setFlexDollars(user.getFlexDollars() + 1);
+                userRepository.save(user);
+
+                Station station = stationOpt.orElseThrow(() -> new RuntimeException("Station not found"));
+                eventService.emitEvent(user, "FLEX_DOLLAR_AWARDED",
+                        String.format("You earned 1 Flex Dollar for returning to low-capacity station %s!",
+                                station.getName()));
+                return true;
+            }
+        } catch (Exception e) {
+            // Log but don't fail the trip if flex dollar award fails
+            System.err.println("Failed to award flex dollars: " + e.getMessage());
+        }
+        return false;
     }
 
     public List<TripDTO> getUserTrips(Long userId) {

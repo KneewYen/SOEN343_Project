@@ -42,7 +42,7 @@ public interface  UserRepository extends JpaRepository<User, Long> {
      */
     @Modifying
     @Transactional
-    @Query(value = "update users set flex_  dollar_balance = case when flex_dollar_balance >= :amount then flexdollarbalance - :amount else 0 end where id = :userId", nativeQuery = true)
+    @Query(value = "update users set flex_dollar_balance = case when flex_dollar_balance >= :amount then flex_dollar_balance - :amount else 0 end where id = :userId", nativeQuery = true)
     int applyFlexDollarsById(@Param("userId") Long userId, @Param("amount") int amount);
 
     /**

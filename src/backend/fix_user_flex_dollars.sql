@@ -1,0 +1,41 @@
+-- -- Migration script to add flex_dollar_balance column to users table
+-- -- Run this to fix the "flex dollar badge not showing" issue
+--
+-- -- Step 1: Check if column exists
+-- SELECT column_name, data_type, column_default, is_nullable
+-- FROM information_schema.columns
+-- WHERE table_name = 'users' AND column_name = 'flex_dollar_balance';
+--
+-- -- Step 2: Add column if it doesn't exist
+-- DO $$
+-- BEGIN
+--     IF NOT EXISTS (
+--         SELECT 1
+--         FROM information_schema.columns
+--         WHERE table_name = 'users'
+--         AND column_name = 'flex_dollar_balance'
+--     ) THEN
+--         ALTER TABLE users ADD COLUMN flex_dollar_balance INTEGER DEFAULT 0 NOT NULL;
+--         RAISE NOTICE 'Column flex_dollar_balance added to users table';
+--     ELSE
+--         RAISE NOTICE 'Column flex_dollar_balance already exists';
+--     END IF;
+-- END $$;
+--
+-- -- Step 3: Ensure all existing users have 0 flex dollars (in case column exists but has NULLs)
+-- UPDATE users
+-- SET flex_dollar_balance = 0
+-- WHERE flex_dollar_balance IS NULL;
+--
+-- -- Step 4: Verify the column and data
+-- SELECT
+--     id,
+--     full_name,
+--     user_name,
+--     role,
+--     flex_dollar_balance
+-- FROM users
+-- ORDER BY id;
+--
+-- -- Expected output: All users should have flex_dollar_balance = 0
+--

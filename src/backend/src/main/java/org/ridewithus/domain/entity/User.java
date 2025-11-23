@@ -44,28 +44,11 @@ public class User {
     }
 
     /**
-     * Add flex dollars to the user's balance.
-     * @param amount the amount to add
-     * @return the amount actually added
-     */
-    public int addFlexDollars(int amount) {
-        if (amount <= 0) return 0;
-        this.flex_dollar_balance += amount;
-        return amount;
-    }
-
-    /**
      * Apply (deduct) flex dollars from the user's balance.
      * Will not go below zero.
      * @param amount the amount to deduct
      * @return the amount actually deducted
      */
-    public int applyFlexDollars(int amount) {
-        if (amount <= 0) return 0;
-        int actualDeduction = Math.min(amount, this.flex_dollar_balance);
-        this.flex_dollar_balance -= actualDeduction;
-        return actualDeduction;
-    }
 
     //ADD PAYMENT INFO OR CREATE A NEW TABLE??
     @ManyToOne
