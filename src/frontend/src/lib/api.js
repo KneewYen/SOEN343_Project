@@ -1,6 +1,6 @@
 // API Client for backend communication
 const API_BASE_URL = 'http://localhost:8080/api'
-const API_TIMEOUT = 10000
+const API_TIMEOUT = 30000 // Increased to 30 seconds for database operations
 
 class ApiClient {
   constructor() {
