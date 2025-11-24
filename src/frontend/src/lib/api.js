@@ -1,6 +1,6 @@
 // API Client for backend communication
 const API_BASE_URL = 'http://localhost:8080/api'
-const API_TIMEOUT = 10000
+const API_TIMEOUT = 100000
 
 class ApiClient {
   constructor() {
@@ -77,6 +77,10 @@ class ApiClient {
     return this.request('/auth/me', {
       credentials: 'include'
     })
+  }
+
+  async getUserLoyaltyTierUpdate(userId) {
+    return this.request(`/UserRequest/${userId}`)
   }
 
   async getUserById(id) {

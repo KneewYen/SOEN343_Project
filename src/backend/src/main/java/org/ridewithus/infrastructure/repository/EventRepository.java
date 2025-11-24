@@ -15,7 +15,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     @Query("SELECT e FROM Event e ORDER BY e.timestamp DESC")
     List<Event> findRecentEvents(Pageable pageable);
 
-    boolean existsByUserIdAndEventTypeAndTimestampAfter(User user, String eventType, LocalDateTime after);
+    boolean existsByUserAndEventTypeAndTimestampAfter(User user, String eventType, LocalDateTime after);
 
     boolean existsByUserIdAndEventType(User user, String eventType);
 

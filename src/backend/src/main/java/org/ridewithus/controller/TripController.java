@@ -2,6 +2,7 @@ package org.ridewithus.controller;
 
 import org.ridewithus.domain.dto.BillingDTO;
 import org.ridewithus.domain.dto.TripDTO;
+import org.ridewithus.domain.loyaltyProgram.ChainOfR.Tier;
 import org.ridewithus.domain.services.PricingService;
 import org.ridewithus.domain.services.TripService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,8 +44,10 @@ public class TripController {
     public ResponseEntity<Map<String, Object>> endTrip(@PathVariable("tripId") Long tripId, @PathVariable("stationId") Long stationId) {
         try {
             Long endTripId = tripService.endTrip(tripId, stationId);
+            Tier tier = tripService.getTier(tripId);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
+            response.put("tier", tier);
             response.put("tripId", endTripId);
             response.put("message", "Trip ended successfully");
             return ResponseEntity.ok(response);

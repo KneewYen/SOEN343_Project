@@ -10,16 +10,16 @@ import lombok.Setter;
 @Getter
 @Setter
 public class PercentageDiscount extends PricingDecorator {
-    private int discount;
+    private double discount;
 
-    public PercentageDiscount(PricingStrategy wrappee, int percentage_off){
+    public PercentageDiscount(PricingStrategy wrappee, double percentage_off){
         super(wrappee);
-        discount = percentage_off ;
+        discount = percentage_off;
     }
 
     @Override
     public double calculatePrice(Trip trip){
-        return super.calculatePrice(trip) - super.calculatePrice(trip)*discount;
+        return super.calculatePrice(trip) - super.calculatePrice(trip) * discount;
     }
 
     public String getName(){
@@ -27,6 +27,6 @@ public class PercentageDiscount extends PricingDecorator {
     }
 
     public String getDescription(){
-        return "percentage discount for youe loyalty";
+        return "percentage discount for your loyalty";
     }
 }

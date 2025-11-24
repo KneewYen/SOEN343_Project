@@ -16,10 +16,8 @@ import org.ridewithus.infrastructure.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.swing.text.html.Option;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -88,7 +86,12 @@ public class ReservationService {
 
         bikeRepository.save(bike.get());
 
-        Reservation reservation = Reservation.builder().bike(bike.get()).user(user.get()).build();
+        Reservation reservation = Reservation.builder()
+                .bike(bike.get())
+                .user(user.get())
+                .expiryDateTime(LocalDateTime.now().plusMinutes(5 + user.get().getLoyaltyTier().getAdditionalReservationHoldTime()))
+            .build();
+
         reservation.setStatus(Reservation.ReservationStatus.ACTIVE);
 
         reservationRepository.save(reservation);

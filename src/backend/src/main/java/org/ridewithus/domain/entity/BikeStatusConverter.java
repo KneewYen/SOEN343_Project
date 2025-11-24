@@ -9,7 +9,7 @@ public class BikeStatusConverter implements AttributeConverter<BikeStatus, Strin
     @Override
     public String convertToDatabaseColumn(BikeStatus status) {
         if (status == null) return null;
-        return status.name().toLowerCase(); // store lowercase in DB
+        return status.name().toUpperCase(); // store lowercase in DB
     }
 
     @Override

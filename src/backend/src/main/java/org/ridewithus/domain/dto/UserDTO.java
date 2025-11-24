@@ -22,6 +22,7 @@ public class UserDTO {
     private String address;
     private PricingPlan pricingPlan;
     private Tier loyaltyTier;
+    private Tier prevLoyaltyTier;
 
     public static UserDTO fromEntity(User u) {
         return UserDTO.builder()

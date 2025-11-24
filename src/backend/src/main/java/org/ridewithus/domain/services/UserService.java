@@ -4,17 +4,13 @@ import java.time.LocalDateTime;
 
 import org.ridewithus.domain.entity.Trip;
 import org.ridewithus.domain.entity.User;
-import org.ridewithus.domain.loyaltyProgram.ChainOfR.BronzeHandler;
-import org.ridewithus.domain.loyaltyProgram.ChainOfR.GoldHandler;
-import org.ridewithus.domain.loyaltyProgram.ChainOfR.SilverHandler;
-import org.ridewithus.domain.loyaltyProgram.ChainOfR.Tier;
-import org.ridewithus.domain.loyaltyProgram.ChainOfR.TierHandler;
 import org.ridewithus.infrastructure.repository.EventRepository;
 import org.ridewithus.infrastructure.repository.TripRepository;
 import org.ridewithus.infrastructure.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserService {
@@ -25,11 +21,20 @@ public class UserService {
     @Autowired
     private TripRepository tripRepository;
 
+    public void save(User user) {
+        userRepository.save(user);
+    }
+
+    public User getUserById(Long userId) {
+        Optional<User> user = userRepository.findById(userId);
+        return user.orElse(null);
+    }
+
     public boolean hasMissedReservations(User user){
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime start_search = now.minusYears(1);
 
-        boolean condition = eventRepository.existsByUserIdAndEventTypeAndTimestampAfter(user, "RESERVATION_EXPIRED", start_search);
+        boolean condition = eventRepository.existsByUserAndEventTypeAndTimestampAfter(user, "RESERVATION_EXPIRED", start_search);
 
         return condition;
     }
@@ -100,22 +105,4 @@ public class UserService {
         return true;
     }
 
-    // update tier of user 
-    public void updateLoyaltyTier(User user){
-        TierHandler bronzeHandler = new BronzeHandler();
-        TierHandler silverHandler = new SilverHandler();
-        TierHandler goldHandler = new GoldHandler();
-
-        bronzeHandler.setNext(silverHandler);
-        silverHandler.setNext(goldHandler);
-
-        Tier updatedTier = bronzeHandler.handle(user);
-        Tier currentTier = user.getLoyaltyTier();
-
-        // only update if the tier changes
-        if (updatedTier != currentTier){
-            user.setLoyaltyTier(updatedTier);
-            userRepository.save(user);
-        }
-    }
 }

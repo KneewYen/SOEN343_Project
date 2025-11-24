@@ -180,7 +180,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             user.getRole(),
             user.getAddress(),
             user.getPricingPlan(),
-            user.getLoyaltyTier()
+            user.getLoyaltyTier(),
+            user.getPrevLoyaltyTier()
         );
     }
 }
