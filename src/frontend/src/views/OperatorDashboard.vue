@@ -107,7 +107,7 @@
                     <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2"/>
                   </svg>
                 </span>
-                <span class="btn-text">Show Map</span>
+                <span class="btn-text">View Map</span>
               </button>
               <button @click="showStationManagement = true" class="action-btn secondary">
                 <span class="btn-icon">
