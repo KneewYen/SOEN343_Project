@@ -78,6 +78,19 @@ public class StationService {
         return docks.stream().map(this::mapToDockDTO).toList();
     }
 
+    public void checkRebalance(Long stationId) {
+        Station station = stationRepository.findById(stationId)
+                .orElseThrow(() -> new RuntimeException("Station not found"));
+
+        long bikes = station.getDocks().stream()
+                .filter(d -> d.getBike() != null)
+                .count();
+
+        if (bikes == 0) {
+            alertService.sendRebalanceAlert(stationId);
+        }
+    }
+
     private DockDTO mapToDockDTO(Dock dock) {
         return DockDTO.builder()
                         .id(dock.getId())
