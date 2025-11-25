@@ -6,7 +6,7 @@ import org.ridewithus.domain.entity.Trip;
 
 public class BaseRateStrategy implements PricingStrategy {
     
-    private double baseRate = 10;
+    private double baseRate = 5;
     private double minuteRate = 1;
     @Override
     public double calculatePrice(Trip trip){
@@ -20,7 +20,7 @@ public class BaseRateStrategy implements PricingStrategy {
     }
 
     public String getName(){
-        return "Base plan";
+        return "Standard plan";
     }
 
     public String getDescription(){

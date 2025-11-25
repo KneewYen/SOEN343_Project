@@ -6,8 +6,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
 import org.ridewithus.domain.entity.*;
 import org.ridewithus.domain.services.DomainEventService;
 import org.ridewithus.domain.services.OperatorService;
@@ -17,7 +15,6 @@ import org.ridewithus.infrastructure.repository.StationRepository;
 import static org.mockito.Mockito.lenient;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -25,7 +22,7 @@ import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-//@MockitoSettings(strictness = Strictness.LENIENT)
+
 @ExtendWith(MockitoExtension.class)
 public class ToggleStatusTest {
 
