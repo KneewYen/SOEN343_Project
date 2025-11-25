@@ -6,6 +6,7 @@ import org.ridewithus.domain.entity.BikeStatus;
 import org.ridewithus.domain.entity.Dock;
 import org.ridewithus.domain.entity.Station;
 import org.ridewithus.domain.entity.Dock.DockStatus;
+import org.ridewithus.domain.services.DomainEventService;
 import org.ridewithus.infrastructure.repository.BikeRepository;
 import org.ridewithus.infrastructure.repository.DockRepository;
 import org.ridewithus.infrastructure.repository.StationRepository;
@@ -38,6 +39,8 @@ public class ConfigLoadController {
     private StationRepository stationRepository;
     @Autowired
     private EntityManager entityManager;
+    @Autowired
+    private DomainEventService eventService;
 
 
     @PostMapping("/core")
@@ -160,7 +163,7 @@ public class ConfigLoadController {
                     if (dockNode.has("bike") && !dockNode.get("bike").isNull()) {
 
                         JsonNode bikeNode = dockNode.get("bike");
-                        Bike bike = bikeRepository.findById(bikeNode.get("id").asLong());
+                        Bike bike = bikeRepository.findById(bikeNode.get("id").asLong()).orElseThrow();
 
                         bike.setType(bikeNode.get("type").asText());
                         bike.setStatus(BikeStatus.valueOf(bikeNode.get("status").asText().toUpperCase()));
@@ -170,6 +173,8 @@ public class ConfigLoadController {
                     }
                 }
             }
+
+            eventService.emitEvent("SYSTEM_RESET", "System has been reset.");
 
             response.put("success", true);
             response.put("message", "System reset successfully!");

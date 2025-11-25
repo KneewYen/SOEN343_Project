@@ -1,13 +1,11 @@
 package org.ridewithus.domain.services;
 
 import jakarta.transaction.Transactional;
+import org.h2.schema.Domain;
 import org.ridewithus.domain.dto.BikeDTO;
 import org.ridewithus.domain.dto.DockDTO;
 import org.ridewithus.domain.dto.StationDTO;
-import org.ridewithus.domain.entity.Bike;
-import org.ridewithus.domain.entity.BikeStatus;
-import org.ridewithus.domain.entity.Dock;
-import org.ridewithus.domain.entity.Station;
+import org.ridewithus.domain.entity.*;
 import org.ridewithus.infrastructure.repository.DockRepository;
 import org.ridewithus.infrastructure.repository.StationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,9 +19,10 @@ public class StationService {
 
     @Autowired
     private StationRepository stationRepository;
-
     @Autowired
     private DockRepository dockRepository;
+    @Autowired
+    private DomainEventService eventService;
 
     @Transactional
     public List<StationDTO> getAllStations() {
@@ -91,6 +90,19 @@ public class StationService {
         List<Dock> docks = dockRepository.findByStationAndStatus(station.get(), Dock.DockStatus.EMPTY);
 
         return docks.stream().map(this::mapToDockDTO).toList();
+    }
+
+    public void checkRebalance(User user, Long stationId) {
+        Station station = stationRepository.findById(stationId)
+                .orElseThrow(() -> new RuntimeException("Station not found"));
+
+        long bikes = station.getDocks().stream()
+                .filter(d -> d.getBike() != null)
+                .count();
+
+        if (bikes == 0) {
+            eventService.emitEvent(user,"ALERT_OPERATOR", station.getName() + " station has no bikes. Rebalance required");
+        }
     }
 
     private DockDTO mapToDockDTO(Dock dock) {
