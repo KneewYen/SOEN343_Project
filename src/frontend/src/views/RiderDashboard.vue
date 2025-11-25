@@ -16,7 +16,7 @@
               </svg>
             </div>
             <h1 class="app-title">RideWithUs</h1>
-            <span class="role-badge">Rider</span>
+            <span class="role-badge">{{ user?.role?.toLowerCase() === 'dual' ? 'Dual Mode' : 'Rider' }}</span>
           </div>
           <div class="user-info">
             <span class="welcome-text">Welcome, {{ user?.fullName || 'Rider' }}!</span>
@@ -294,6 +294,7 @@
       :show="showAccountDetails" 
       :user="user"
       @close="showAccountDetails = false"
+      @modeChanged="handleModeChange"
     />
   </div>
 </template>
@@ -308,14 +309,23 @@ import RideHistory from '@/components/RideHistory.vue'
 import BillingHistory from '@/components/BillingHistory.vue'
 import PricingPlan from '@/components/PricingPlan.vue'
 import AccountDetails from '@/components/AccountDetails.vue'
+import { useDualMode } from '@/composables/useDualMode'
 
 
 const router = useRouter()
+const { currentMode } = useDualMode()
 const user = ref(null)
 const showStationsList = ref(false)
 const showRideHistoryList = ref(false)
 const showBillingHistoryList = ref(false)
 const showAccountDetails = ref(false)
+
+const handleModeChange = (mode) => {
+  // If user switches to operator mode, redirect to operator dashboard
+  if (mode === 'operator' && user.value?.role?.toLowerCase() === 'dual') {
+    router.push('/dashboard/operator')
+  }
+}
 const stations = ref([])
 const loading = ref(false)
 const currentReservation = ref(null)
@@ -355,6 +365,7 @@ const handleLogout = () => {
   console.log('🚪 Logout button clicked')
   localStorage.removeItem('user')
   localStorage.removeItem('token')
+  localStorage.removeItem('dualMode')
   console.log('🚪 Navigating to /login')
   // Use replace instead of push to avoid navigation guard issues
   router.replace('/login')
