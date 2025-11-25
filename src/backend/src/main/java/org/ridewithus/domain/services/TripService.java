@@ -44,7 +44,7 @@ public class TripService {
 
     @Transactional
     public Long startTrip(Long reservationId) throws Exception {
-        Reservation reservation = reservationRepository.findByReservationId(reservationId);
+        Reservation reservation = reservationRepository.findByReservationId(reservationId).orElseThrow();
 
         if (reservation == null || reservation.getExpiryDateTime().isBefore(LocalDateTime.now())){
             throw new Exception("Reservation is Invalid or has Expired");

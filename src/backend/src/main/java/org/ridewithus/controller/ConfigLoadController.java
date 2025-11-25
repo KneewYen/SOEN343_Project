@@ -163,7 +163,7 @@ public class ConfigLoadController {
                     if (dockNode.has("bike") && !dockNode.get("bike").isNull()) {
 
                         JsonNode bikeNode = dockNode.get("bike");
-                        Bike bike = bikeRepository.findById(bikeNode.get("id").asLong());
+                        Bike bike = bikeRepository.findById(bikeNode.get("id").asLong()).orElseThrow();
 
                         bike.setType(bikeNode.get("type").asText());
                         bike.setStatus(BikeStatus.valueOf(bikeNode.get("status").asText().toUpperCase()));

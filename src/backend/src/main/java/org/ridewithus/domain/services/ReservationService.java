@@ -43,7 +43,7 @@ public class ReservationService {
     private DomainEventService eventService;
 
     public ReservationDTO getReservation(Long reservationId) {
-        Reservation reservation = reservationRepository.findByReservationId(reservationId);
+        Reservation reservation = reservationRepository.findByReservationId(reservationId).orElseThrow();
         return mapToDTO(reservation);
     }
 
@@ -103,13 +103,13 @@ public class ReservationService {
 
 
     public boolean isReservationValid(Long reservationId) {
-        Reservation reservation = reservationRepository.findByReservationId(reservationId);
+        Reservation reservation = reservationRepository.findByReservationId(reservationId).orElseThrow();
 
         return reservation != null && reservation.getExpiryDateTime().isAfter(LocalDateTime.now());
     }
 
     public void deleteReservation(Long reservationId) throws Exception {
-        Reservation reservation = reservationRepository.findByReservationId(reservationId);
+        Reservation reservation = reservationRepository.findByReservationId(reservationId).orElseThrow();
 
         if (reservation == null) {
             throw new Exception("Reservation not found");
