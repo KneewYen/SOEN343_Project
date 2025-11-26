@@ -232,6 +232,26 @@
               <div v-else class="no-billing">
                 <p>No billing information available for this trip.</p>
               </div>
+
+              <div v-if="!hasSubmittedRating" class="bike-rating">
+                <h3 class="section-title">Rate Your Bike</h3>
+
+                <div class="stars">
+                  <span 
+                    v-for="star in 5" 
+                    :key="star"
+                    class="star"
+                    :class="{ filled: star <= bikeRating }"
+                    @click="bikeRating = star"
+                  >
+                    ★
+                  </span>
+                </div>
+
+                <button class="action-btn primary submit-rating" @click="submitRating">
+                  Submit Rating
+                </button>
+              </div>
             </section>
 
           <!-- Recent Trips -->
@@ -306,6 +326,9 @@ const prevReservationId = ref(null)
 const showPricingList = ref(false)
 const tripSummary = ref(null)
 const billing = ref(null)
+const bikeRating = ref(0)
+const hasSubmittedRating = ref(false)
+const selectedBike = ref(null)
 
 onMounted(() => {
   // Load user data from localStorage
@@ -330,6 +353,17 @@ onBeforeUnmount(() => {
     reservationInterval = null
   }
 })
+const submitRating = async () => {
+  try {
+    await apiClient.submitBikeRating(selectedBike.value, bikeRating.value)
+
+    alert("Thanks for rating!")
+    hasSubmittedRating.value = true
+  } catch (err) {
+    console.error(err)
+    alert("Could not submit rating.")
+  }
+}
 
 const handleLogout = () => {
   console.log('🚪 Logout button clicked')
@@ -606,6 +640,7 @@ const checkActiveReservation = async () => {
             startTime: new Date()
           }
           currentReservation.value = null
+          hasSubmittedRating.value = false
         } else {
           alert('Failed to start trip: ' + (response.message || 'Unknown error'))
         }
@@ -654,6 +689,7 @@ const checkActiveReservation = async () => {
           alert('Please select a return station')
           return
         }
+        selectedBike.value = currentTrip.value.bikeId
         const response = await apiClient.endTrip(currentTrip.value.id, selectedReturnStation.value)
         if (response.success) {
           alert('Trip ended successfully!')
@@ -1303,4 +1339,33 @@ const checkActiveReservation = async () => {
     grid-template-columns: 1fr;
   }
 }
+.bike-rating {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 12px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.stars {
+  font-size: 30px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.star {
+  color: #ccc;
+  margin-right: 6px;
+  cursor: pointer;
+}
+
+.star.filled {
+  color: gold;
+}
+
+.submit-rating {
+  margin-top: 10px;
+  width: 150px;
+}
+
 </style>
