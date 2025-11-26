@@ -343,6 +343,12 @@ class ApiClient {
     return this.request(`/billing/user/${userId}`)
   }
 
+  async submitBikeRating(bikeId, rating){
+    return this.request(`/bike/rating/${bikeId}/${rating}`, {
+      method: 'POST'
+    })
+  }
+
 }
 
 const apiClient = new ApiClient()

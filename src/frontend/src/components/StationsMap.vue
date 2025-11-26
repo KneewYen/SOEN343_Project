@@ -148,6 +148,7 @@
                 <h4>Bike #{{ bike.id }}</h4>
                 <p>Type: {{ bike.type || 'Standard' }}</p>
                 <p>Status: {{ bike.status }}</p>
+                <p>Rating: {{ bike.rating }} / 5</p>
               </div>
               <div class="bike-status" :class="getBikeStatusClass(bike)">
                 {{ getBikeStatusText(bike) }}
