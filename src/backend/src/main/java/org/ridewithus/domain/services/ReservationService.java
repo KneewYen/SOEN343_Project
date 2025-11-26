@@ -62,7 +62,7 @@ public class ReservationService {
 
         List<Reservation> reservations = reservationRepository.findByUserId(userId);
 
-        boolean hasActiveReservation = reservations.stream().anyMatch(res -> res.getStatus() == Reservation.ReservationStatus.ACTIVE);
+        boolean hasActiveReservation = reservations.stream().anyMatch(res -> res.getExpiryDateTime().isAfter(LocalDateTime.now()));
 
         if (hasActiveReservation) {
             throw new Exception("You already have an active reservation");
@@ -89,7 +89,6 @@ public class ReservationService {
         bikeRepository.save(bike.get());
 
         Reservation reservation = Reservation.builder().bike(bike.get()).user(user.get()).build();
-        reservation.setStatus(Reservation.ReservationStatus.ACTIVE);
 
         reservationRepository.save(reservation);
 
@@ -119,20 +118,19 @@ public class ReservationService {
 
         reservation.getBike().returnBike();
 
-        reservation.setStatus(Reservation.ReservationStatus.CANCELLED);
-
         bikeRepository.save(reservation.getBike());
-        reservationRepository.save(reservation);
 
         String newStatus = reservation.getBike().getStatus().toString();
 
         eventService.emitEvent(reservation.getUser(),"RESERVATION_DELETED", String.format("Reservation %d deleted - Bike %d: %s -> %s", reservation.getReservationId(), reservation.getBike().getId(), oldStatus, newStatus));
+
+        reservationRepository.deleteById(reservationId);
     }
 
     public List<ReservationDTO> getUserReservations(Long userId) {
         List<Reservation> reservations = reservationRepository.findByUserId(userId);
         return reservations.stream()
-                .filter(res -> res.getStatus() == Reservation.ReservationStatus.ACTIVE)
+                .filter(res -> res.getExpiryDateTime().isAfter(LocalDateTime.now()))
                 .map(this::mapToDTO)
                 .toList();
     }

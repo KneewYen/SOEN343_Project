@@ -9,7 +9,6 @@ import org.ridewithus.infrastructure.repository.BikeRepository;
 import org.ridewithus.infrastructure.repository.DockRepository;
 import org.ridewithus.infrastructure.repository.StationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,12 +19,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @RestController
-@RequestMapping("api/import")
+@RequestMapping("/import")
 public class ConfigLoadController {
     
     // autowire tells spring to find a bean with that name
@@ -105,77 +101,5 @@ public class ConfigLoadController {
             return "failure" ;
         }
 
-    }
-
-    @PostMapping("/reset")
-    @Transactional
-    public ResponseEntity<Map<String, Object>> resetSystem(){
-        Map<String, Object> response = new HashMap<>();
-
-        try {
-            List<Bike> badBikes = bikeRepository.findAll().stream()
-                    .filter(b -> b.getStatus() == BikeStatus.ON_TRIP ||
-                            b.getStatus() == BikeStatus.RESERVED)
-                    .toList();
-
-            if (!badBikes.isEmpty()) {
-                response.put("success", false);
-                response.put("message", "Some bikes are still ON_TRIP or RESERVED.");
-                return ResponseEntity.badRequest().body(response);
-            }
-
-            ObjectMapper mapper = new ObjectMapper();
-            InputStream file = getClass().getClassLoader().getResourceAsStream("core.json");
-            JsonNode root = mapper.readTree(file);
-
-            for (JsonNode stationNode : root.get("stations")) {
-
-                Long stationId = stationNode.get("id").asLong();
-                Station station = stationRepository.getReferenceById(stationId);
-
-                station.setName(stationNode.get("name").asText());
-                station.setStatus(Station.StationStatus.valueOf(stationNode.get("status").asText().toUpperCase()));
-                station.setLatitude(stationNode.get("latitude").asDouble());
-                station.setLongitude(stationNode.get("longitude").asDouble());
-                station.setAddress(stationNode.get("address").asText());
-                station.setCapacity(stationNode.get("capacity").asInt());
-                stationRepository.save(station);
-
-                for (JsonNode dockNode : stationNode.get("docks")) {
-
-                    Long dockId = dockNode.get("id").asLong();
-                    Dock dock = dockRepository.getReferenceById(dockId);
-
-                    dock.setStatus(Dock.DockStatus.valueOf(dockNode.get("status").asText().toUpperCase()));
-                    dockRepository.save(dock);
-
-                    if (dockNode.has("bike") && !dockNode.get("bike").isNull()) {
-                        JsonNode bikeNode = dockNode.get("bike");
-
-                        Bike bike = bikeRepository.getReferenceById(bikeNode.get("id").asLong());
-                        bike.setType(bikeNode.get("type").asText());
-                        bike.setStatus(BikeStatus.valueOf(bikeNode.get("status").asText().toUpperCase()));
-                        bike.setDock(dock);
-                        bikeRepository.save(bike);
-
-                    } else {
-                        // Remove any existing bike
-                        if (dock.getBike() != null) {
-                            dock.getBike().setDock(null);
-                            bikeRepository.save(dock.getBike());
-                        }
-                    }
-                }
-            }
-
-            response.put("success", true);
-            response.put("message", "System reset successfully!");
-            return ResponseEntity.ok(response);
-
-        } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "Reset failed: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
-        }
     }
 }
