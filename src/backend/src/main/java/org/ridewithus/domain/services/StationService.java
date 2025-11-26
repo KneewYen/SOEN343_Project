@@ -60,7 +60,6 @@ public class StationService {
                         .id(bike.getId())
                         .type(bike.getType())
                         .status(bike.getStatus())
-                        .rating(bike.getRating())
                         .dockId(bike.getDock().getId())
                         .build()).toList();
 

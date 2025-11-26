@@ -258,17 +258,11 @@ class ApiClient {
     })
   }
 
-  async resetSystem(){
-    return this.request('/import/reset', {
-      method: 'POST'
-    })
-  }
-
   //Event API methods
   async getRecentEvents() {
-    return this.request('/events/recent', {
-      method: 'GET'
-    })
+  return this.request('/events/recent', {
+    method: 'GET'
+  })
 }
 
 
@@ -337,12 +331,6 @@ class ApiClient {
 
   async getBillingsByUserId(userId) {
     return this.request(`/billing/user/${userId}`)
-  }
-
-  async submitBikeRating(bikeId, rating){
-    return this.request(`/bike/rating/${bikeId}/${rating}`, {
-      method: 'POST'
-    })
   }
 
 }

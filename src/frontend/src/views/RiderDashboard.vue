@@ -16,7 +16,6 @@
               </svg>
             </div>
             <h1 class="app-title">RideWithUs</h1>
-            <span class="role-badge">Rider</span>
           </div>
           <div class="user-info">
             <span class="welcome-text">Welcome, {{ user?.fullName || 'Rider' }}!</span>
@@ -205,12 +204,12 @@
             </div>
           </section>
 
-          <section v-if="tripSummary" class="recent-trips">
+          <section v-if="tripSummary" class="trip-summary">
               <TripSummary :trip="selectedTrip" />
 
               <!-- Billing Information (added here) -->
               <div v-if="billing" class="billing-info">
-                <h3 class="section-title">Billing Summary</h3>
+                <h3 class="billing-title">Billing Summary</h3>
 
                 <div class="billing-details">
                   <p><strong>Billing ID:</strong> {{ billing.billingId }}</p>
@@ -231,26 +230,6 @@
 
               <div v-else class="no-billing">
                 <p>No billing information available for this trip.</p>
-              </div>
-
-              <div v-if="!hasSubmittedRating" class="bike-rating">
-                <h3 class="section-title">Rate Your Bike</h3>
-
-                <div class="stars">
-                  <span 
-                    v-for="star in 5" 
-                    :key="star"
-                    class="star"
-                    :class="{ filled: star <= bikeRating }"
-                    @click="bikeRating = star"
-                  >
-                    ★
-                  </span>
-                </div>
-
-                <button class="action-btn primary submit-rating" @click="submitRating">
-                  Submit Rating
-                </button>
               </div>
             </section>
 
@@ -326,9 +305,6 @@ const prevReservationId = ref(null)
 const showPricingList = ref(false)
 const tripSummary = ref(null)
 const billing = ref(null)
-const bikeRating = ref(0)
-const hasSubmittedRating = ref(false)
-const selectedBike = ref(null)
 
 onMounted(() => {
   // Load user data from localStorage
@@ -353,17 +329,6 @@ onBeforeUnmount(() => {
     reservationInterval = null
   }
 })
-const submitRating = async () => {
-  try {
-    await apiClient.submitBikeRating(selectedBike.value, bikeRating.value)
-
-    alert("Thanks for rating!")
-    hasSubmittedRating.value = true
-  } catch (err) {
-    console.error(err)
-    alert("Could not submit rating.")
-  }
-}
 
 const handleLogout = () => {
   console.log('🚪 Logout button clicked')
@@ -504,7 +469,7 @@ const checkActiveReservation = async () => {
           prevReservationId.value = null
           currentReservation.value = null
           console.log('Reservation expired (backend removed it) — notifying user')
-          alert('Your bike reservation has expired.')
+          //alert('Your bike reservation has expired.')
           await loadStations()
         } else {
           currentReservation.value = null
@@ -581,42 +546,42 @@ const checkActiveReservation = async () => {
     return null
 }
 
-  const reserveBike = async (bikeId) => {
-    try {
-      if (!user.value?.id) {
-        alert('Please log in to reserve a bike')
-        return
-      }
-      
-      // Check if user already has an active reservation
-      if (currentReservation.value) {
-        const cancel = confirm('You already have an active reservation. Do you want to cancel it and create a new one?')
-        if (cancel) {
-          await cancelReservation()
-        } else {
+    const reserveBike = async (bikeId) => {
+      try {
+        if (!user.value?.id) {
+          alert('Please log in to reserve a bike')
           return
         }
-      }
-      
-      const response = await apiClient.createReservation(bikeId, user.value.id)
-      if (response.success) {
-        alert('Bike reserved successfully!')
-        // Set the current reservation state
-        currentReservation.value = { 
-          id: response.reservationId, 
-          bikeId: response.bike.id,
-          stationName: response.station, 
-          expiryTime: response.expiryDateTime 
+        
+        // Check if user already has an active reservation
+        if (currentReservation.value) {
+          const cancel = confirm('You already have an active reservation. Do you want to cancel it and create a new one?')
+          if (cancel) {
+            await cancelReservation()
+          } else {
+            return
+          }
         }
-        await loadStations() // Refresh stations
-      } else {
-        alert('Failed to reserve bike: ' + (response.message || 'Unknown error'))
+        
+        const response = await apiClient.createReservation(bikeId, user.value.id)
+        if (response.success) {
+          alert('Bike reserved successfully!')
+          // Set the current reservation state
+          currentReservation.value = { 
+            id: response.reservationId, 
+            bikeId: response.bike.id,
+            stationName: response.station, 
+            expiryTime: response.expiryDateTime 
+          }
+          await loadStations() // Refresh stations
+        } else {
+          alert('Failed to reserve bike: ' + (response.message || 'Unknown error'))
+        }
+      } catch (error) {
+        console.error('Error reserving bike:', error)
+        alert('Failed to reserve bike: ' + error.message)
       }
-    } catch (error) {
-      console.error('Error reserving bike:', error)
-      alert('Failed to reserve bike: ' + error.message)
     }
-  }
 
     const startTrip = async () => {
       try {
@@ -640,7 +605,6 @@ const checkActiveReservation = async () => {
             startTime: new Date()
           }
           currentReservation.value = null
-          hasSubmittedRating.value = false
         } else {
           alert('Failed to start trip: ' + (response.message || 'Unknown error'))
         }
@@ -689,13 +653,9 @@ const checkActiveReservation = async () => {
           alert('Please select a return station')
           return
         }
-        selectedBike.value = currentTrip.value.bikeId
         const response = await apiClient.endTrip(currentTrip.value.id, selectedReturnStation.value)
         if (response.success) {
           alert('Trip ended successfully!')
-
-          prevReservationId.value = null
-          currentReservation.value = null
 
           const res = await apiClient.calculatePrice(currentTrip.value.id)
           console.log("Billing response:", res)
@@ -1194,15 +1154,6 @@ const checkActiveReservation = async () => {
     gap: 12px;
   }
 }
-.role-badge {
-  background: var(--primary);
-  color: white;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-}
 
 @media (min-width: 481px) and (max-width: 768px) {
   .dashboard-main {
@@ -1339,33 +1290,4 @@ const checkActiveReservation = async () => {
     grid-template-columns: 1fr;
   }
 }
-.bike-rating {
-  margin-top: 20px;
-  padding: 15px;
-  border-radius: 12px;
-  background: var(--card-bg);
-  box-shadow: var(--card-shadow);
-}
-
-.stars {
-  font-size: 30px;
-  cursor: pointer;
-  margin-bottom: 10px;
-}
-
-.star {
-  color: #ccc;
-  margin-right: 6px;
-  cursor: pointer;
-}
-
-.star.filled {
-  color: gold;
-}
-
-.submit-rating {
-  margin-top: 10px;
-  width: 150px;
-}
-
 </style>

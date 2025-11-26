@@ -15,14 +15,6 @@ import java.time.LocalDateTime;
 @Table(name = "reservation")
 public class Reservation {
 
-    public enum ReservationStatus {
-        ACTIVE,
-        EXPIRED,
-        COMPLETED,
-        CANCELLED
-    }
-
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "reservation_id")
@@ -39,9 +31,5 @@ public class Reservation {
     @Builder.Default
     @Column(name = "expiry_date_time")
     private LocalDateTime expiryDateTime = LocalDateTime.now().plusMinutes(5); //Time till user can no longer use this reservation
-
-    @Enumerated(EnumType.STRING)
-    private ReservationStatus status;
-
 
 }
