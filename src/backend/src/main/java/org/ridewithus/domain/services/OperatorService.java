@@ -1,5 +1,6 @@
 package org.ridewithus.domain.services;
 
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.ridewithus.domain.entity.*;
 import org.ridewithus.infrastructure.repository.BikeRepository;
@@ -24,6 +25,10 @@ public class OperatorService {
     private StationRepository stationRepository;
     @Autowired
     private DomainEventService eventService;
+    @Autowired
+    private StationService stationService;
+    @Autowired
+    private EntityManager entityManager;
 
     @Transactional
     public String toggleBikeStatus(Long bikeId, User operator){
@@ -173,6 +178,15 @@ public class OperatorService {
             eventService.emitEvent(operator, "STATION_FULL", String.format("%s station is full", destinationStation.getName()));
         }
 
+        stationRepository.flush();   // flush pending changes
+        entityManager.clear();
+
+        // Reload the source station with updated docks
+        Station freshSourceStation = stationRepository.findById(sourceStationId)
+                .orElseThrow(() -> new RuntimeException("Station not found"));
+
+        stationService.checkRebalance(operator, freshSourceStation.getId());
+
         return "Bike " + bike.getId() + " successfully moved from station " + sourceStation.getName()
                 + " to station " + destinationStation.getName();
 
@@ -239,9 +253,21 @@ public class OperatorService {
         // Get free docks at destination after rebalancing
         List<Dock> freeDocksAfterRebalance = dockRepository.findAllByStationAndStatus(destinationStation, Dock.DockStatus.EMPTY);
 
+
         if(freeDocksAfterRebalance.isEmpty()){
             eventService.emitEvent(operator, "STATION_FULL", String.format("%s station is full", destinationStation.getName()));
         }
+
+        stationRepository.flush();   // flush pending changes
+        entityManager.clear();
+
+        // Reload the source station with updated docks
+        Station freshSourceStation = stationRepository.findById(sourceStationId)
+                .orElseThrow(() -> new RuntimeException("Station not found"));
+
+        stationService.checkRebalance(operator, freshSourceStation.getId());
+
+
 
         return numberOfBikes + " bikes successfully rebalanced from " + sourceStation.getName() + " to " + destinationStation.getName();
 

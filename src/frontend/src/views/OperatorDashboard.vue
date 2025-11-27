@@ -20,6 +20,17 @@
           </div>
           <div class="user-info">
             <span class="welcome-text">Welcome, {{ user?.fullName || 'Operator' }}!</span>
+            <button 
+              @click="showAccountDetails = true" 
+              class="account-btn" 
+              aria-label="Account Details" 
+              title="View Account Details"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </button>
             <button @click="handleLogout" class="logout-btn">Logout</button>
           </div>
         </div>
@@ -100,14 +111,22 @@
                 </span>
                 <span class="btn-text">Rebalance Bikes</span>
               </button>
-              <button @click="showStationManagement = true" class="action-btn secondary">
+              <button @click="showStationMap = true" class="action-btn secondary">
                 <span class="btn-icon">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2"/>
                   </svg>
                 </span>
-                <span class="btn-text">Manage Stations</span>
+                <span class="btn-text">View Map</span>
+              </button>
+              <button @click="showStationManagement = true" class="action-btn secondary">
+                <span class="btn-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+                <span class="btn-text">Station Management</span>
               </button>
               <button @click="showBikeManagement = true" class="action-btn secondary">
                 <span class="btn-icon">
@@ -116,17 +135,6 @@
                   </svg>
                 </span>
                 <span class="btn-text">Bike Maintenance</span>
-              </button>
-              <button class="action-btn secondary">
-                <span class="btn-icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </span>
-                <span class="btn-text">View Analytics</span>
               </button>
               <button @click="showDockManagement = true" class="action-btn secondary">
                 <span class="btn-icon">
@@ -264,6 +272,27 @@
       </div>
     </div>
 
+     <!-- Station Map Modal -->
+    <div v-if="showStationMap" class="modal-overlay" @click="showStationMap = false">
+      <div class="modal-content large" @click.stop>
+        <div class="modal-header">
+          <h3>Station Map</h3>
+          <button @click="showStationMap = false" class="close-btn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="stations-management">
+            <StationsMap 
+              :stations="stations" 
+              :loading="loading" 
+              @stationToggle = "toggleStationStatus($event)"
+              :guest-mode="false"
+              :operator-mode="true"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Station Management Modal -->
     <div v-if="showStationManagement" class="modal-overlay" @click="showStationManagement = false">
       <div class="modal-content large" @click.stop>
@@ -359,6 +388,13 @@
         </div>
       </div>
     </div>
+    
+    <!-- Account Details Modal -->
+    <AccountDetails 
+      :show="showAccountDetails" 
+      :user="user"
+      @close="showAccountDetails = false"
+    />
   </div>
 </template>
 
@@ -368,12 +404,16 @@ import { useRouter } from 'vue-router'
 import ThemeToggle from '../components/ThemeToggle.vue'
 import apiClient from '../lib/api'
 import RideHistory from '@/components/RideHistory.vue'
+import StationsMap from '@/components/StationsMap.vue'
+import AccountDetails from '@/components/AccountDetails.vue'
 
 export default {
   name: 'OperatorDashboard',
   components: {
     ThemeToggle,
-    RideHistory
+    RideHistory, 
+    StationsMap,
+    AccountDetails
   },
   setup() {
     const router = useRouter()
@@ -382,8 +422,10 @@ export default {
     const loading = ref(false)
     const showRebalanceModal = ref(false)
     const showStationManagement = ref(false)
+    const showStationMap = ref(false)
     const showBikeManagement = ref(false)
     const showDockManagement = ref(false)
+    const showAccountDetails = ref(false)
     const events = ref([])
     const rebalanceForm = ref({
       sourceStationId: '',
@@ -425,31 +467,44 @@ export default {
 
     const loadStationCounts = async () => {
       for (const station of stations.value) {
-        if (!stationCounts.value[station.id]) {
-          try {
-            const [freeDocksResponse, availableBikesResponse] = await Promise.all([
-              apiClient.getNumberOfFreeDocks(station.id),
-              apiClient.getNumberOfAvailableBikes(station.id)
-            ])
-            // Handle both number response and object response
-            const freeDocks = typeof freeDocksResponse === 'number' ? freeDocksResponse : (freeDocksResponse?.count || freeDocksResponse || 0)
-            const availableBikes = typeof availableBikesResponse === 'number' ? availableBikesResponse : (availableBikesResponse?.count || availableBikesResponse || 0)
-            
+
+        try {
+          const [freeDocksRes, availableBikesRes] = await Promise.all([
+            apiClient.getNumberOfFreeDocks(station.id),
+            apiClient.getNumberOfAvailableBikes(station.id)
+          ])
+
+          const freeDocks =
+            typeof freeDocksRes === 'number'
+              ? freeDocksRes
+              : freeDocksRes?.count ?? 0
+
+          const availableBikes =
+            typeof availableBikesRes === 'number'
+              ? availableBikesRes
+              : availableBikesRes?.count ?? 0
+
+          stationCounts.value[station.id] = {
+            freeDocks,
+            availableBikes
+          }
+
+        } catch (error) {
+          console.error(`Error loading counts for station ${station.id}:`, error)
+
+          // SAFER FALLBACK (station.docks must exist)
+          if (station.docks) {
             stationCounts.value[station.id] = {
-              freeDocks: freeDocks,
-              availableBikes: availableBikes
+              freeDocks: station.docks.filter(d => d.status?.toLowerCase() === 'empty').length,
+              availableBikes: station.docks.filter(d => d.bike != null).length
             }
-          } catch (error) {
-            console.error(`Error loading counts for station ${station.id}:`, error)
-            // Fallback to local calculation if API fails
-            stationCounts.value[station.id] = {
-              freeDocks: station.dockIds ? station.dockIds.filter(dock => dock.status === 'EMPTY').length : 0,
-              availableBikes: station.dockIds ? station.dockIds.filter(dock => dock.bikeId && dock.status === 'OCCUPIED').length : 0
-            }
+          } else {
+            stationCounts.value[station.id] = { freeDocks: 0, availableBikes: 0 }
           }
         }
       }
     }
+
 
     const loadStations = async () => {
       try {
@@ -677,6 +732,10 @@ export default {
   
     }
 
+     const handleStationToggle = (station, status) => {
+      toggleStationStatus(station.id)
+    }
+
     return {
       user,
       handleLogout,
@@ -684,8 +743,10 @@ export default {
       loading,
       showRebalanceModal,
       showStationManagement,
+      showStationMap,
       showBikeManagement,
       showDockManagement,
+      showAccountDetails,
       rebalanceForm,
       systemStats,
       events,
@@ -699,7 +760,8 @@ export default {
       getStationStatusClass,
       getDockStatusClass,
       getBikeStatusClass,
-      resetSystem
+      resetSystem, 
+      handleStationToggle
     }
   }
 }
@@ -772,6 +834,54 @@ export default {
 .welcome-text {
   color: var(--text);
   font-weight: 600;
+}
+
+.account-btn {
+  background: var(--surface-hover, #f1f5f9);
+  color: var(--text, #1e293b);
+  border: 2px solid var(--border, #e2e8f0);
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.account-btn::after {
+  content: 'Account Details';
+  position: absolute;
+  bottom: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  z-index: 1000;
+}
+
+.account-btn:hover::after {
+  opacity: 1;
+}
+
+.account-btn:hover {
+  background: var(--primary, #ff6b9d);
+  color: white;
+  border-color: var(--primary, #ff6b9d);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
 }
 
 .logout-btn {

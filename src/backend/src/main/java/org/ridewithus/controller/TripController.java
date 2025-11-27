@@ -93,6 +93,22 @@ public class TripController {
         }
     }
 
+    @GetMapping("/incomplete/{userId}")
+    public ResponseEntity<Map<String, Object>> getIncompleteUserTrips(@PathVariable("userId") Long userId) {
+        try {
+            List<TripDTO> trips = tripService.getIncompleteUserTrips(userId);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("trips", trips);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
     @GetMapping("/AllTrips")
     public ResponseEntity<Map<String, Object>> getAllTrips( @RequestParam(name = "page", defaultValue = "0") int page,
                                                             @RequestParam(name = "size", defaultValue = "3") int size) {

@@ -12,6 +12,8 @@ import java.util.Optional;
 @Repository
 public interface DockRepository extends JpaRepository<Dock, Long> {
 
+    Optional<Dock> findById(long id);
+
     // returns number of bikes in a station by searching a certain station and dock status (occupied or empty)
     long countByStationAndStatus(Station station, String status);
 
@@ -25,6 +27,8 @@ public interface DockRepository extends JpaRepository<Dock, Long> {
 
     // returns multiple docks
     List<Dock> findAllByStationAndStatus(Station station, Dock.DockStatus status);
+
+
 
     
 }

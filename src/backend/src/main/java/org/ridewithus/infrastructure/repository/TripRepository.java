@@ -1,5 +1,6 @@
 package org.ridewithus.infrastructure.repository;
 
+import org.ridewithus.domain.entity.Reservation;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.ridewithus.domain.entity.Trip;
@@ -26,5 +27,7 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
     Page<Trip> findByUserId(Long userId, Pageable pageable);
 
     List<Trip> findByUserIdAndStartTimeAfterAndTripCompleteTrue(Long userId, LocalDateTime starTime);
+  
+    List<Trip> findByUserIdAndTripComplete(Long userId, boolean tripComplete);
 
 }

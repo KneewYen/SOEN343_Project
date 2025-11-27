@@ -1,6 +1,6 @@
 // API Client for backend communication
 const API_BASE_URL = 'http://localhost:8080/api'
-const API_TIMEOUT = 100000
+const API_TIMEOUT = 30000 // Increased to 30 seconds for database operations
 
 class ApiClient {
   constructor() {
@@ -207,6 +207,10 @@ class ApiClient {
     return this.request(`/trip/paginate/user/${userId}?page=${page}&size=${size}`)
   }
 
+  async getIncompleteUserTrips(userId) {
+    return this.request(`/trip/incomplete/${userId}`)
+  }
+
   async startTrip(reservationId) {
     return this.request(`/trip/${reservationId}`, {
       method: 'POST'
@@ -341,6 +345,12 @@ class ApiClient {
 
   async getBillingsByUserId(userId) {
     return this.request(`/billing/user/${userId}`)
+  }
+
+  async submitBikeRating(bikeId, rating){
+    return this.request(`/bike/rating/${bikeId}/${rating}`, {
+      method: 'POST'
+    })
   }
 
 }
