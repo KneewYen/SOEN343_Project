@@ -4,6 +4,14 @@
     <div class="dashboard-container">
       <!-- Header -->
       <header class="dashboard-header">
+        <!-- Flex Dollar Balance - Top of Header -->
+        <div class="flex-dollar-top-badge" v-if="user?.role === 'rider'">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+            <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span class="flex-dollar-text">{{ user.flexDollars || 0 }} Flex $</span>
+        </div>
         <div class="header-content">
           <div class="logo-section">
             <div class="logo-icon">
@@ -19,13 +27,6 @@
             <span class="role-badge">Rider</span>
           </div>
           <div class="user-info">
-            <div class="flex-dollar-badge" v-if="user?.role === 'rider'">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-              <span>{{ user.flexDollars || 0 }} Flex $</span>
-            </div>
             <span class="welcome-text">Welcome, {{ user?.fullName || 'Rider' }}!</span>
             <button 
               @click="showAccountDetails = true" 
@@ -308,6 +309,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
+import authService from '../services/authService'
 import ThemeToggle from '../components/ThemeToggle.vue'
 import StationsMap from '../components/StationsMap.vue'
 import apiClient from '../lib/api'
@@ -334,19 +336,43 @@ const showPricingList = ref(false)
 const tripSummary = ref(null)
 const billing = ref(null)
 
-onMounted(() => {
-  // Load user data from localStorage
+onMounted(async () => {
+  // Load user data from localStorage first (for immediate display)
   const userData = localStorage.getItem('user')
   if (userData) {
     user.value = JSON.parse(userData)
 
-    // Initialize flexDollars if missing (for backward compatibility)
-    if (user.value && user.value.flexDollars === undefined) {
-      user.value.flexDollars = 0
-      localStorage.setItem('user', JSON.stringify(user.value))
-      console.log('Initialized flexDollars to 0')
+    // Normalize flexDollars field (map flexdollarbalance to flexDollars)
+    if (user.value) {
+      if (user.value.flexdollarbalance !== undefined) {
+        user.value.flexDollars = user.value.flexdollarbalance
+      } else if (user.value.flexDollars === undefined) {
+        user.value.flexDollars = 0
+      }
     }
   }
+  
+  // Refresh user data from backend database to get latest Flex Dollar balance
+  try {
+    const currentUser = await authService.getCurrentUser()
+    if (currentUser) {
+      // Normalize flexDollars field
+      if (currentUser.flexdollarbalance !== undefined) {
+        currentUser.flexDollars = currentUser.flexdollarbalance
+      } else if (currentUser.flexDollars === undefined) {
+        currentUser.flexDollars = 0
+      }
+      
+      user.value = currentUser
+      // Update localStorage with fresh data from database
+      localStorage.setItem('user', JSON.stringify(currentUser))
+      console.log('Refreshed user data from database. Flex Dollars:', currentUser.flexDollars)
+    }
+  } catch (error) {
+    console.warn('Could not refresh user data from backend:', error)
+    // Continue with localStorage data if backend is unavailable
+  }
+  
   // Initialize with clean state
   currentReservation.value = null
   currentTrip.value = null
@@ -701,14 +727,50 @@ const checkActiveReservation = async () => {
 
           // Check if flex dollar was awarded
           if (response.flexDollarAwarded) {
-            message += `\n\n🎉 You earned 1 Flex Dollar for returning to a low-capacity station!`
-            message += `\nYour Flex Dollar balance: ${response.flexDollarBalance}`
+            const amountAwarded = response.flexDollarAmountAwarded || 1
+            message += `\n\n🎉 You earned ${amountAwarded} Flex Dollar${amountAwarded > 1 ? 's' : ''} for returning to a low-capacity station!`
+            if (response.flexDollarConfirmationMessage) {
+              message += `\n${response.flexDollarConfirmationMessage}`
+            }
+          }
 
-            // Update user object with new balance
-            if (user.value) {
+          // Always refresh user data from database to get latest Flex Dollar balance
+          // Add a small delay to ensure database transaction is committed
+          await new Promise(resolve => setTimeout(resolve, 500))
+          
+          try {
+            const currentUser = await authService.getCurrentUser()
+            if (currentUser) {
+              // Normalize flexDollars field
+              if (currentUser.flexdollarbalance !== undefined) {
+                currentUser.flexDollars = currentUser.flexdollarbalance
+              } else if (currentUser.flexDollars === undefined) {
+                currentUser.flexDollars = 0
+              }
+              
+              user.value = currentUser
+              localStorage.setItem('user', JSON.stringify(currentUser))
+              console.log('Refreshed user balance from database after ending trip. Flex Dollars:', currentUser.flexDollars)
+              
+              // Update message with balance from database
+              if (response.flexDollarAwarded) {
+                message += `\nYour Flex Dollar balance: ${currentUser.flexDollars}`
+              }
+            } else if (response.flexDollarBalance !== undefined) {
+              // Fallback to response balance if getCurrentUser fails
+              if (user.value) {
+                user.value.flexDollars = response.flexDollarBalance
+                localStorage.setItem('user', JSON.stringify(user.value))
+                console.log('Updated user flex dollars from response:', user.value.flexDollars)
+              }
+            }
+          } catch (refreshError) {
+            console.warn('Could not refresh user data from backend:', refreshError)
+            // Fallback to response balance
+            if (response.flexDollarBalance !== undefined && user.value) {
               user.value.flexDollars = response.flexDollarBalance
               localStorage.setItem('user', JSON.stringify(user.value))
-              console.log('Updated user flex dollars:', user.value.flexDollars)
+              console.log('Updated user flex dollars from response (fallback):', user.value.flexDollars)
             }
           }
 
@@ -830,6 +892,36 @@ const checkActiveReservation = async () => {
   border-bottom: 2px solid var(--border);
   padding: 16px 20px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.flex-dollar-top-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-weight: 700;
+  font-size: 16px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  margin-bottom: 12px;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+  z-index: 10;
+}
+
+.flex-dollar-top-badge svg {
+  color: white;
+  flex-shrink: 0;
+}
+
+.flex-dollar-text {
+  white-space: nowrap;
 }
 
 .header-content {

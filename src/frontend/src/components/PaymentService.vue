@@ -13,9 +13,63 @@
             <span>Trip ID:</span>
             <strong>#{{ bill.tripId }}</strong>
           </div>
-          <div class="summary-item">
+          
+          <!-- Flex Dollar Application Control -->
+          <div v-if="currentFlexDollarBalance > 0" class="flex-dollar-application">
+            <div class="flex-dollar-header">
+              <span>Apply Flex Dollars</span>
+              <span class="balance-badge">{{ currentFlexDollarBalance }} Flex $ available</span>
+            </div>
+            <div class="flex-dollar-controls">
+              <button 
+                @click="decreaseFlexDollars" 
+                :disabled="selectedFlexDollarAmount <= 0"
+                class="flex-dollar-btn decrease"
+                type="button"
+              >
+                −
+              </button>
+              <div class="flex-dollar-amount">
+                <span class="amount-label">Amount to Apply:</span>
+                <strong class="amount-value">{{ selectedFlexDollarAmount }} Flex $</strong>
+              </div>
+              <button 
+                @click="increaseFlexDollars" 
+                :disabled="selectedFlexDollarAmount >= maxFlexDollarAmount"
+                class="flex-dollar-btn increase"
+                type="button"
+              >
+                +
+              </button>
+            </div>
+            <div v-if="selectedFlexDollarAmount > 0" class="flex-dollar-preview">
+              <span>Discount:</span>
+              <strong class="discount-amount">-${{ formatCurrency(selectedFlexDollarAmount) }}</strong>
+            </div>
+          </div>
+          
+          <!-- Total Charges -->
+          <div class="summary-item flex-dollar-info">
+            <span>Total Charges:</span>
+            <strong>${{ formatCurrency(paymentSummary ? paymentSummary.totalCharges : amount) }}</strong>
+          </div>
+          
+          <!-- Actual Discount (After Payment Processing) -->
+          <div v-if="paymentSummary && paymentSummary.flexDollarDiscount > 0" class="summary-item flex-dollar-discount">
+            <span>Flex Dollar Discount Applied:</span>
+            <strong class="discount">-${{ formatCurrency(paymentSummary.flexDollarDiscount) }}</strong>
+          </div>
+          
+          <!-- Amount Due -->
+          <div class="summary-item amount-due">
             <span>Amount Due:</span>
-            <strong class="amount">${{ formatCurrency(amount) }}</strong>
+            <strong class="amount">${{ formatCurrency(paymentSummary ? paymentSummary.finalAmount : Math.max(0, props.amount - selectedFlexDollarAmount)) }}</strong>
+          </div>
+          
+          <!-- Updated Balance (After Payment) -->
+          <div v-if="paymentSummary && paymentSummary.flexDollarBalance !== undefined" class="summary-item flex-dollar-balance">
+            <span>Remaining Flex Dollar Balance:</span>
+            <strong>{{ paymentSummary.flexDollarBalance }} Flex $</strong>
           </div>
         </div>
 
@@ -115,7 +169,7 @@
           @click="processPayment" 
           :disabled="processing || !canSubmit"
         >
-          {{ processing ? 'Processing...' : `Pay $${formatCurrency(amount)}` }}
+          {{ processing ? 'Processing...' : `Pay $${formatCurrency(paymentSummary ? paymentSummary.finalAmount : Math.max(0, props.amount - selectedFlexDollarAmount))}` }}
         </button>
       </footer>
     </div>
@@ -123,7 +177,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import apiClient from '../lib/api'
 
@@ -143,6 +197,14 @@ const cvv = ref('')
 const cardholderName = ref('')
 const processing = ref(false)
 const error = ref('')
+const paymentSummary = ref(null)
+const currentFlexDollarBalance = ref(0)
+const estimatedFlexDollarDiscount = ref(0)
+const selectedFlexDollarAmount = ref(0)
+const maxFlexDollarAmount = computed(() => {
+  // Maximum is the minimum of: user's balance and trip cost
+  return Math.min(currentFlexDollarBalance.value, Math.floor(props.amount))
+})
 
 const paymentMethods = [
   { id: 'card', name: 'Credit/Debit Card', icon: '💳' },
@@ -178,37 +240,106 @@ function formatCurrency(val) {
   return typeof val === 'number' ? val.toFixed(2) : val
 }
 
+// Load current Flex Dollar balance and calculate estimated discount
+function loadFlexDollarInfo() {
+  try {
+    const userData = localStorage.getItem('user')
+    if (userData) {
+      const user = JSON.parse(userData)
+      currentFlexDollarBalance.value = user.flexDollars || 0
+      // Initialize selected amount to 0 (user must manually select)
+      selectedFlexDollarAmount.value = 0
+      // Calculate estimated discount (min of balance and trip cost) for display
+      estimatedFlexDollarDiscount.value = Math.min(currentFlexDollarBalance.value, Math.floor(props.amount))
+    }
+  } catch (e) {
+    console.error('Error loading Flex Dollar info:', e)
+  }
+}
+
+function increaseFlexDollars() {
+  if (selectedFlexDollarAmount.value < maxFlexDollarAmount.value) {
+    selectedFlexDollarAmount.value = Math.min(selectedFlexDollarAmount.value + 1, maxFlexDollarAmount.value)
+  }
+}
+
+function decreaseFlexDollars() {
+  if (selectedFlexDollarAmount.value > 0) {
+    selectedFlexDollarAmount.value = Math.max(selectedFlexDollarAmount.value - 1, 0)
+  }
+}
+
+// Load Flex Dollar info when component mounts
+onMounted(() => {
+  loadFlexDollarInfo()
+})
+
 async function processPayment() {
   if (!canSubmit.value) return
 
   processing.value = true
   error.value = ''
+  paymentSummary.value = null
 
   try {
-    // Call payment API endpoint
-    const response = await apiClient.processPayment({
-      tripId: props.bill.tripId,
-      amount: props.amount,
-      paymentMethod: selectedMethod.value,
-      paymentDetails: selectedMethod.value === 'card' ? {
-        cardNumber: cardNumber.value.replace(/\s/g, ''),
-        expiryDate: expiryDate.value,
-        cvv: cvv.value,
-        cardholderName: cardholderName.value
-      } : {}
-    })
+    // Call the new endpoint that automatically applies Flex Dollars
+    const paymentDetails = selectedMethod.value === 'card' ? {
+      cardNumber: cardNumber.value.replace(/\s/g, ''),
+      expiryDate: expiryDate.value,
+      cvv: cvv.value,
+      cardholderName: cardholderName.value
+    } : {}
+
+    // Include selected Flex Dollar amount in payment details
+    if (selectedFlexDollarAmount.value > 0) {
+      paymentDetails.flexDollarAmount = selectedFlexDollarAmount.value
+    }
+    
+    const response = await apiClient.processTripPayment(
+      props.bill.tripId,
+      selectedMethod.value,
+      paymentDetails
+    )
 
     if (response.success) {
+      // Store payment summary for display
+      paymentSummary.value = {
+        totalCharges: response.totalCharges,
+        flexDollarDiscount: response.flexDollarDiscount || 0,
+        finalAmount: response.finalAmount,
+        flexDollarBalance: response.flexDollarBalance,
+        paymentSummary: response.paymentSummary
+      }
+
+      // Update user's Flex Dollar balance in localStorage if available
+      const userData = localStorage.getItem('user')
+      if (userData) {
+        const user = JSON.parse(userData)
+        user.flexDollars = response.flexDollarBalance
+        localStorage.setItem('user', JSON.stringify(user))
+      }
+
       // Mark the trip as paid in localStorage
       const paidTrips = JSON.parse(localStorage.getItem('paidTrips') || '[]')
       if (!paidTrips.includes(props.bill.tripId)) {
         paidTrips.push(props.bill.tripId)
         localStorage.setItem('paidTrips', JSON.stringify(paidTrips))
       }
+
+      // Show success message with Flex Dollar details
+      let successMessage = 'Payment processed successfully!'
+      if (response.paymentSummary) {
+        successMessage = response.paymentSummary
+      }
+      
+      alert(successMessage)
+
       emit('payment-success', {
         tripId: props.bill.tripId,
-        amount: props.amount,
-        transactionId: response.transactionId
+        amount: response.finalAmount,
+        transactionId: response.transactionId,
+        flexDollarDiscount: response.flexDollarDiscount,
+        flexDollarBalance: response.flexDollarBalance
       })
     } else {
       error.value = response.message || 'Payment failed. Please try again.'
@@ -499,6 +630,175 @@ function close() {
 .cancel-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.flex-dollar-info {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.flex-dollar-discount {
+  color: #059669;
+  font-weight: 600;
+}
+
+.flex-dollar-discount .discount {
+  color: #059669;
+}
+
+.flex-dollar-balance {
+  color: #667eea;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.flex-dollar-balance-info {
+  background: rgba(102, 126, 234, 0.1);
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border-left: 3px solid #667eea;
+}
+
+.flex-dollar-balance-info .balance-amount {
+  color: #667eea;
+  font-size: 1.1rem;
+}
+
+.flex-dollar-preview {
+  background: rgba(5, 150, 105, 0.1);
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border-left: 3px solid #059669;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.flex-dollar-preview .discount-preview {
+  color: #059669;
+  font-size: 1.1rem;
+}
+
+.auto-apply-note {
+  font-size: 0.75rem;
+  color: #059669;
+  font-style: italic;
+  margin-left: auto;
+}
+
+.amount-due {
+  border-top: 2px solid var(--border-color);
+  padding-top: 12px;
+  margin-top: 8px;
+  font-size: 1.1rem;
+}
+
+.amount-due .amount {
+  font-size: 1.5rem;
+  color: var(--primary);
+}
+
+.flex-dollar-application {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border: 2px solid #667eea;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0;
+}
+
+.flex-dollar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.balance-badge {
+  background: #667eea;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.flex-dollar-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 12px 0;
+}
+
+.flex-dollar-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #667eea;
+  background: white;
+  color: #667eea;
+  font-size: 24px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.flex-dollar-btn:hover:not(:disabled) {
+  background: #667eea;
+  color: white;
+  transform: scale(1.1);
+}
+
+.flex-dollar-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: #ccc;
+  color: #ccc;
+}
+
+.flex-dollar-amount {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 150px;
+}
+
+.amount-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.amount-value {
+  font-size: 1.5rem;
+  color: #667eea;
+  font-weight: 700;
+}
+
+.flex-dollar-preview {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  margin-top: 12px;
+  border-top: 1px solid rgba(102, 126, 234, 0.2);
+  font-size: 0.95rem;
+}
+
+.discount-amount {
+  color: #059669;
+  font-size: 1.2rem;
+  font-weight: 700;
 }
 </style>
 

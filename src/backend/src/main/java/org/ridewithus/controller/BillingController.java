@@ -4,6 +4,7 @@ import org.ridewithus.domain.dto.BillingDTO;
 import org.ridewithus.domain.dto.ChargeDTO;
 import org.ridewithus.domain.entity.Billing;
 import org.ridewithus.domain.entity.Charge;
+import org.ridewithus.domain.services.PaymentService;
 import org.ridewithus.domain.services.PricingService;
 import org.ridewithus.infrastructure.repository.BillingRepository;
 import org.ridewithus.infrastructure.repository.ChargeRepository;
@@ -29,6 +30,9 @@ public class BillingController {
 
     @Autowired
     private PricingService pricingService;
+
+    @Autowired
+    private PaymentService paymentService;
 
     @PostMapping("/create/{tripId}")
     public ResponseEntity<Map<String, Object>> createBillingForTrip(@PathVariable Long tripId) {
@@ -64,6 +68,8 @@ public class BillingController {
                     .tripId(billing.getTrip().getTripId())
                     .charges(chargeDTOs)
                     .totalAmount(totalAmount)
+                    .flexDollarDiscount(billing.getFlexDollarDiscount())
+                    .finalAmount(billing.getFinalAmount() > 0 ? billing.getFinalAmount() : (int) Math.round(totalAmount))
                     .build();
             
             response.put("success", true);
@@ -108,6 +114,8 @@ public class BillingController {
                     .tripId(billing.getTrip().getTripId())
                     .charges(chargeDTOs)
                     .totalAmount(totalAmount)
+                    .flexDollarDiscount(billing.getFlexDollarDiscount())
+                    .finalAmount(billing.getFinalAmount() > 0 ? billing.getFinalAmount() : (int) Math.round(totalAmount))
                     .build();
             
             response.put("success", true);
@@ -153,6 +161,43 @@ public class BillingController {
             response.put("success", true);
             response.put("billings", billingDTOs);
             return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * Process trip payment with automatic Flex Dollar application.
+     * This endpoint automatically applies any available Flex Dollars to reduce the trip cost.
+     * 
+     * POST /api/billing/trips/{tripId}/process
+     */
+    @PostMapping("/trips/{tripId}/process")
+    public ResponseEntity<Map<String, Object>> processTripPayment(
+            @PathVariable Long tripId,
+            @RequestBody(required = false) Map<String, Object> paymentData) {
+        try {
+            // Default payment method and details if not provided
+            String paymentMethod = "card";
+            Map<String, Object> paymentDetails = new HashMap<>();
+            
+            if (paymentData != null) {
+                if (paymentData.containsKey("paymentMethod")) {
+                    paymentMethod = paymentData.get("paymentMethod").toString();
+                }
+                if (paymentData.containsKey("paymentDetails")) {
+                    paymentDetails = (Map<String, Object>) paymentData.get("paymentDetails");
+                }
+            }
+
+            // Process payment with Flex Dollar application
+            Map<String, Object> result = paymentService.processTripPaymentWithFlexDollars(
+                    tripId, paymentMethod, paymentDetails);
+            
+            return ResponseEntity.ok(result);
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);

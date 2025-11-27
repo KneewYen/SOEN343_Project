@@ -27,6 +27,13 @@ public interface AuthenticationFacade {
     UserDTO getCurrentUser();
     
     /**
+     * Get user by ID from database (fetches latest data including Flex Dollar balance)
+     * @param userId The user ID
+     * @return User details or null if not found
+     */
+    UserDTO getCurrentUserById(Long userId);
+    
+    /**
      * Logout current user
      * @return Success status
      */

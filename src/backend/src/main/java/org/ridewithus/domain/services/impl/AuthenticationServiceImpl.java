@@ -129,6 +129,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
     
     @Override
+    public UserDTO getCurrentUserById(Long userId) {
+        // Fetch latest user data from database to ensure we have current Flex Dollar balance
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            UserDTO userDTO = mapToUserDTO(user);
+            // Update cached user with latest data
+            this.currentUser = userDTO;
+            return userDTO;
+        }
+        return null;
+    }
+    
+    @Override
     public void logout() {
         this.currentUser = null;
     }

@@ -117,6 +117,7 @@ class FlexDollarControllerTest {
                 .andExpect(jsonPath("$.message").value("Station does not exist"));
     }
 
+
     /**
      * Test Case 4: API should return all required fields in response
      * Expected: Response contains success, tripId, flexDollarBalance, flexDollarAwarded, message

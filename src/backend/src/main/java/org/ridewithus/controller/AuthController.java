@@ -76,6 +76,7 @@ public class AuthController {
     /**
      * Get current logged-in user
      * GET /api/auth/me
+     * Fetches the latest user data from database, including Flex Dollar balance
      */
     @GetMapping("/me")
     public ResponseEntity<AuthResponse> getCurrentUser(HttpSession session) {
@@ -86,8 +87,8 @@ public class AuthController {
                     .body(new AuthResponse(false, "Not authenticated", null, null));
         }
 
-        // Get user details from facade
-        UserDTO user = authenticationFacade.getCurrentUser();
+        // Fetch latest user data from database (including Flex Dollar balance)
+        UserDTO user = authenticationFacade.getCurrentUserById(userId);
         if (user != null) {
             return ResponseEntity.ok(new AuthResponse(true, "Authenticated", user, null));
         } else {
