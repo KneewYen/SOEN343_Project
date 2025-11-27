@@ -23,24 +23,33 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 public class HappyPathTest {
 
-    @Mock private UserRepository userRepository;
-    @Mock private BikeRepository bikeRepository;
-    @Mock private ReservationRepository reservationRepository;
-    @Mock private TripRepository tripRepository;
-    @Mock private DockRepository dockRepository;
-    @Mock private StationRepository stationRepository;
-    @Mock private PricingPlanRepository pricingPlanRepository;
-    @Mock private BillingRepository billingRepository;
-    @Mock private ChargeRepository chargeRepository;
-    @Mock private DomainEventService eventService;
-    @Mock private StationService stationService;
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private BikeRepository bikeRepository;
+    @Mock
+    private ReservationRepository reservationRepository;
+    @Mock
+    private TripRepository tripRepository;
+    @Mock
+    private DockRepository dockRepository;
+    @Mock
+    private StationRepository stationRepository;
+    @Mock
+    private PricingPlanRepository pricingPlanRepository;
+    @Mock
+    private BillingRepository billingRepository;
+    @Mock
+    private ChargeRepository chargeRepository;
+    @Mock
+    private DomainEventService eventService;
+    @Mock
+    private StationService stationService;
 
     @InjectMocks
     private ReservationService reservationService;
-
     @InjectMocks
     private TripService tripService;
-
     @InjectMocks
     private PricingService pricingService;
 
@@ -66,19 +75,21 @@ public class HappyPathTest {
 
         plan = rider.getPricingPlan();
 
+        stationA = Station.builder().id(100L).name("Station A").count(5).status(Station.StationStatus.ACTIVE).build();
+        stationB = Station.builder().id(200L).name("Station B").count(2).status(Station.StationStatus.ACTIVE).build();
+
+        dockA = spy(Dock.builder().id(500L).station(stationA)
+                .status(Dock.DockStatus.OCCUPIED).build());
+        dockB = spy(Dock.builder().id(600L).station(stationB)
+                .status(Dock.DockStatus.EMPTY).build());
+
         bike = spy(Bike.builder()
                 .id(1L)
                 .type("standard")
                 .status(BikeStatus.AVAILABLE)
                 .build());
 
-        stationA = Station.builder().id(100L).name("Station A").count(5).build();
-        stationB = Station.builder().id(200L).name("Station B").count(2).build();
-
-        dockA = spy(Dock.builder().id(500L).station(stationA)
-                .status(Dock.DockStatus.OCCUPIED).build());
-        dockB = spy(Dock.builder().id(600L).station(stationB)
-                .status(Dock.DockStatus.EMPTY).build());
+        bike.changeState(new AvailableState());
 
         bike.setDock(dockA);
 
@@ -98,23 +109,37 @@ public class HappyPathTest {
                 .startStation(stationA)
                 .startTime(LocalDateTime.now())
                 .build();
+
     }
 
     @Test
     void completeRide_happyPath_success() throws Exception {
 
         // ----------- RESERVATION CREATION -------------
+        when(bikeRepository.findById(any(Long.class))).thenReturn(Optional.of(bike));
         when(userRepository.findById(10L)).thenReturn(Optional.of(rider));
         when(reservationRepository.findByUserId(10L)).thenReturn(List.of());
         when(tripRepository.findByReservationUserId(10L)).thenReturn(List.of());
-        when(bikeRepository.findById(eq(1L))).thenReturn(Optional.of(bike));
-        when(reservationRepository.save(any())).thenReturn(reservation);
+        when(reservationRepository.save(any(Reservation.class)))
+                .thenAnswer(invocation -> {
+                    // 1. Get the Reservation object passed to the save method
+                    Reservation res = invocation.getArgument(0);
+
+                    // 2. Manually set the ID (simulating the database)
+                    //    Ensure the ID is only set if it's currently null
+                    if (res.getReservationId() == null) {
+                        res.setReservationId(300L);
+                    }
+
+                    // 3. Return the now-ID'd object
+                    return res;
+                });
         when(bikeRepository.save(any())).thenReturn(bike);
 
         Long reservationId = reservationService.createReservation(1L, 10L);
         assertEquals(300L, reservationId);
 
-        verify(bike).reserve(); // Ensure the status method was called
+        verify(bike).reserve();
         assertEquals(BikeStatus.RESERVED, bike.getStatus(), "Bike status should be RESERVED after reservation.");
 
         // ----------- START TRIP -------------
@@ -123,12 +148,17 @@ public class HappyPathTest {
 
         when(dockRepository.save(any())).thenReturn(dockA);
         when(stationRepository.save(any())).thenReturn(stationA);
-        when(tripRepository.save(any())).thenReturn(trip);
+        when(tripRepository.save(any()))
+                .thenAnswer(inv -> {
+                    Trip t = inv.getArgument(0);
+                    t.setTripId(400L);
+                    return t;
+                });
 
         Long tripId = tripService.startTrip(300L);
         assertEquals(400L, tripId);
 
-        verify(bike).checkOut(); // Ensure the status method was called
+        verify(bike).checkOut();
         assertEquals(BikeStatus.ON_TRIP, bike.getStatus(), "Bike status should be ON_TRIP after starting trip.");
         verify(dockA).setStatus(Dock.DockStatus.EMPTY);
 
@@ -140,7 +170,6 @@ public class HappyPathTest {
 
         when(bikeRepository.save(any())).thenReturn(bike);
         when(dockRepository.save(any())).thenReturn(dockB);
-        when(tripRepository.save(any())).thenReturn(trip);
         when(reservationRepository.save(any())).thenReturn(reservation);
 
 
@@ -149,7 +178,7 @@ public class HappyPathTest {
         Long endedTripId = tripService.endTrip(400L, 200L);
         assertEquals(400L, endedTripId);
 
-        verify(bike).returnBike(); // Ensure bike status was reverted
+        verify(bike).returnBike();
         assertEquals(BikeStatus.AVAILABLE, bike.getStatus(), "Bike status should be AVAILABLE after trip ends.");
         verify(dockB).setStatus(Dock.DockStatus.OCCUPIED);
 
@@ -177,9 +206,12 @@ public class HappyPathTest {
         verify(eventService, atLeastOnce()).emitEvent(eq(rider), contains("TRIP_ENDED"), anyString());
 
         // ----------- FINAL ASSERTIONS -------------
+        assertEquals(700L, bill.getBillingId());
+        assertEquals(400L, bill.getTripId());
+        assertTrue(bill.getTotalAmount() > 0, "Bill amount must be greater than zero based on set duration.");
         assertTrue(trip.isTripComplete());
         assertEquals(Reservation.ReservationStatus.COMPLETED, reservation.getStatus());
 
-        verify(stationService, times(1)).checkRebalance(eq(rider), eq(stationA.getId()));
+        verify(stationService, times(2)).checkRebalance(eq(rider), eq(stationA.getId()));
     }
 }
