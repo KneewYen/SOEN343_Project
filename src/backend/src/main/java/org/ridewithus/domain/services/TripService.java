@@ -201,7 +201,7 @@ public class TripService {
 
         if (updatedTier != currentTier){
             user.setLoyaltyTier(updatedTier);
-            user.setPrevLoyaltyTier(currentTier);
+            user.setPrevLoyaltyTier(updatedTier);
             userService.save(user);
             return updatedTier;
         } else {
