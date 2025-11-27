@@ -113,6 +113,66 @@
             />
           </section>
 
+
+                <!-- Bike Selection Modal -->
+          <div v-if="showBillingPopup" class="modal-overlay" @click="showBillingPopup = false">
+            <div class="modal-content" @click.stop>
+              <div class="modal-header">
+                <h3>Billing Summary</h3>
+                <button @click="showBillingPopup = false" class="close-btn">&times;</button>
+              </div>
+              <div class="modal-body">
+                 <section v-if="tripSummary" class="recent-trips">
+              <TripSummary :trip="selectedTrip" />
+
+              <!-- Billing Information (added here) -->
+              <div v-if="billing" class="billing-info">
+
+                <div class="billing-details">
+                  <p><strong>Billing ID:</strong> {{ billing.billingId }}</p>
+                  <p><strong>Trip ID:</strong> {{ billing.tripId }}</p>
+                  <p><strong>Total Cost:</strong> ${{ billing.totalAmount.toFixed(2) }}</p>
+                </div>
+
+                <div class="billing-charges">
+                  <h4>Charges</h4>
+                  <ul>
+                    <li v-for="charge in billing.charges" :key="charge.name">
+                      <strong>{{ charge.name }}</strong> — {{ charge.description }}
+                      <span class="charge-cost">(${{ charge.cost.toFixed(2) }})</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div v-else class="no-billing">
+                <p>No billing information available for this trip.</p>
+              </div>
+
+              <div v-if="!hasSubmittedRating" class="bike-rating">
+                <h3 class="section-title">Rate Your Bike</h3>
+
+                <div class="stars">
+                  <span 
+                    v-for="star in 5" 
+                    :key="star"
+                    class="star"
+                    :class="{ filled: star <= bikeRating }"
+                    @click="bikeRating = star"
+                  >
+                    ★
+                  </span>
+                </div>
+
+                <button class="action-btn primary submit-rating" @click="submitRating">
+                  Submit Rating
+                </button>
+              </div>
+            </section>
+              </div>
+            </div>
+    </div>
+
           <!-- Current Trip -->
           <section class="current-trip">
             <h2 class="section-title">Current Trip</h2>
@@ -216,54 +276,6 @@
             </div>
           </section>
 
-          <section v-if="tripSummary" class="recent-trips">
-              <TripSummary :trip="selectedTrip" />
-
-              <!-- Billing Information (added here) -->
-              <div v-if="billing" class="billing-info">
-                <h3 class="section-title">Billing Summary</h3>
-
-                <div class="billing-details">
-                  <p><strong>Billing ID:</strong> {{ billing.billingId }}</p>
-                  <p><strong>Trip ID:</strong> {{ billing.tripId }}</p>
-                  <p><strong>Total Cost:</strong> ${{ billing.totalAmount.toFixed(2) }}</p>
-                </div>
-
-                <div class="billing-charges">
-                  <h4>Charges</h4>
-                  <ul>
-                    <li v-for="charge in billing.charges" :key="charge.name">
-                      <strong>{{ charge.name }}</strong> — {{ charge.description }}
-                      <span class="charge-cost">(${{ charge.cost.toFixed(2) }})</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              <div v-else class="no-billing">
-                <p>No billing information available for this trip.</p>
-              </div>
-
-              <div v-if="!hasSubmittedRating" class="bike-rating">
-                <h3 class="section-title">Rate Your Bike</h3>
-
-                <div class="stars">
-                  <span 
-                    v-for="star in 5" 
-                    :key="star"
-                    class="star"
-                    :class="{ filled: star <= bikeRating }"
-                    @click="bikeRating = star"
-                  >
-                    ★
-                  </span>
-                </div>
-
-                <button class="action-btn primary submit-rating" @click="submitRating">
-                  Submit Rating
-                </button>
-              </div>
-            </section>
 
           <!-- Recent Trips -->
           <section class="recent-trips">
@@ -349,6 +361,7 @@ const billing = ref(null)
 const bikeRating = ref(0)
 const hasSubmittedRating = ref(false)
 const selectedBike = ref(null)
+const showBillingPopup = ref(false)
 
 onMounted(() => {
   // Load user data from localStorage
@@ -721,6 +734,7 @@ const checkActiveReservation = async () => {
           console.log("Billing response:", res)
           tripSummary.value = res.billing
           billing.value = res.billing
+          showBillingPopup.value = true
 
           currentTrip.value = null
           selectedReturnStation.value = ''
@@ -1270,6 +1284,66 @@ const checkActiveReservation = async () => {
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  border: 2px solid #e2e8f0;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #1e293b;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.modal-body p {
+  margin-bottom: 16px;
 }
 
 @media (min-width: 481px) and (max-width: 768px) {
