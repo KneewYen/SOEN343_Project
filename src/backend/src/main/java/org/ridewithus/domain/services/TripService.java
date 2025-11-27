@@ -54,6 +54,8 @@ public class TripService {
 
     @Autowired
     private DomainEventService eventService;
+    @Autowired
+    private StationService stationService;
 
     @PostConstruct
     public void initChain() {
@@ -63,7 +65,7 @@ public class TripService {
 
     @Transactional
     public Long startTrip(Long reservationId) throws Exception {
-        Reservation reservation = reservationRepository.findByReservationId(reservationId);
+        Reservation reservation = reservationRepository.findByReservationId(reservationId).orElseThrow();
 
         if (reservation == null || reservation.getExpiryDateTime().isBefore(LocalDateTime.now())){
             throw new Exception("Reservation is Invalid or has Expired");
@@ -108,6 +110,8 @@ public class TripService {
         tripRepository.save(trip);
 
         eventService.emitEvent(trip.getReservation().getUser(),"TRIP_STARTED", String.format("Trip %d started - Bike %d: %s -> %s", trip.getTripId(), reservation.getBike().getId(), oldStatus, newStatus));
+
+        stationService.checkRebalance(trip.getUser(), station.getId());
 
         return trip.getTripId();
 
@@ -223,6 +227,13 @@ public class TripService {
 
     public List<TripDTO> getUserTrips(Long userId) {
         List<Trip> trips = tripRepository.findByUserId(userId);
+        return trips.stream()
+                .map(this::mapToDTO)
+                .toList();
+    }
+
+    public List<TripDTO> getIncompleteUserTrips(Long userId) {
+        List<Trip> trips = tripRepository.findByUserIdAndTripComplete(userId, false);
         return trips.stream()
                 .map(this::mapToDTO)
                 .toList();

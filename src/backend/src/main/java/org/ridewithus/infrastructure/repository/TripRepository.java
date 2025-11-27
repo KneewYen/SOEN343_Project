@@ -1,5 +1,6 @@
 package org.ridewithus.infrastructure.repository;
 
+import org.ridewithus.domain.entity.Reservation;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.ridewithus.domain.entity.Trip;

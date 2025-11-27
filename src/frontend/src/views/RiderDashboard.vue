@@ -20,6 +20,17 @@
           </div>
           <div class="user-info">
             <span class="welcome-text">Welcome, {{ user?.fullName || 'Rider' }}!</span>
+            <button 
+              @click="showAccountDetails = true" 
+              class="account-btn" 
+              aria-label="Account Details" 
+              title="View Account Details"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </button>
             <button @click="handleLogout" class="logout-btn">Logout</button>
           </div>
         </div>
@@ -101,6 +112,66 @@
               :user="user" 
             />
           </section>
+
+
+                <!-- Bike Selection Modal -->
+          <div v-if="showBillingPopup" class="modal-overlay" @click="showBillingPopup = false">
+            <div class="modal-content" @click.stop>
+              <div class="modal-header">
+                <h3>Billing Summary</h3>
+                <button @click="showBillingPopup = false" class="close-btn">&times;</button>
+              </div>
+              <div class="modal-body">
+                 <section v-if="tripSummary" class="recent-trips">
+              <TripSummary :trip="selectedTrip" />
+
+              <!-- Billing Information (added here) -->
+              <div v-if="billing" class="billing-info">
+
+                <div class="billing-details">
+                  <p><strong>Billing ID:</strong> {{ billing.billingId }}</p>
+                  <p><strong>Trip ID:</strong> {{ billing.tripId }}</p>
+                  <p><strong>Total Cost:</strong> ${{ billing.totalAmount.toFixed(2) }}</p>
+                </div>
+
+                <div class="billing-charges">
+                  <h4>Charges</h4>
+                  <ul>
+                    <li v-for="charge in billing.charges" :key="charge.name">
+                      <strong>{{ charge.name }}</strong> — {{ charge.description }}
+                      <span class="charge-cost">(${{ charge.cost.toFixed(2) }})</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div v-else class="no-billing">
+                <p>No billing information available for this trip.</p>
+              </div>
+
+              <div v-if="!hasSubmittedRating" class="bike-rating">
+                <h3 class="section-title">Rate Your Bike</h3>
+
+                <div class="stars">
+                  <span 
+                    v-for="star in 5" 
+                    :key="star"
+                    class="star"
+                    :class="{ filled: star <= bikeRating }"
+                    @click="bikeRating = star"
+                  >
+                    ★
+                  </span>
+                </div>
+
+                <button class="action-btn primary submit-rating" @click="submitRating">
+                  Submit Rating
+                </button>
+              </div>
+            </section>
+              </div>
+            </div>
+    </div>
 
           <!-- Current Trip -->
           <section class="current-trip">
@@ -205,34 +276,6 @@
             </div>
           </section>
 
-          <section v-if="tripSummary" class="recent-trips">
-              <TripSummary :trip="selectedTrip" />
-
-              <!-- Billing Information (added here) -->
-              <div v-if="billing" class="billing-info">
-                <h3 class="section-title">Billing Summary</h3>
-
-                <div class="billing-details">
-                  <p><strong>Billing ID:</strong> {{ billing.billingId }}</p>
-                  <p><strong>Trip ID:</strong> {{ billing.tripId }}</p>
-                  <p><strong>Total Cost:</strong> ${{ billing.totalAmount.toFixed(2) }}</p>
-                </div>
-
-                <div class="billing-charges">
-                  <h4>Charges</h4>
-                  <ul>
-                    <li v-for="charge in billing.charges" :key="charge.name">
-                      <strong>{{ charge.name }}</strong> — {{ charge.description }}
-                      <span class="charge-cost">(${{ charge.cost.toFixed(2) }})</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              <div v-else class="no-billing">
-                <p>No billing information available for this trip.</p>
-              </div>
-            </section>
 
           <!-- Recent Trips -->
           <section class="recent-trips">
@@ -277,6 +320,13 @@
         </div>
       </main>
     </div>
+    
+    <!-- Account Details Modal -->
+    <AccountDetails 
+      :show="showAccountDetails" 
+      :user="user"
+      @close="showAccountDetails = false"
+    />
   </div>
 </template>
 
@@ -290,6 +340,7 @@ import RideHistory from '@/components/RideHistory.vue'
 import BillingHistory from '@/components/BillingHistory.vue'
 import PricingPlan from '@/components/PricingPlan.vue'
 import { toast } from "vue3-toastify"
+import AccountDetails from '@/components/AccountDetails.vue'
 
 
 const router = useRouter()
@@ -297,6 +348,7 @@ const user = ref(null)
 const showStationsList = ref(false)
 const showRideHistoryList = ref(false)
 const showBillingHistoryList = ref(false)
+const showAccountDetails = ref(false)
 const stations = ref([])
 const loading = ref(false)
 const currentReservation = ref(null)
@@ -307,6 +359,10 @@ const prevReservationId = ref(null)
 const showPricingList = ref(false)
 const tripSummary = ref(null)
 const billing = ref(null)
+const bikeRating = ref(0)
+const hasSubmittedRating = ref(false)
+const selectedBike = ref(null)
+const showBillingPopup = ref(false)
 
 const TierMap = {
     0: "ENTRY",
@@ -376,6 +432,17 @@ onBeforeUnmount(() => {
     reservationInterval = null
   }
 })
+const submitRating = async () => {
+  try {
+    await apiClient.submitBikeRating(selectedBike.value, bikeRating.value)
+
+    alert("Thanks for rating!")
+    hasSubmittedRating.value = true
+  } catch (err) {
+    console.error(err)
+    alert("Could not submit rating.")
+  }
+}
 
 const handleLogout = () => {
   console.log('🚪 Logout button clicked')
@@ -478,11 +545,11 @@ const showPricing = () => {
 const checkActiveTrip = async () => {
   try {
     if (!user.value?.id) return
-    if (!apiClient.getUserTrips) {
+    if (!apiClient.getIncompleteUserTrips) {
       currentTrip.value = null
       return
     }
-    const resp = await apiClient.getUserTrips(user.value.id)
+    const resp = await apiClient.getIncompleteUserTrips(user.value.id)
     if (resp && resp.success && Array.isArray(resp.trips)) {
       const incomplete = resp.trips.find(t => !t.tripComplete)
       if (incomplete) {
@@ -652,6 +719,7 @@ const checkActiveReservation = async () => {
             startTime: new Date()
           }
           currentReservation.value = null
+          hasSubmittedRating.value = false
         } else {
           alert('Failed to start trip: ' + (response.message || 'Unknown error'))
         }
@@ -700,6 +768,7 @@ const checkActiveReservation = async () => {
           alert('Please select a return station')
           return
         }
+        selectedBike.value = currentTrip.value.bikeId
         const response = await apiClient.endTrip(currentTrip.value.id, selectedReturnStation.value)
         if (response.success) {
           alert('Trip ended successfully!')
@@ -715,6 +784,7 @@ const checkActiveReservation = async () => {
           console.log("Billing response:", res)
           tripSummary.value = res.billing
           billing.value = res.billing
+          showBillingPopup.value = true
 
           currentTrip.value = null
           selectedReturnStation.value = ''
@@ -863,6 +933,54 @@ const checkActiveReservation = async () => {
 .welcome-text {
   color: var(--text);
   font-weight: 600;
+}
+
+.account-btn {
+  background: var(--surface-hover, #f1f5f9);
+  color: var(--text, #1e293b);
+  border: 2px solid var(--border, #e2e8f0);
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.account-btn::after {
+  content: 'Account Details';
+  position: absolute;
+  bottom: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  z-index: 1000;
+}
+
+.account-btn:hover::after {
+  opacity: 1;
+}
+
+.account-btn:hover {
+  background: var(--primary, #ff6b9d);
+  color: white;
+  border-color: var(--primary, #ff6b9d);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
 }
 
 .logout-btn {
@@ -1218,6 +1336,66 @@ const checkActiveReservation = async () => {
   text-transform: uppercase;
 }
 
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  border: 2px solid #e2e8f0;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #1e293b;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.modal-body p {
+  margin-bottom: 16px;
+}
+
 @media (min-width: 481px) and (max-width: 768px) {
   .dashboard-main {
     padding: 20px;
@@ -1353,4 +1531,33 @@ const checkActiveReservation = async () => {
     grid-template-columns: 1fr;
   }
 }
+.bike-rating {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 12px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.stars {
+  font-size: 30px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.star {
+  color: #ccc;
+  margin-right: 6px;
+  cursor: pointer;
+}
+
+.star.filled {
+  color: gold;
+}
+
+.submit-rating {
+  margin-top: 10px;
+  width: 150px;
+}
+
 </style>
