@@ -22,6 +22,10 @@ public class PercentageDiscount extends PricingDecorator {
         return super.calculatePrice(trip) - super.calculatePrice(trip) * discount;
     }
 
+    public double getSavings(Trip trip){
+        return -super.calculatePrice(trip) * discount;
+    }
+
     public String getName(){
         return "Loyalty discount";
     }

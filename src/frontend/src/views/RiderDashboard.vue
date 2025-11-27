@@ -323,15 +323,18 @@ const TierMap = {
       }
     } catch (error) {
       console.error(`Error fetching user's tier`)
+      console.error("Prev:", user.prevLoyaltyTier, "New:", user.loyaltyTier)
     }
-    
+    console.log("Prev:", user.prevLoyaltyTier, "New:", user.loyaltyTier);
+
     if (user.loyaltyTier !== user.prevLoyaltyTier) {
       if (user.loyaltyTier > user.prevLoyaltyTier) {
         toast.success("You have been promoted to " + TierMap[user.loyaltyTier] + " tier!");
       } else if (user.loyaltyTier < user.prevLoyaltyTier) {
         toast.error("You have been demoted to " + TierMap[user.loyaltyTier] + " tier!");
       }
-      user.prevLoyaltyTier = user.loyaltyTier      
+      user.prevLoyaltyTier = user.loyaltyTier 
+      console.log("AfterPrev:", user.prevLoyaltyTier, "New:", user.loyaltyTier);     
     }
   }
 

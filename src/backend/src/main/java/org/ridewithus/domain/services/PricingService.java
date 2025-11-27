@@ -13,6 +13,7 @@ import org.ridewithus.domain.entity.User;
 import java.util.Optional;
 
 import org.ridewithus.domain.loyaltyProgram.PercentageDiscount;
+import org.ridewithus.domain.loyaltyProgram.ChainOfR.Tier;
 import org.ridewithus.domain.pricing.decorator.EbikeSurcharge;
 import org.ridewithus.domain.pricing.strategy.BaseRateStrategy;
 import org.ridewithus.domain.pricing.strategy.DistanceStrategy;
@@ -47,6 +48,9 @@ public class PricingService {
     @Autowired
     private ChargeRepository chargeRepository;
 
+    @Autowired
+    private LoyaltyService loyaltyService;
+
     public List<PricingPlan> getAllPlans() {
         return pricingPlanRepository.findAll();
     }
@@ -66,22 +70,18 @@ public class PricingService {
         
         PricingStrategy strategy;
 
-        PercentageDiscount percentageDiscount;
         switch (plan) {
             case "Standard plan":
                 strategy = new BaseRateStrategy();
-                percentageDiscount = new PercentageDiscount(strategy, user.getPrevLoyaltyTier().getDiscount());
-                items.add(new ChargeDTO(strategy.getName(), strategy.getDescription(), percentageDiscount.calculatePrice(trip)));
+                items.add(new ChargeDTO(strategy.getName(), strategy.getDescription(), strategy.calculatePrice(trip)));
                 break;
             case "Distance plan":
                 strategy = new DistanceStrategy();
-                percentageDiscount = new PercentageDiscount(strategy, user.getPrevLoyaltyTier().getDiscount());
-                items.add(new ChargeDTO(strategy.getName(), strategy.getDescription(), percentageDiscount.calculatePrice(trip)));
+                items.add(new ChargeDTO(strategy.getName(), strategy.getDescription(), strategy.calculatePrice(trip)));
                 break;
             default:
                 strategy = new BaseRateStrategy();
-                percentageDiscount = new PercentageDiscount(strategy, user.getPrevLoyaltyTier().getDiscount());
-                items.add(new ChargeDTO(strategy.getName(), strategy.getDescription(), percentageDiscount.calculatePrice(trip)));
+                items.add(new ChargeDTO(strategy.getName(), strategy.getDescription(), strategy.calculatePrice(trip)));
                 break;
         }
         
@@ -94,9 +94,15 @@ public class PricingService {
         if(bike.getType().equals("e-bike")){
             System.out.println("bikela"+bike.getType());
             strategy = new EbikeSurcharge(strategy);
-            items.add(new ChargeDTO(strategy.getName(), strategy.getDescription(), ((EbikeSurcharge)strategy).getSurcharge() * (1 - percentageDiscount.getDiscount())));
+            items.add(new ChargeDTO(strategy.getName(), strategy.getDescription(), ((EbikeSurcharge)strategy).getSurcharge()));
         }
         
+        // apply loyalty discount , if no tier, then no discount
+        Tier loyalty = user.getLoyaltyTier();
+        if (!loyalty.equals(Tier.NONE)){
+            strategy = new PercentageDiscount(strategy, user.getPrevLoyaltyTier().getDiscount());
+            items.add(new ChargeDTO(strategy.getName(), strategy.getDescription(), ((PercentageDiscount)strategy).getSavings(trip)));
+        }
         // Check if billing already exists for this trip
         Billing billing = billingRepository.findByTrip(trip).orElse(null);
         
@@ -140,8 +146,9 @@ public class PricingService {
             .totalAmount(price)
             .build();
 
-        user.setPrevLoyaltyTier(user.getLoyaltyTier());
-        userRepository.save(user);
+        //user.setPrevLoyaltyTier(user.getLoyaltyTier());
+        loyaltyService.updateLoyaltyTier(user);
+        //userRepository.save(user);
 
         return billingDTO;
     }

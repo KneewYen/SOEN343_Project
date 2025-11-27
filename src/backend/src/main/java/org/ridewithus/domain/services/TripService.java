@@ -19,9 +19,10 @@ import java.util.List;
 import java.util.Optional;
 import org.ridewithus.domain.dto.TripDTO;
 
-@Service
+
 @NoArgsConstructor
 @AllArgsConstructor
+@Service
 public class TripService {
 
     @Autowired
@@ -176,7 +177,7 @@ public class TripService {
             eventService.emitEvent(user, "STATION_FULL", String.format("%s station is full", station.get().getName()));
         }
 
-        updateLoyaltyTier(user);
+        //updateLoyaltyTier(user);
 
         return trip.getTripId();
 
@@ -200,7 +201,7 @@ public class TripService {
 
         if (updatedTier != currentTier){
             user.setLoyaltyTier(updatedTier);
-            user.setPrevLoyaltyTier(updatedTier);
+            user.setPrevLoyaltyTier(currentTier);
             userService.save(user);
             return updatedTier;
         } else {

@@ -13,8 +13,8 @@ public class GoldHandler implements TierHandler{
     private UserService userService;
 
     public Tier handle(User user){
-        boolean check1 = userService.hasXtripPerMonthForXMonths(user, 5, 3);
-        
+        boolean check1 = userService.hasXtripPerWeekForXWeeks(user, 5, 12);
+        // boolean check1 = false;
 
         if (check1){
             return Tier.GOLD;

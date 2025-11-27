@@ -13,11 +13,11 @@ public class SilverHandler implements TierHandler{
     private UserService userService;
 
     public Tier handle(User user){
-        boolean check1 = userService.hasAmountReservationInYear(user, 5);
+        //boolean check1 = userService.hasAmountReservationInYear(user, 5);
         boolean check2 = userService.hasXtripPerMonthForXMonths(user, 5, 3);
         
 
-        if (check1 && check2 ){
+        if (check2 ){
             return next.handle(user);
         }
 
