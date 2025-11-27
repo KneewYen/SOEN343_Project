@@ -339,6 +339,7 @@ import apiClient from '../lib/api'
 import RideHistory from '@/components/RideHistory.vue'
 import BillingHistory from '@/components/BillingHistory.vue'
 import PricingPlan from '@/components/PricingPlan.vue'
+import { toast } from "vue3-toastify"
 import AccountDetails from '@/components/AccountDetails.vue'
 
 
@@ -363,11 +364,56 @@ const hasSubmittedRating = ref(false)
 const selectedBike = ref(null)
 const showBillingPopup = ref(false)
 
+const TierMap = {
+    0: "ENTRY",
+    1: "BRONZE",
+    2: "SILVER",
+    3: "GOLD"
+  };
+
+  const getLoyaltyStatus = async (user) => {
+    try {
+      const response = await apiClient.getUserLoyaltyTierUpdate(user.id)
+      if (response.success && response.tier != null) {
+        user.loyaltyTier = response.tier
+      }
+    } catch (error) {
+      console.error(`Error fetching user's tier`)
+      console.error("Prev:", user.prevLoyaltyTier, "New:", user.loyaltyTier)
+    }
+    console.log("Prev:", user.prevLoyaltyTier, "New:", user.loyaltyTier);
+
+    if (user.loyaltyTier !== user.prevLoyaltyTier) {
+      if (user.loyaltyTier > user.prevLoyaltyTier) {
+        toast.success("You have been promoted to " + TierMap[user.loyaltyTier] + " tier!");
+      } else if (user.loyaltyTier < user.prevLoyaltyTier) {
+        toast.error("You have been demoted to " + TierMap[user.loyaltyTier] + " tier!");
+      }
+      user.prevLoyaltyTier = user.loyaltyTier 
+      console.log("AfterPrev:", user.prevLoyaltyTier, "New:", user.loyaltyTier);     
+    }
+  }
+
+  const getLoyaltyStatusTwoArgs = (user, tier) => {  
+      if (user.value.loyaltyTier < tier) {
+        toast.success("You have been promoted to " + TierMap[tier] + " tier. it will apply to your next trip!")
+      } else if (user.value.loyaltyTier > tier) {
+        toast.error("You have been demoted to " + TierMap[tier] + " tier!");
+      }
+      user.value.prevLoyaltyTier = user.value.loyaltyTier
+
+      let storedUser = JSON.parse(localStorage.getItem('user'))
+      storedUser.prevLoyaltyTier = user.value.loyaltyTier
+
+      localStorage.setItem('user', JSON.stringify(storedUser))
+  }
+
 onMounted(() => {
   // Load user data from localStorage
   const userData = localStorage.getItem('user')
   if (userData) {
     user.value = JSON.parse(userData)
+    getLoyaltyStatus(user.value)
   }
   // Initialize with clean state
   currentReservation.value = null
@@ -729,6 +775,10 @@ const checkActiveReservation = async () => {
 
           prevReservationId.value = null
           currentReservation.value = null
+
+          if (response.tier != null) {
+            getLoyaltyStatusTwoArgs(user, response.tier)
+          }
 
           const res = await apiClient.calculatePrice(currentTrip.value.id)
           console.log("Billing response:", res)

@@ -79,6 +79,10 @@ class ApiClient {
     })
   }
 
+  async getUserLoyaltyTierUpdate(userId) {
+    return this.request(`/UserRequest/${userId}`)
+  }
+
   async getUserById(id) {
     return this.request(`/users/${id}`)
   }
