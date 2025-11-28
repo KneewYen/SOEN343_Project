@@ -35,19 +35,22 @@
               <p><strong>Available Bikes:</strong> {{ getAvailableBikesCount(station) }}</p>
               <p><strong>Free Docks:</strong> {{ getFreeDocksCount(station) }}</p>
               <p><strong>Status:</strong> {{ station.status }}</p>
-              <div v-if="canReserveBike(station) && !guestMode && !operatorMode" class="reservation-actions">
+              <div v-if="canReserveBike(station) && !guestMode && canMakeReservations" class="reservation-actions">
                 <button @click="showBikeSelection(station)" class="reserve-btn">
                   Reserve Bike
                 </button>
               </div>
-              <div v-if="canReserveBike(station) && guestMode && !operatorMode" class="reservation-actions">
+              <div v-if="canReserveBike(station) && guestMode" class="reservation-actions">
                 <p class="guest-notice">Login to reserve bikes</p>
               </div>
-              <div v-if="!guestMode && operatorMode" class="reservation-action">
-              <button @click="stationToggle(station.id)" class="reserve-btn" :class="station.status === 'ACTIVE' ? 'danger' : 'success'">
+              <div v-if="canReserveBike(station) && !canMakeReservations && !guestMode && !operatorMode" class="reservation-actions">
+                <p class="guest-notice">Reservations not available in operator mode</p>
+              </div>
+              <div v-if="!guestMode && operatorMode" class="reservation-actions">
+                <button @click="handleStationToggle(station.id)" class="reserve-btn" :class="station.status === 'ACTIVE' ? 'danger' : 'success'">
                   {{ station.status === 'ACTIVE' ? 'Set Out of Service' : 'Set Active' }}
                 </button>
-            </div>
+              </div>
             </div>
           </GMapInfoWindow>
         </GMapMarker>
@@ -110,18 +113,21 @@
               </div>
             </div>
             
-            <div v-if="canReserveBike(station) && !guestMode && !operatorMode" class="station-actions">
+            <div v-if="canReserveBike(station) && !guestMode && canMakeReservations" class="station-actions">
               <button @click="showBikeSelection(station)" class="reserve-btn">
                 Reserve Bike
               </button>
             </div>
-            <div v-if="canReserveBike(station) && guestMode && !operatorMode" class="station-actions">
+            <div v-if="canReserveBike(station) && guestMode" class="station-actions">
               <p class="guest-notice">Login to reserve bikes</p>
             </div>
+            <div v-if="canReserveBike(station) && !canMakeReservations && !guestMode && !operatorMode" class="station-actions">
+              <p class="guest-notice">Reservations not available in operator mode</p>
+            </div>
             <div v-if="!guestMode && operatorMode" class="station-actions">
-              <button @click="stationToggle(station.id)" class="reserve-btn" :class="station.status === 'ACTIVE' ? 'danger' : 'success'">
-                  Toggle Status
-                </button>
+              <button @click="handleStationToggle(station.id)" class="reserve-btn" :class="station.status === 'ACTIVE' ? 'danger' : 'success'">
+                Toggle Status
+              </button>
             </div>
           </div>
         </div>
@@ -177,7 +183,11 @@ const props = defineProps({
   guestMode: {
     type: Boolean,
     default: false
-  }, 
+  },
+  allowReservations: {
+    type: Boolean,
+    default: true
+  },
   operatorMode: {
     type: Boolean,
     default: false
@@ -341,6 +351,11 @@ const markerIcon = (color) => {
   return url
 }
 
+// Computed property to determine if reservations are allowed
+const canMakeReservations = computed(() => {
+  return props.allowReservations && !props.operatorMode
+})
+
 const canReserveBike = (station) => {
   return station.status === 'ACTIVE' && getAvailableBikesCount(station) > 0
 }
@@ -372,6 +387,10 @@ const stationToggle = (station) => {
   emit('stationToggle', station)
 }
 
+const handleStationToggle = (stationId) => {
+  emit('stationToggle', stationId)
+}
+
 const normalizeStatus = (s) => String(s || '').toLowerCase()
 
 // returns user-friendly text
@@ -395,17 +414,25 @@ const getBikeStatusClass = (bike) => {
 }
 
 const getDockStatusClass = (dock) => {
-  if (dock.status === 'EMPTY') return 'empty'
-  if (dock.status === 'OCCUPIED') return 'occupied'
+  // Always respect OUT_OF_SERVICE status
   if (dock.status === 'OUT_OF_SERVICE') return 'out-of-service'
-  return 'unknown'
+  
+  // If dock has a bike, it should be OCCUPIED
+  if (dock.bike) return 'occupied'
+  
+  // If dock has no bike, it should be EMPTY
+  return 'empty'
 }
 
 const getDockStatusText = (dock) => {
-  if (dock.status === 'EMPTY') return 'Empty'
-  if (dock.status === 'OCCUPIED') return 'Occupied'
+  // Always respect OUT_OF_SERVICE status
   if (dock.status === 'OUT_OF_SERVICE') return 'Out of Service'
-  return 'Unknown'
+  
+  // If dock has a bike, it should be OCCUPIED
+  if (dock.bike) return 'Occupied'
+  
+  // If dock has no bike, it should be EMPTY
+  return 'Empty'
 }
 
 
@@ -640,6 +667,26 @@ watch(() => props.stations, () => {
   background: #e55a8a;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
+}
+
+.reserve-btn.danger {
+  background: #ef4444;
+  color: white;
+}
+
+.reserve-btn.danger:hover {
+  background: #dc2626;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.reserve-btn.success {
+  background: #10b981;
+  color: white;
+}
+
+.reserve-btn.success:hover {
+  background: #059669;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .guest-notice {

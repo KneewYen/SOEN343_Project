@@ -34,6 +34,30 @@
           <span class="detail-label">User Type:</span>
           <span class="detail-value">{{ userType }}</span>
         </div>
+        
+        <!-- Dual Mode Switcher -->
+        <div v-if="isDualUser" class="dual-mode-section">
+          <div class="account-detail-item">
+            <span class="detail-label">Current Mode:</span>
+            <span class="detail-value">{{ currentModeDisplay }}</span>
+          </div>
+          <div class="mode-switcher">
+            <button 
+              @click="switchMode('rider')" 
+              class="mode-btn"
+              :class="{ active: isRiderMode, inactive: !isRiderMode }"
+            >
+              Rider
+            </button>
+            <button 
+              @click="switchMode('operator')" 
+              class="mode-btn"
+              :class="{ active: isOperatorMode, inactive: !isOperatorMode }"
+            >
+              Operator
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -41,6 +65,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useDualMode } from '@/composables/useDualMode'
 
 const props = defineProps({
   show: {
@@ -53,7 +78,9 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'modeChanged'])
+
+const { currentMode, setMode, isRiderMode, isOperatorMode } = useDualMode()
 
 const closeModal = () => {
   emit('close')
@@ -97,6 +124,20 @@ const loyaltyStatus = computed(() => {
   }
   return 'None'
 })
+const isDualUser = computed(() => {
+  return props.user?.role?.toLowerCase() === 'dual'
+})
+
+const currentModeDisplay = computed(() => {
+  return currentMode.value.charAt(0).toUpperCase() + currentMode.value.slice(1)
+})
+
+const switchMode = (mode) => {
+  setMode(mode)
+  emit('modeChanged', mode)
+  // Optionally close modal after switching
+  // closeModal()
+}
 </script>
 
 <style scoped>
@@ -190,6 +231,54 @@ const loyaltyStatus = computed(() => {
   color: var(--text, #1e293b);
   font-size: 16px;
   text-align: right;
+}
+
+.dual-mode-section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 2px solid var(--border, #e2e8f0);
+}
+
+.mode-switcher {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid var(--border, #e2e8f0);
+  background: var(--surface-hover, #f1f5f9);
+  color: var(--text-secondary, #64748b);
+}
+
+.mode-btn.active {
+  background: var(--primary, #ff6b9d);
+  color: white;
+  border-color: var(--primary, #ff6b9d);
+  box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
+}
+
+.mode-btn.inactive {
+  background: var(--surface-hover, #f1f5f9);
+  color: var(--text-secondary, #64748b);
+  border-color: var(--border, #e2e8f0);
+  opacity: 0.6;
+}
+
+.mode-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.mode-btn.active:hover {
+  box-shadow: 0 6px 16px rgba(255, 107, 157, 0.4);
 }
 </style>
 

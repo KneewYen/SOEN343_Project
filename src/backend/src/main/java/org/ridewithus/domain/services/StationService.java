@@ -53,7 +53,11 @@ public class StationService {
 
         List<Dock> docks = dockRepository.findByStationAndStatus(station.get(), Dock.DockStatus.OCCUPIED);
 
-        List<Bike> bikes = docks.stream().map(Dock::getBike).filter(Objects::nonNull).filter(bike -> bike.getStatus() == BikeStatus.AVAILABLE).toList();
+        // Filter out null bikes and only include bikes with AVAILABLE status
+        List<Bike> bikes = docks.stream()
+                .map(Dock::getBike)
+                .filter(Objects::nonNull).filter(bike -> bike != null && bike.getStatus() == BikeStatus.AVAILABLE)
+                .toList();
 
         return bikes.stream().map(bike ->
                 BikeDTO.builder()
