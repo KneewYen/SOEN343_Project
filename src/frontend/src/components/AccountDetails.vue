@@ -28,7 +28,7 @@
         </div>
         <div class="account-detail-item">
           <span class="detail-label">Loyalty Status:</span>
-          <span class="detail-value">TODO</span>
+          <span class="detail-value">{{ loyaltyStatus }}</span>
         </div>
         <div class="account-detail-item">
           <span class="detail-label">User Type:</span>
@@ -100,6 +100,30 @@ const userType = computed(() => {
   return 'N/A'
 })
 
+const loyaltyStatus = computed(() => {
+  if (props.user?.loyaltyTier !== null && props.user?.loyaltyTier !== undefined) {
+    // Backend sends numeric values: 0=NONE, 1=BRONZE, 2=SILVER, 3=GOLD
+    const tierMap = {
+      0: 'None',
+      1: 'Bronze',
+      2: 'Silver',
+      3: 'Gold'
+    }
+    
+    // Handle numeric value from backend
+    const tierValue = Number(props.user.loyaltyTier)
+    if (tierMap.hasOwnProperty(tierValue)) {
+      return tierMap[tierValue]
+    }
+    
+    // Fallback: if it's a string, try to format it
+    const tier = String(props.user.loyaltyTier).toUpperCase()
+    if (tier === 'NONE' || tier === 'BRONZE' || tier === 'SILVER' || tier === 'GOLD') {
+      return tier.charAt(0) + tier.slice(1).toLowerCase()
+    }
+  }
+  return 'None'
+})
 const isDualUser = computed(() => {
   return props.user?.role?.toLowerCase() === 'dual'
 })
