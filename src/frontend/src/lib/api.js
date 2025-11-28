@@ -347,6 +347,17 @@ class ApiClient {
     return this.request(`/billing/user/${userId}`)
   }
 
+  // Process trip payment with automatic Flex Dollar application
+  async processTripPayment(tripId, paymentMethod = 'card', paymentDetails = {}) {
+    return this.request(`/billing/trips/${tripId}/process`, {
+      method: 'POST',
+      body: JSON.stringify({
+        paymentMethod,
+        paymentDetails
+      })
+    })
+  }
+
   async submitBikeRating(bikeId, rating){
     return this.request(`/bike/rating/${bikeId}/${rating}`, {
       method: 'POST'

@@ -1,0 +1,21 @@
+-- -- Migration script to fix existing billing records
+-- -- Run this BEFORE starting the application
+--
+-- -- Update existing billing records with default values for new columns
+-- UPDATE billing
+-- SET flex_dollar_discount = 0
+-- WHERE flex_dollar_discount IS NULL;
+--
+-- UPDATE billing
+-- SET total_amount = 0
+-- WHERE total_amount IS NULL;
+--
+-- UPDATE billing
+-- SET final_amount = 0
+-- WHERE final_amount IS NULL;
+--
+-- -- After running this, you can optionally make columns NOT NULL
+-- -- ALTER TABLE billing ALTER COLUMN flex_dollar_discount SET NOT NULL;
+-- -- ALTER TABLE billing ALTER COLUMN total_amount SET NOT NULL;
+-- -- ALTER TABLE billing ALTER COLUMN final_amount SET NOT NULL;
+--

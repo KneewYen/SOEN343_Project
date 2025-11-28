@@ -47,8 +47,15 @@
           <span>{{ charge.name }}:</span>
           <span>{{ formatCurrency(charge.cost) }}</span>
         </div>
+        <div v-if="bill.flexDollarDiscount && bill.flexDollarDiscount > 0" class="cost-row flex-dollar-discount">
+          <span>Flex Dollar Discount:</span>
+          <span class="discount">-${{ formatCurrency(bill.flexDollarDiscount) }}</span>
+        </div>
         <div class="cost-row total">
           <strong>Total:</strong><strong>{{ formatCurrency(bill.totalAmount) }}</strong>
+        </div>
+        <div v-if="bill.finalAmount !== undefined && bill.finalAmount !== bill.totalAmount" class="cost-row final-amount">
+          <strong>Final Amount (after discount):</strong><strong class="final">${{ formatCurrency(bill.finalAmount) }}</strong>
         </div>
 
         <h3>Event timeline</h3>
@@ -210,8 +217,27 @@ function handlePaymentSuccess() {
 .cost-row {
   display: flex;
   justify-content: space-between;
-  padding: 0.35rem 0;
-  border-bottom: 1px dashed var(--border-color);
+  padding: 0.5rem 0;
+}
+
+.cost-row.flex-dollar-discount {
+  color: #059669;
+  font-weight: 600;
+}
+
+.cost-row.flex-dollar-discount .discount {
+  color: #059669;
+}
+
+.cost-row.final-amount {
+  border-top: 1px solid var(--border-color);
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+}
+
+.cost-row.final-amount .final {
+  color: var(--primary);
+  font-size: 1.1rem;
 }
 
 .cost-row.total {

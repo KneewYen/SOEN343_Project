@@ -70,6 +70,21 @@ public class StationService {
 
     }
 
+    public boolean minimumCapacityReached(long stationId) throws Exception {
+        Optional<Station> stationOpt = stationRepository.findById(stationId);
+
+        if (stationOpt.isEmpty()) {
+            throw new Exception("Station does not exist");
+        }
+
+        Station station = stationOpt.get();
+        int currentBikes = this.getBikesAvailable(stationId).size();
+        int totalCapacity = station.getCapacity();
+        double occupancyPercentage = (double) currentBikes / totalCapacity;
+
+        return occupancyPercentage < 0.25;
+    }
+
     public List<DockDTO> getFreeDocks(long stationId) throws Exception {
 
         Optional<Station> station = stationRepository.findById(stationId);

@@ -15,14 +15,15 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.ridewithus.domain.dto.TripDTO;
 
-
+@Service
 @NoArgsConstructor
 @AllArgsConstructor
-@Service
 public class TripService {
 
     @Autowired
@@ -41,6 +42,9 @@ public class TripService {
     private TripRepository tripRepository;
 
     @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
     private DockRepository dockRepository;
 
     @Autowired
@@ -56,6 +60,8 @@ public class TripService {
     private DomainEventService eventService;
     @Autowired
     private StationService stationService;
+    @Autowired
+    private FlexDollarService flexDollarService;
 
     @PostConstruct
     public void initChain() {
@@ -118,7 +124,7 @@ public class TripService {
     }
 
     @Transactional
-    public Long endTrip(Long tripId, Long endStationId) throws Exception {
+    public Map<String, Object> endTrip(Long tripId, Long endStationId) throws Exception {
 
         Trip trip = tripRepository.findByTripId(tripId);
 
@@ -139,24 +145,45 @@ public class TripService {
             throw new Exception("No empty places available to Dock");
         }
 
+        // Check capacity BEFORE returning the bike to determine if Flex Dollars should be awarded
+        // We need to check if the station will be below 25% AFTER we return this bike
+        // So we check current capacity + 1 (the bike we're about to return)
+        Station stationEntity = station.get();
+        int currentBikesBeforeReturn = stationService.getBikesAvailable(endStationId).size();
+        int bikesAfterReturn = currentBikesBeforeReturn + 1; // +1 for the bike we're returning
+        int totalCapacity = stationEntity.getCapacity();
+        double occupancyAfterReturn = (double) bikesAfterReturn / totalCapacity;
+        boolean willBeBelowThreshold = occupancyAfterReturn < 0.25;
+
+        // Debug logging
+        System.out.println(String.format(
+            "Flex Dollar Check - Station: %s (ID: %d), Current bikes: %d, After return: %d, Capacity: %d, Occupancy: %.2f%%, Below threshold: %s",
+            stationEntity.getName(), endStationId, currentBikesBeforeReturn, bikesAfterReturn,
+            totalCapacity, occupancyAfterReturn * 100, willBeBelowThreshold
+        ));
+
         //increment available bikes at station
         //Marks one more bike as present at the station and assigns the bike to an empty dock.
-        station.get().setCount(station.get().getCount() + 1);
+        stationEntity.setCount(stationEntity.getCount() + 1);
 
-        trip.getReservation().getBike().setDock(docks.getFirst());
+        Dock assignedDock = docks.getFirst();
+        trip.getReservation().getBike().setDock(assignedDock);
 
         String oldStatus = trip.getReservation().getBike().getStatus().toString();
 
         trip.getReservation().getBike().returnBike();
 
-        dockRepository.save(trip.getReservation().getBike().getDock());
+        // Set dock status to OCCUPIED since bike is now in the dock
+        assignedDock.setStatus(Dock.DockStatus.OCCUPIED);
+
+        dockRepository.save(assignedDock);
 
         bikeRepository.save(trip.getReservation().getBike());
 
-        stationRepository.save(station.get());
+        stationRepository.save(stationEntity);
 
         trip.setEndTime(LocalDateTime.now());
-        trip.setEndStation(station.get());
+        trip.setEndStation(stationEntity);
         trip.setTripComplete(true);
 
         //Store user for event
@@ -165,10 +192,22 @@ public class TripService {
         // Store reservation reference before clearing it
         Reservation reservation = trip.getReservation();
 
+
         tripRepository.save(trip);
 
         reservation.setStatus(Reservation.ReservationStatus.COMPLETED);
         reservationRepository.save(reservation);
+
+        // Award Flex Dollars if station will be below minimum capacity (< 25%) after return
+        // This implements UC1: Award Flex Dollars
+        Map<String, Object> flexDollarAward = awardFlexDollars(user, endStationId, station, trip.getTripId(), willBeBelowThreshold);
+        boolean flexDollarAwarded = (Boolean) flexDollarAward.get("awarded");
+
+        // Reload user to get updated balance if Flex Dollars were awarded
+        if (flexDollarAwarded) {
+            user = userRepository.findById(user.getId())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+        }
 
         String newStatus = reservation.getBike().getStatus().toString();
 
@@ -182,11 +221,79 @@ public class TripService {
         }
 
         //updateLoyaltyTier(user);
-      
+
         stationService.checkRebalance(user, trip.getStartStation().getId());
 
-        return trip.getTripId();
+        // Prepare response with trip ID, flex dollar balance, and award information
+        Map<String, Object> result = new HashMap<>();
+        result.put("tripId", trip.getTripId());
+        result.put("flexDollarBalance", user.getFlexDollars());
+        result.put("flexDollarAwarded", flexDollarAwarded);
+        result.put("flexDollarAmountAwarded", flexDollarAward.get("amountAwarded"));
+        result.put("flexDollarConfirmationMessage", flexDollarAward.get("confirmationMessage"));
 
+        return result;
+
+    }
+
+    /**
+     * Award Flex Dollars to a rider when they return a bike to a low-occupancy station.
+     * Implements UC1: Award Flex Dollars
+     *
+     * @param user The rider
+     * @param endStationId The station where the bike was returned
+     * @param stationOpt Optional station object
+     * @param tripId The trip ID for ledger reference
+     * @param isBelowThreshold Whether the station will be below 25% after the bike is returned
+     * @return Map containing award information: awarded (boolean), amountAwarded (int), newBalance (int), confirmationMessage (String)
+     */
+    private Map<String, Object> awardFlexDollars(User user, Long endStationId, Optional<Station> stationOpt, Long tripId, boolean isBelowThreshold) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("awarded", false);
+        result.put("amountAwarded", 0);
+        result.put("newBalance", user.getFlexDollars());
+        result.put("confirmationMessage", "");
+
+        try {
+            // Award Flex Dollars if station will be below 25% threshold after return
+            if (isBelowThreshold) {
+                // Award 1 Flex Dollar using the service (creates ledger entry)
+                int amountAwarded = 1;
+                int newBalance = flexDollarService.creditFlexDollars(user.getId(), amountAwarded, endStationId, tripId);
+
+                // Use the balance returned from creditFlexDollars (it's already updated)
+                // No need to reload user - the service method already refreshed it
+
+                Station station = stationOpt.orElseThrow(() -> new RuntimeException("Station not found"));
+
+                // Create confirmation message
+                String confirmationMessage = String.format(
+                    "You earned %d Flex Dollar%s for helping balance station capacity at %s. Your new balance is %d Flex Dollar%s.",
+                    amountAwarded,
+                    amountAwarded == 1 ? "" : "s",
+                    station.getName(),
+                    newBalance,
+                    newBalance == 1 ? "" : "s"
+                );
+
+                // Emit event
+                eventService.emitEvent(user, "FLEX_DOLLAR_AWARDED", confirmationMessage);
+
+                // Update result
+                result.put("awarded", true);
+                result.put("amountAwarded", amountAwarded);
+                result.put("newBalance", newBalance);
+                result.put("confirmationMessage", confirmationMessage);
+
+                return result;
+            }
+        } catch (Exception e) {
+            // Log but don't fail the trip if flex dollar award fails
+            System.err.println("Failed to award flex dollars: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return result;
     }
 
     public Tier getTier(Long tripId) throws Exception {

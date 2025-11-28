@@ -14,13 +14,25 @@ class AuthService {
       const storedSession = localStorage.getItem('session')
       
       if (storedUser && storedSession) {
-        this.user = JSON.parse(storedUser)
+        let user = JSON.parse(storedUser)
+        // Normalize user object - ensure flexDollars field exists
+        if (user) {
+          if (user.flexdollarbalance !== undefined) {
+            user.flexDollars = user.flexdollarbalance
+          } else if (user.flexDollars === undefined) {
+            user.flexDollars = 0
+          }
+        }
+        
+        this.user = user
         this.session = JSON.parse(storedSession)
         
-        // Verify session is still valid with backend
+        // Verify session is still valid with backend and refresh user data
         try {
           const currentUser = await this.getCurrentUser()
           this.user = currentUser
+          // Update localStorage with fresh data from backend
+          localStorage.setItem('user', JSON.stringify(currentUser))
         } catch (error) {
           // Session invalid, clear stored data
           this.clearAuth()
@@ -47,8 +59,21 @@ class AuthService {
     try {
       const response = await apiClient.getCurrentUser()
       if (response.success) {
-        this.user = response.user
-        return response.user
+        // Normalize user object - map flexdollarbalance to flexDollars for frontend consistency
+        const user = response.user
+        if (user) {
+          // Map backend field name to frontend field name
+          if (user.flexdollarbalance !== undefined) {
+            user.flexDollars = user.flexdollarbalance
+          } else if (user.flexDollars === undefined) {
+            user.flexDollars = 0
+          }
+        }
+        
+        this.user = user
+        // Update localStorage with normalized user data
+        localStorage.setItem('user', JSON.stringify(user))
+        return user
       } else {
         throw new Error(response.message || 'Failed to get current user')
       }
@@ -76,11 +101,22 @@ class AuthService {
       })
       
       if (response.success) {
-        this.user = response.user
+        // Normalize user object - map flexdollarbalance to flexDollars for frontend consistency
+        const user = response.user
+        if (user) {
+          // Map backend field name to frontend field name
+          if (user.flexdollarbalance !== undefined) {
+            user.flexDollars = user.flexdollarbalance
+          } else if (user.flexDollars === undefined) {
+            user.flexDollars = 0
+          }
+        }
+        
+        this.user = user
         this.session = { token: response.token }
         
         // Store in localStorage
-        localStorage.setItem('user', JSON.stringify(response.user))
+        localStorage.setItem('user', JSON.stringify(user))
         localStorage.setItem('session', JSON.stringify({ token: response.token }))
         
         // Emit auth state change event
@@ -88,7 +124,7 @@ class AuthService {
           detail: { user: this.user, session: this.session, event: 'SIGNED_UP' }
         }))
         
-        return { user: response.user, session: this.session }
+        return { user: user, session: this.session }
       } else {
         throw new Error(response.message || 'Registration failed')
       }
@@ -106,11 +142,22 @@ class AuthService {
       })
       
       if (response.success) {
-        this.user = response.user
+        // Normalize user object - map flexdollarbalance to flexDollars for frontend consistency
+        const user = response.user
+        if (user) {
+          // Map backend field name to frontend field name
+          if (user.flexdollarbalance !== undefined) {
+            user.flexDollars = user.flexdollarbalance
+          } else if (user.flexDollars === undefined) {
+            user.flexDollars = 0
+          }
+        }
+        
+        this.user = user
         this.session = { token: response.token }
         
         // Store in localStorage
-        localStorage.setItem('user', JSON.stringify(response.user))
+        localStorage.setItem('user', JSON.stringify(user))
         localStorage.setItem('session', JSON.stringify({ token: response.token }))
         
         // Emit auth state change event
@@ -118,7 +165,7 @@ class AuthService {
           detail: { user: this.user, session: this.session, event: 'SIGNED_IN' }
         }))
         
-        return { user: response.user, session: this.session }
+        return { user: user, session: this.session }
       } else {
         throw new Error(response.message || 'Login failed')
       }

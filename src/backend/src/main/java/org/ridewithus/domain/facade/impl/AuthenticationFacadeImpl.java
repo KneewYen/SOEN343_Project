@@ -52,6 +52,16 @@ public class AuthenticationFacadeImpl implements AuthenticationFacade {
     }
     
     @Override
+    public UserDTO getCurrentUserById(Long userId) {
+        try {
+            // Delegate to authentication service
+            return authenticationService.getCurrentUserById(userId);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+    
+    @Override
     public boolean logout() {
         try {
             // Delegate to authentication service

@@ -69,7 +69,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             user.setRole("rider"); // Default role
             user.setLoyaltyTier(Tier.NONE);
             user.setPrevLoyaltyTier(Tier.NONE);
-            
+
 
             // Save to database
             User savedUser = userRepository.save(user);
@@ -133,6 +133,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
     
     @Override
+    public UserDTO getCurrentUserById(Long userId) {
+        // Fetch latest user data from database to ensure we have current Flex Dollar balance
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            UserDTO userDTO = mapToUserDTO(user);
+            // Update cached user with latest data
+            this.currentUser = userDTO;
+            return userDTO;
+        }
+        return null;
+    }
+
+    @Override
     public void logout() {
         this.currentUser = null;
     }
@@ -177,15 +191,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
      */
     private UserDTO mapToUserDTO(User user) {
         return new UserDTO(
-            user.getId(),
-            user.getFullName(),
-            user.getUserName(),
-            user.getEmail(),
-            user.getRole(),
-            user.getAddress(),
-            user.getPricingPlan(),
-            user.getLoyaltyTier(),
-            user.getPrevLoyaltyTier()
+                user.getId(),
+                user.getFullName(),
+                user.getUserName(),
+                user.getEmail(),
+                user.getRole(),
+                user.getAddress(),
+                user.getPricingPlan(),
+                user.getFlex_dollar_balance()
         );
     }
 }

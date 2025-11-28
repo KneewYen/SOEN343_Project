@@ -271,6 +271,8 @@ const loadBills = async () => {
               ...trip,
               charges: billingResp.billing.charges,
               totalAmount: billingResp.billing.totalAmount,
+              flexDollarDiscount: billingResp.billing.flexDollarDiscount || 0,
+              finalAmount: billingResp.billing.finalAmount || billingResp.billing.totalAmount,
               startStationName: billingResp.billing.startStationName,
               endStationName: billingResp.billing.endStationName,
               paymentStatus: 'Pending'
@@ -353,11 +355,13 @@ const openBill = async (bill) => {
     const response = await apiClient.getBillingByTripId(bill.tripId)
     console.log(response)
     if (response.success && response.billing) {
-      // merge billing DTO into bill
+      // merge billing DTO into bill, including Flex Dollar discount info
       selectedBill.value = {
         ...bill, // use the bill object passed from table
         charges: response.billing.charges,
         totalAmount: response.billing.totalAmount,
+        flexDollarDiscount: response.billing.flexDollarDiscount || 0,
+        finalAmount: response.billing.finalAmount || response.billing.totalAmount,
         startStationName: response.billing.startStationName,
         endStationName: response.billing.endStationName
       }
