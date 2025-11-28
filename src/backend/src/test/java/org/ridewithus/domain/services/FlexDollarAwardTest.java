@@ -46,11 +46,12 @@ class FlexDollarAwardTest {
 
     @Mock
     private StationService stationService;
+    @Mock
+    private FlexDollarService flexDollarService;
 
     @InjectMocks
     private TripService tripService;
-    @InjectMocks
-    private FlexDollarService flexDollarService;
+
 
     private Trip trip;
     private Station station;
@@ -63,6 +64,7 @@ class FlexDollarAwardTest {
     void setUp() {
         // Setup user with initial flex dollar balance of 0
         user = new User("John Doe", "johndoe", "123 Main St", "john@test.com", "password");
+        user.setId(5L);
         user.setFlexDollars(0);
 
         // Setup station with 10 capacity
@@ -103,6 +105,10 @@ class FlexDollarAwardTest {
                 .startTime(LocalDateTime.now().minusMinutes(30))
                 .tripComplete(false)
                 .build();
+
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenReturn(user);
+
     }
 
     /**
@@ -117,6 +123,16 @@ class FlexDollarAwardTest {
         when(dockRepository.findByStationAndStatus(station, Dock.DockStatus.EMPTY))
                 .thenReturn(List.of(dock));
         when(stationService.minimumCapacityReached(1L)).thenReturn(true); // < 25%
+
+        doAnswer(invocation -> {
+            user.setFlexDollars(user.getFlexDollars() + invocation.getArgument(1, Integer.class));
+            return null;
+        }).when(flexDollarService).creditFlexDollars(
+                anyLong(),
+                eq(1), // Expect 1 dollar award
+                anyLong(),
+                anyLong()
+        );
 
         // Act
         Map<String, Object> result = tripService.endTrip(1L, 1L);
@@ -297,7 +313,7 @@ class FlexDollarAwardTest {
         when(stationRepository.findById(1L)).thenReturn(Optional.of(station));
         when(dockRepository.findByStationAndStatus(station, Dock.DockStatus.EMPTY))
                 .thenReturn(List.of(dock));
-        lenient().when(stationService.minimumCapacityReached(1L)).thenReturn(false); // Exactly 25% = false
+        when(stationService.minimumCapacityReached(1L)).thenReturn(false); // Exactly 25% = false
 
         // Act
         Map<String, Object> result = tripService.endTrip(1L, 1L);
@@ -305,6 +321,12 @@ class FlexDollarAwardTest {
         // Assert
         assertFalse((Boolean) result.get("flexDollarAwarded"));
         assertEquals(0, user.getFlexDollars());
+
+        verify(flexDollarService, never()).creditFlexDollars(
+                anyLong(), anyInt(), anyLong(), anyLong()
+        );
+
+        verify(userRepository, never()).save(user);
     }
 
     /**
