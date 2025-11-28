@@ -182,7 +182,7 @@ function formatCurrency(val) {
 const loadRides = async () => {
   try {
     let response;
-    if (props.user.role === 'operator') {
+    if (props.user.role === 'operator' || props.user.role === 'dual') {
       response = await apiClient.getAllTrips(currentPage.value, pageSize);
     } else {
       response = await apiClient.getUserTrips(props.user.id, currentPage.value, pageSize);

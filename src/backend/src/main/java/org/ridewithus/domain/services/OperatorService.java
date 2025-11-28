@@ -32,7 +32,7 @@ public class OperatorService {
 
     @Transactional
     public String toggleBikeStatus(Long bikeId, User operator){
-        if(!operator.getRole().equals("operator")){
+        if(!operator.getRole().equals("operator") && !operator.getRole().equals("dual")){
             return "Error: Unauthorized";
         }
         Bike bike = bikeRepository.findById(bikeId).orElseThrow(() -> new RuntimeException("Bike not found"));
@@ -57,7 +57,7 @@ public class OperatorService {
 
     @Transactional
     public String toggleDockStatus(Long dockId, User operator){
-        if(!operator.getRole().equals("operator")){
+        if(!operator.getRole().equals("operator") && !operator.getRole().equals("dual")){
             return "Error: Unauthorized";
         }
 
@@ -102,7 +102,7 @@ public class OperatorService {
 
     @Transactional
     public String toggleStationStatus(Long stationId, User operator){
-        if(!operator.getRole().equals("operator")){
+        if(!operator.getRole().equals("operator") && !operator.getRole().equals("dual")){
             return "Error: Unauthorized";
         }
 
@@ -126,7 +126,7 @@ public class OperatorService {
     // Move single bike
     @Transactional
     public String moveBike(Long bikeId, Long sourceStationId, Long destinationStationId, User operator){
-        if(!operator.getRole().equals("operator")){
+        if(!operator.getRole().equals("operator") && !operator.getRole().equals("dual")){
             return "Error: Unauthorized";
         }
 
@@ -195,7 +195,7 @@ public class OperatorService {
     // Bulk rebalancing
     @Transactional
     public String rebalanceBikes(Long sourceStationId, Long destinationStationId, int numberOfBikes, User operator){
-        if(!operator.getRole().equals("operator")){
+        if(!operator.getRole().equals("operator") && !operator.getRole().equals("dual")){
             return "Error: Unauthorized";
         }
 

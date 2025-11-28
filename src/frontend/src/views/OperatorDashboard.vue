@@ -16,7 +16,7 @@
               </svg>
             </div>
             <h1 class="app-title">RideWithUs</h1>
-            <span class="role-badge">Operator</span>
+            <span class="role-badge">{{ user?.role?.toLowerCase() === 'dual' ? 'Dual Mode' : 'Operator' }}</span>
           </div>
           <div class="user-info">
             <span class="welcome-text">Welcome, {{ user?.fullName || 'Operator' }}!</span>
@@ -197,7 +197,7 @@
                   <div v-for="dock in station.dockIds" :key="dock.id" class="dock-card" :class="getDockStatusClass(dock)">
                     <div class="dock-header">
                       <span class="dock-id">Dock {{ dock.id }}</span>
-                      <span class="dock-status">{{ dock.status }}</span>
+                      <span class="dock-status">{{ getDockStatusText(dock) }}</span>
                     </div>
                     <div v-if="dock.bike" class="bike-info">
                       <span class="bike-id">Bike #{{ dock.bike.id }}</span>
@@ -394,6 +394,7 @@
       :show="showAccountDetails" 
       :user="user"
       @close="showAccountDetails = false"
+      @modeChanged="handleModeChange"
     />
   </div>
 </template>
@@ -406,6 +407,7 @@ import apiClient from '../lib/api'
 import RideHistory from '@/components/RideHistory.vue'
 import StationsMap from '@/components/StationsMap.vue'
 import AccountDetails from '@/components/AccountDetails.vue'
+import { useDualMode } from '@/composables/useDualMode'
 
 export default {
   name: 'OperatorDashboard',
@@ -417,6 +419,7 @@ export default {
   },
   setup() {
     const router = useRouter()
+    const { currentMode, isRiderMode, isOperatorMode } = useDualMode()
     const user = ref({ role: 'operator' })
     const stations = ref([])
     const loading = ref(false)
@@ -459,7 +462,15 @@ export default {
     const handleLogout = () => {
       localStorage.removeItem('user')
       localStorage.removeItem('token')
+      localStorage.removeItem('dualMode')
       router.push('/login')
+    }
+
+    const handleModeChange = (mode) => {
+      // If user switches to rider mode, redirect to rider dashboard
+      if (mode === 'rider' && user.value?.role?.toLowerCase() === 'dual') {
+        router.push('/dashboard/rider')
+      }
     }
 
     // Load station counts from API
@@ -674,9 +685,25 @@ export default {
     }
 
     const getDockStatusClass = (dock) => {
+      // Always respect OUT_OF_SERVICE status
       if (dock.status === 'OUT_OF_SERVICE') return 'out-of-service'
-      if (dock.status === 'OCCUPIED') return 'occupied'
+      
+      // If dock has a bike, it should be OCCUPIED
+      if (dock.bike) return 'occupied'
+      
+      // If dock has no bike, it should be EMPTY
       return 'empty'
+    }
+    
+    const getDockStatusText = (dock) => {
+      // Always respect OUT_OF_SERVICE status
+      if (dock.status === 'OUT_OF_SERVICE') return 'OUT_OF_SERVICE'
+      
+      // If dock has a bike, it should be OCCUPIED
+      if (dock.bike) return 'OCCUPIED'
+      
+      // If dock has no bike, it should be EMPTY
+      return 'EMPTY'
     }
 
     const getBikeStatusClass = (bikeStatus) => {
@@ -739,6 +766,7 @@ export default {
     return {
       user,
       handleLogout,
+      handleModeChange,
       stations,
       loading,
       showRebalanceModal,
@@ -759,6 +787,7 @@ export default {
       toggleDockStatus,
       getStationStatusClass,
       getDockStatusClass,
+      getDockStatusText,
       getBikeStatusClass,
       resetSystem, 
       handleStationToggle
