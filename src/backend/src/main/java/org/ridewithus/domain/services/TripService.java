@@ -211,6 +211,8 @@ public class TripService {
             userService.save(user);
             return updatedTier;
         } else {
+            user.setPrevLoyaltyTier(updatedTier);
+            userService.save(user);
             return null;
         }
     }
