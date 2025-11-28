@@ -197,8 +197,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 user.getEmail(),
                 user.getRole(),
                 user.getAddress(),
+                user.getFlex_dollar_balance(),
                 user.getPricingPlan(),
-                user.getFlex_dollar_balance()
+                user.getLoyaltyTier(),
+                user.getPrevLoyaltyTier()
         );
     }
 }
