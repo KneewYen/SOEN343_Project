@@ -1,8 +1,10 @@
 package org.ridewithus.domain.services;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import org.ridewithus.domain.loyaltyProgram.ChainOfR.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.ridewithus.domain.entity.*;
@@ -17,10 +19,23 @@ import java.util.List;
 import java.util.Optional;
 import org.ridewithus.domain.dto.TripDTO;
 
-@Service
+
 @NoArgsConstructor
 @AllArgsConstructor
+@Service
 public class TripService {
+
+    @Autowired
+    private BronzeHandler bronzeHandler;
+
+    @Autowired
+    private SilverHandler silverHandler;
+
+    @Autowired
+    private GoldHandler goldHandler;
+
+    @Autowired
+    private UserService userService;
 
     @Autowired
     private TripRepository tripRepository;
@@ -41,6 +56,12 @@ public class TripService {
     private DomainEventService eventService;
     @Autowired
     private StationService stationService;
+
+    @PostConstruct
+    public void initChain() {
+        bronzeHandler.setNext(silverHandler);
+        silverHandler.setNext(goldHandler);
+    }
 
     @Transactional
     public Long startTrip(Long reservationId) throws Exception {
@@ -144,12 +165,10 @@ public class TripService {
         // Store reservation reference before clearing it
         Reservation reservation = trip.getReservation();
 
-
         tripRepository.save(trip);
 
         reservation.setStatus(Reservation.ReservationStatus.COMPLETED);
         reservationRepository.save(reservation);
-
 
         String newStatus = reservation.getBike().getStatus().toString();
 
@@ -158,14 +177,54 @@ public class TripService {
         // Get free docks at destination
         List<Dock> freeDocks = dockRepository.findAllByStationAndStatus(station.get(), Dock.DockStatus.EMPTY);
 
-        if(freeDocks.isEmpty()){
+        if (freeDocks.isEmpty()){
             eventService.emitEvent(user, "STATION_FULL", String.format("%s station is full", station.get().getName()));
         }
 
+        //updateLoyaltyTier(user);
+      
         stationService.checkRebalance(user, trip.getStartStation().getId());
 
         return trip.getTripId();
 
+    }
+
+    public Tier getTier(Long tripId) throws Exception {
+        Trip trip = tripRepository.findByTripId(tripId);
+        if (trip == null) {
+            throw new Exception("Trip does not Exists");
+        }
+        if (trip.getUser().getLoyaltyTier() != trip.getUser().getPrevLoyaltyTier()) {
+            return trip.getUser().getLoyaltyTier();
+        } else {
+            return null;
+        }
+    }
+
+    public Tier getTierByUser(User user) {
+        Tier updatedTier = bronzeHandler.handle(user);
+        Tier currentTier = user.getLoyaltyTier();
+
+        if (updatedTier != currentTier){
+            user.setLoyaltyTier(updatedTier);
+            user.setPrevLoyaltyTier(updatedTier);
+            userService.save(user);
+            return updatedTier;
+        } else {
+            return null;
+        }
+    }
+
+    // update tier of user
+    public void updateLoyaltyTier(User user){
+        Tier updatedTier = bronzeHandler.handle(user);
+        Tier currentTier = user.getLoyaltyTier();
+
+        // only update if the tier changes
+        if (updatedTier != currentTier){
+            user.setLoyaltyTier(updatedTier);
+            userService.save(user);
+        }
     }
 
     public List<TripDTO> getUserTrips(Long userId) {

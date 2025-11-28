@@ -113,6 +113,66 @@
             />
           </section>
 
+
+                <!-- Bike Selection Modal -->
+          <div v-if="showBillingPopup" class="modal-overlay" @click="showBillingPopup = false">
+            <div class="modal-content" @click.stop>
+              <div class="modal-header">
+                <h3>Billing Summary</h3>
+                <button @click="showBillingPopup = false" class="close-btn">&times;</button>
+              </div>
+              <div class="modal-body">
+                 <section v-if="tripSummary" class="recent-trips">
+              <TripSummary :trip="selectedTrip" />
+
+              <!-- Billing Information (added here) -->
+              <div v-if="billing" class="billing-info">
+
+                <div class="billing-details">
+                  <p><strong>Billing ID:</strong> {{ billing.billingId }}</p>
+                  <p><strong>Trip ID:</strong> {{ billing.tripId }}</p>
+                  <p><strong>Total Cost:</strong> ${{ billing.totalAmount.toFixed(2) }}</p>
+                </div>
+
+                <div class="billing-charges">
+                  <h4>Charges</h4>
+                  <ul>
+                    <li v-for="charge in billing.charges" :key="charge.name">
+                      <strong>{{ charge.name }}</strong> — {{ charge.description }}
+                      <span class="charge-cost">(${{ charge.cost.toFixed(2) }})</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div v-else class="no-billing">
+                <p>No billing information available for this trip.</p>
+              </div>
+
+              <div v-if="!hasSubmittedRating" class="bike-rating">
+                <h3 class="section-title">Rate Your Bike</h3>
+
+                <div class="stars">
+                  <span 
+                    v-for="star in 5" 
+                    :key="star"
+                    class="star"
+                    :class="{ filled: star <= bikeRating }"
+                    @click="bikeRating = star"
+                  >
+                    ★
+                  </span>
+                </div>
+
+                <button class="action-btn primary submit-rating" @click="submitRating">
+                  Submit Rating
+                </button>
+              </div>
+            </section>
+              </div>
+            </div>
+    </div>
+
           <!-- Current Trip -->
           <section class="current-trip">
             <h2 class="section-title">Current Trip</h2>
@@ -216,34 +276,6 @@
             </div>
           </section>
 
-          <section v-if="tripSummary" class="recent-trips">
-              <TripSummary :trip="selectedTrip" />
-
-              <!-- Billing Information (added here) -->
-              <div v-if="billing" class="billing-info">
-                <h3 class="section-title">Billing Summary</h3>
-
-                <div class="billing-details">
-                  <p><strong>Billing ID:</strong> {{ billing.billingId }}</p>
-                  <p><strong>Trip ID:</strong> {{ billing.tripId }}</p>
-                  <p><strong>Total Cost:</strong> ${{ billing.totalAmount.toFixed(2) }}</p>
-                </div>
-
-                <div class="billing-charges">
-                  <h4>Charges</h4>
-                  <ul>
-                    <li v-for="charge in billing.charges" :key="charge.name">
-                      <strong>{{ charge.name }}</strong> — {{ charge.description }}
-                      <span class="charge-cost">(${{ charge.cost.toFixed(2) }})</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              <div v-else class="no-billing">
-                <p>No billing information available for this trip.</p>
-              </div>
-            </section>
 
           <!-- Recent Trips -->
           <section class="recent-trips">
@@ -308,6 +340,7 @@ import apiClient from '../lib/api'
 import RideHistory from '@/components/RideHistory.vue'
 import BillingHistory from '@/components/BillingHistory.vue'
 import PricingPlan from '@/components/PricingPlan.vue'
+import { toast } from "vue3-toastify"
 import AccountDetails from '@/components/AccountDetails.vue'
 import { useDualMode } from '@/composables/useDualMode'
 
@@ -336,12 +369,61 @@ const prevReservationId = ref(null)
 const showPricingList = ref(false)
 const tripSummary = ref(null)
 const billing = ref(null)
+const bikeRating = ref(0)
+const hasSubmittedRating = ref(false)
+const selectedBike = ref(null)
+const showBillingPopup = ref(false)
+
+const TierMap = {
+    0: "ENTRY",
+    1: "BRONZE",
+    2: "SILVER",
+    3: "GOLD"
+  };
+
+  const getLoyaltyStatus = async (user) => {
+    try {
+      const response = await apiClient.getUserLoyaltyTierUpdate(user.id)
+      if (response.success && response.tier != null) {
+        user.loyaltyTier = response.tier
+      }
+    } catch (error) {
+      console.error(`Error fetching user's tier`)
+      console.error("Prev:", user.prevLoyaltyTier, "New:", user.loyaltyTier)
+    }
+    console.log("Prev:", user.prevLoyaltyTier, "New:", user.loyaltyTier);
+
+    if (user.loyaltyTier !== user.prevLoyaltyTier) {
+      if (user.loyaltyTier > user.prevLoyaltyTier) {
+        toast.success("You have been promoted to " + TierMap[user.loyaltyTier] + " tier!");
+      } else if (user.loyaltyTier < user.prevLoyaltyTier) {
+        toast.error("You have been demoted to " + TierMap[user.loyaltyTier] + " tier!");
+      }
+      user.prevLoyaltyTier = user.loyaltyTier 
+      console.log("AfterPrev:", user.prevLoyaltyTier, "New:", user.loyaltyTier);     
+    }
+  }
+
+  const getLoyaltyStatusTwoArgs = (user, tier) => {  
+      if (user.value.loyaltyTier < tier) {
+        toast.success("You have been promoted to " + TierMap[tier] + " tier. it will apply to your next trip!")
+      } else if (user.value.loyaltyTier > tier) {
+        toast.error("You have been demoted to " + TierMap[tier] + " tier!");
+      }
+      user.value.prevLoyaltyTier = user.value.loyaltyTier
+
+      let storedUser = JSON.parse(localStorage.getItem('user'))
+      storedUser.prevLoyaltyTier = user.value.loyaltyTier
+
+      localStorage.setItem('user', JSON.stringify(storedUser))
+  }
 
 onMounted(() => {
   // Load user data from localStorage
   const userData = localStorage.getItem('user')
   if (userData) {
     user.value = JSON.parse(userData)
+    getLoyaltyStatus(user.value)
   }
   // Initialize with clean state
   currentReservation.value = null
@@ -360,6 +442,17 @@ onBeforeUnmount(() => {
     reservationInterval = null
   }
 })
+const submitRating = async () => {
+  try {
+    await apiClient.submitBikeRating(selectedBike.value, bikeRating.value)
+
+    alert("Thanks for rating!")
+    hasSubmittedRating.value = true
+  } catch (err) {
+    console.error(err)
+    alert("Could not submit rating.")
+  }
+}
 
 const handleLogout = () => {
   console.log('🚪 Logout button clicked')
@@ -637,6 +730,7 @@ const checkActiveReservation = async () => {
             startTime: new Date()
           }
           currentReservation.value = null
+          hasSubmittedRating.value = false
         } else {
           alert('Failed to start trip: ' + (response.message || 'Unknown error'))
         }
@@ -685,6 +779,7 @@ const checkActiveReservation = async () => {
           alert('Please select a return station')
           return
         }
+        selectedBike.value = currentTrip.value.bikeId
         const response = await apiClient.endTrip(currentTrip.value.id, selectedReturnStation.value)
         if (response.success) {
           alert('Trip ended successfully!')
@@ -692,10 +787,15 @@ const checkActiveReservation = async () => {
           prevReservationId.value = null
           currentReservation.value = null
 
+          if (response.tier != null) {
+            getLoyaltyStatusTwoArgs(user, response.tier)
+          }
+
           const res = await apiClient.calculatePrice(currentTrip.value.id)
           console.log("Billing response:", res)
           tripSummary.value = res.billing
           billing.value = res.billing
+          showBillingPopup.value = true
 
           currentTrip.value = null
           selectedReturnStation.value = ''
@@ -1247,6 +1347,66 @@ const checkActiveReservation = async () => {
   text-transform: uppercase;
 }
 
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  border: 2px solid #e2e8f0;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #1e293b;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.modal-body p {
+  margin-bottom: 16px;
+}
+
 @media (min-width: 481px) and (max-width: 768px) {
   .dashboard-main {
     padding: 20px;
@@ -1382,4 +1542,33 @@ const checkActiveReservation = async () => {
     grid-template-columns: 1fr;
   }
 }
+.bike-rating {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 12px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.stars {
+  font-size: 30px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.star {
+  color: #ccc;
+  margin-right: 6px;
+  cursor: pointer;
+}
+
+.star.filled {
+  color: gold;
+}
+
+.submit-rating {
+  margin-top: 10px;
+  width: 150px;
+}
+
 </style>

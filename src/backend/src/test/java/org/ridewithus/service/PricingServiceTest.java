@@ -11,6 +11,8 @@ import org.mockito.quality.Strictness;
 import org.ridewithus.domain.dto.BillingDTO;
 import org.ridewithus.domain.dto.ChargeDTO;
 import org.ridewithus.domain.entity.*;
+import org.ridewithus.domain.loyaltyProgram.ChainOfR.Tier;
+import org.ridewithus.domain.services.LoyaltyService;
 import org.ridewithus.domain.services.PricingService;
 import org.ridewithus.infrastructure.repository.*;
 
@@ -39,6 +41,8 @@ public class PricingServiceTest {
     private BillingRepository billingRepository;
     @Mock
     private ChargeRepository chargeRepository;
+    @Mock
+    private LoyaltyService loyaltyService;
 
 
     @InjectMocks
@@ -78,6 +82,8 @@ public class PricingServiceTest {
         // 2. User
         testUser = new User();
         testUser.setId(100L);
+        testUser.setLoyaltyTier(Tier.NONE);
+        testUser.setPrevLoyaltyTier(Tier.NONE);
         testUser.setPricingPlan(standardPlan); // Default plan for setup
 
         // 3. Bikes
@@ -99,6 +105,8 @@ public class PricingServiceTest {
 
         testTrip.setStartStation(startStation);
         testTrip.setEndStation(endStation);
+
+        doNothing().when(loyaltyService).updateLoyaltyTier(testUser);
 
         // Reset mocks before each test
         reset(tripRepository, userRepository, pricingPlanRepository, billingRepository, chargeRepository);
