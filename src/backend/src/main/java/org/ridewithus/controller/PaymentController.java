@@ -19,11 +19,14 @@ public class PaymentController {
     public ResponseEntity<Map<String, Object>> processPayment(@RequestBody Map<String, Object> paymentData) {
         try {
             Long tripId = Long.valueOf(paymentData.get("tripId").toString());
-            Double amount = Double.valueOf(paymentData.get("amount").toString());
-            String paymentMethod = paymentData.get("paymentMethod").toString();
-            Map<String, Object> paymentDetails = (Map<String, Object>) paymentData.get("paymentDetails");
+            String paymentMethod = paymentData.get("paymentMethod") != null ? 
+                    paymentData.get("paymentMethod").toString() : "card";
+            Map<String, Object> paymentDetails = paymentData.get("paymentDetails") != null ? 
+                    (Map<String, Object>) paymentData.get("paymentDetails") : new HashMap<>();
 
-            Map<String, Object> result = paymentService.processPayment(tripId, amount, paymentMethod, paymentDetails);
+            // Use the new method that automatically applies Flex Dollars
+            Map<String, Object> result = paymentService.processTripPaymentWithFlexDollars(
+                    tripId, paymentMethod, paymentDetails);
             
             return ResponseEntity.ok(result);
         } catch (Exception e) {

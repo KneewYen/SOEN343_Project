@@ -1,5 +1,6 @@
 package org.ridewithus.domain.services;
 
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.ridewithus.domain.entity.*;
 import org.ridewithus.infrastructure.repository.BikeRepository;
@@ -24,10 +25,14 @@ public class OperatorService {
     private StationRepository stationRepository;
     @Autowired
     private DomainEventService eventService;
+    @Autowired
+    private StationService stationService;
+    @Autowired
+    private EntityManager entityManager;
 
     @Transactional
     public String toggleBikeStatus(Long bikeId, User operator){
-        if(!operator.getRole().equals("operator")){
+        if(!operator.getRole().equals("operator") && !operator.getRole().equals("dual")){
             return "Error: Unauthorized";
         }
         Bike bike = bikeRepository.findById(bikeId).orElseThrow(() -> new RuntimeException("Bike not found"));
@@ -52,7 +57,7 @@ public class OperatorService {
 
     @Transactional
     public String toggleDockStatus(Long dockId, User operator){
-        if(!operator.getRole().equals("operator")){
+        if(!operator.getRole().equals("operator") && !operator.getRole().equals("dual")){
             return "Error: Unauthorized";
         }
 
@@ -97,7 +102,7 @@ public class OperatorService {
 
     @Transactional
     public String toggleStationStatus(Long stationId, User operator){
-        if(!operator.getRole().equals("operator")){
+        if(!operator.getRole().equals("operator") && !operator.getRole().equals("dual")){
             return "Error: Unauthorized";
         }
 
@@ -121,7 +126,7 @@ public class OperatorService {
     // Move single bike
     @Transactional
     public String moveBike(Long bikeId, Long sourceStationId, Long destinationStationId, User operator){
-        if(!operator.getRole().equals("operator")){
+        if(!operator.getRole().equals("operator") && !operator.getRole().equals("dual")){
             return "Error: Unauthorized";
         }
 
@@ -173,6 +178,15 @@ public class OperatorService {
             eventService.emitEvent(operator, "STATION_FULL", String.format("%s station is full", destinationStation.getName()));
         }
 
+        stationRepository.flush();   // flush pending changes
+        entityManager.clear();
+
+        // Reload the source station with updated docks
+        Station freshSourceStation = stationRepository.findById(sourceStationId)
+                .orElseThrow(() -> new RuntimeException("Station not found"));
+
+        stationService.checkRebalance(operator, freshSourceStation.getId());
+
         return "Bike " + bike.getId() + " successfully moved from station " + sourceStation.getName()
                 + " to station " + destinationStation.getName();
 
@@ -181,7 +195,7 @@ public class OperatorService {
     // Bulk rebalancing
     @Transactional
     public String rebalanceBikes(Long sourceStationId, Long destinationStationId, int numberOfBikes, User operator){
-        if(!operator.getRole().equals("operator")){
+        if(!operator.getRole().equals("operator") && !operator.getRole().equals("dual")){
             return "Error: Unauthorized";
         }
 
@@ -239,9 +253,21 @@ public class OperatorService {
         // Get free docks at destination after rebalancing
         List<Dock> freeDocksAfterRebalance = dockRepository.findAllByStationAndStatus(destinationStation, Dock.DockStatus.EMPTY);
 
+
         if(freeDocksAfterRebalance.isEmpty()){
             eventService.emitEvent(operator, "STATION_FULL", String.format("%s station is full", destinationStation.getName()));
         }
+
+        stationRepository.flush();   // flush pending changes
+        entityManager.clear();
+
+        // Reload the source station with updated docks
+        Station freshSourceStation = stationRepository.findById(sourceStationId)
+                .orElseThrow(() -> new RuntimeException("Station not found"));
+
+        stationService.checkRebalance(operator, freshSourceStation.getId());
+
+
 
         return numberOfBikes + " bikes successfully rebalanced from " + sourceStation.getName() + " to " + destinationStation.getName();
 

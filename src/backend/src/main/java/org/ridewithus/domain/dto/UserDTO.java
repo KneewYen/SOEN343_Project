@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.ridewithus.domain.entity.User;
+import org.ridewithus.domain.loyaltyProgram.ChainOfR.Tier;
 
 @Data
 @Builder
@@ -19,6 +20,21 @@ public class UserDTO {
     private String email;
     private String role;
     private String address;
+    private int flexdollarbalance;
+
+//    public UserDTO(Long id, String fullName, String userName, String email, String role, String address, PricingPlan pricingPlan, int flexdollarbalance) {
+//        this.id = id;
+//        this.fullName = fullName;
+//        this.userName = userName;
+//        this.email = email;
+//        this.role = role;
+//        this.address = address;
+//        this.pricingPlan = pricingPlan;
+//        this.flexdollarbalance = flexdollarbalance;
+//    }
+    private PricingPlan pricingPlan;
+    private Tier loyaltyTier;
+    private Tier prevLoyaltyTier;
 
     public static UserDTO fromEntity(User u) {
         return UserDTO.builder()
@@ -26,6 +42,5 @@ public class UserDTO {
                 .userName(u.getUserName())
                 .build();
     }
-    private PricingPlan pricingPlan;
 }
 

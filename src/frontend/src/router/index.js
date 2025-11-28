@@ -73,14 +73,20 @@ router.beforeEach((to, from, next) => {
   if (requiresAuth && !user) {
     // Redirect to login if authentication is required
     next('/login')
-  } else if (to.meta.role && user && user.role !== to.meta.role) {
-    // Redirect to correct dashboard if role doesn't match
-    if (user.role === 'operator') {
-      next('/dashboard/operator')
+  } else if (to.meta.role && user && user.role?.toLowerCase() !== 'dual') {
+    // Allow dual users to access both dashboards
+    // For non-dual users, redirect if role doesn't match
+    if (user.role !== to.meta.role) {
+      if (user.role === 'operator') {
+        next('/dashboard/operator')
+      } else {
+        next('/dashboard/rider')
+      }
     } else {
-      next('/dashboard/rider')
+      next()
     }
   } else {
+    // Allow access for dual users or if no role restriction
     next()
   }
 })

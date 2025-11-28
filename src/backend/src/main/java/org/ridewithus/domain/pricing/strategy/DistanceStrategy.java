@@ -34,7 +34,7 @@ public class DistanceStrategy implements PricingStrategy{
     }
 
     public String getName(){
-        return "Base plan";
+        return "Distance plan";
     }
 
     public String getDescription(){

@@ -5,6 +5,7 @@ import org.ridewithus.domain.dto.LoginRequest;
 import org.ridewithus.domain.dto.RegisterRequest;
 import org.ridewithus.domain.dto.UserDTO;
 import org.ridewithus.domain.entity.User;
+import org.ridewithus.domain.loyaltyProgram.ChainOfR.Tier;
 import org.ridewithus.domain.services.AuthenticationService;
 import org.ridewithus.infrastructure.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,6 +67,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             user.setAddress(request.getAddress());
             user.setPassword(request.getPassword());
             user.setRole("rider"); // Default role
+            user.setLoyaltyTier(Tier.NONE);
+            user.setPrevLoyaltyTier(Tier.NONE);
+
 
             // Save to database
             User savedUser = userRepository.save(user);
@@ -129,6 +133,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
     
     @Override
+    public UserDTO getCurrentUserById(Long userId) {
+        // Fetch latest user data from database to ensure we have current Flex Dollar balance
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            UserDTO userDTO = mapToUserDTO(user);
+            // Update cached user with latest data
+            this.currentUser = userDTO;
+            return userDTO;
+        }
+        return null;
+    }
+
+    @Override
     public void logout() {
         this.currentUser = null;
     }
@@ -173,13 +191,16 @@ public class AuthenticationServiceImpl implements AuthenticationService {
      */
     private UserDTO mapToUserDTO(User user) {
         return new UserDTO(
-            user.getId(),
-            user.getFullName(),
-            user.getUserName(),
-            user.getEmail(),
-            user.getRole(),
-            user.getAddress(),
-            user.getPricingPlan()
+                user.getId(),
+                user.getFullName(),
+                user.getUserName(),
+                user.getEmail(),
+                user.getRole(),
+                user.getAddress(),
+                user.getFlex_dollar_balance(),
+                user.getPricingPlan(),
+                user.getLoyaltyTier(),
+                user.getPrevLoyaltyTier()
         );
     }
 }

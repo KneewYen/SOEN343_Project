@@ -4,6 +4,14 @@
     <div class="dashboard-container">
       <!-- Header -->
       <header class="dashboard-header">
+        <!-- Flex Dollar Balance - Top of Header -->
+        <div class="flex-dollar-top-badge" v-if="user?.role === 'rider' || user?.role === 'dual'">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+            <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span class="flex-dollar-text">{{ user.flexDollars || 0 }} Flex $</span>
+        </div>
         <div class="header-content">
           <div class="logo-section">
             <div class="logo-icon">
@@ -16,10 +24,21 @@
               </svg>
             </div>
             <h1 class="app-title">RideWithUs</h1>
-            <span class="role-badge">Rider</span>
+            <span class="role-badge">{{ user?.role?.toLowerCase() === 'dual' ? 'Dual Mode' : 'Rider' }}</span>
           </div>
           <div class="user-info">
             <span class="welcome-text">Welcome, {{ user?.fullName || 'Rider' }}!</span>
+            <button 
+              @click="showAccountDetails = true" 
+              class="account-btn" 
+              aria-label="Account Details" 
+              title="View Account Details"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </button>
             <button @click="handleLogout" class="logout-btn">Logout</button>
           </div>
         </div>
@@ -101,6 +120,66 @@
               :user="user" 
             />
           </section>
+
+
+                <!-- Bike Selection Modal -->
+          <div v-if="showBillingPopup" class="modal-overlay" @click="showBillingPopup = false">
+            <div class="modal-content" @click.stop>
+              <div class="modal-header">
+                <h3>Billing Summary</h3>
+                <button @click="showBillingPopup = false" class="close-btn">&times;</button>
+              </div>
+              <div class="modal-body">
+                 <section v-if="tripSummary" class="recent-trips">
+              <TripSummary :trip="selectedTrip" />
+
+              <!-- Billing Information (added here) -->
+              <div v-if="billing" class="billing-info">
+
+                <div class="billing-details">
+                  <p><strong>Billing ID:</strong> {{ billing.billingId }}</p>
+                  <p><strong>Trip ID:</strong> {{ billing.tripId }}</p>
+                  <p><strong>Total Cost:</strong> ${{ billing.totalAmount.toFixed(2) }}</p>
+                </div>
+
+                <div class="billing-charges">
+                  <h4>Charges</h4>
+                  <ul>
+                    <li v-for="charge in billing.charges" :key="charge.name">
+                      <strong>{{ charge.name }}</strong> — {{ charge.description }}
+                      <span class="charge-cost">(${{ charge.cost.toFixed(2) }})</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div v-else class="no-billing">
+                <p>No billing information available for this trip.</p>
+              </div>
+
+              <div v-if="!hasSubmittedRating" class="bike-rating">
+                <h3 class="section-title">Rate Your Bike</h3>
+
+                <div class="stars">
+                  <span 
+                    v-for="star in 5" 
+                    :key="star"
+                    class="star"
+                    :class="{ filled: star <= bikeRating }"
+                    @click="bikeRating = star"
+                  >
+                    ★
+                  </span>
+                </div>
+
+                <button class="action-btn primary submit-rating" @click="submitRating">
+                  Submit Rating
+                </button>
+              </div>
+            </section>
+              </div>
+            </div>
+    </div>
 
           <!-- Current Trip -->
           <section class="current-trip">
@@ -205,54 +284,6 @@
             </div>
           </section>
 
-          <section v-if="tripSummary" class="recent-trips">
-              <TripSummary :trip="selectedTrip" />
-
-              <!-- Billing Information (added here) -->
-              <div v-if="billing" class="billing-info">
-                <h3 class="section-title">Billing Summary</h3>
-
-                <div class="billing-details">
-                  <p><strong>Billing ID:</strong> {{ billing.billingId }}</p>
-                  <p><strong>Trip ID:</strong> {{ billing.tripId }}</p>
-                  <p><strong>Total Cost:</strong> ${{ billing.totalAmount.toFixed(2) }}</p>
-                </div>
-
-                <div class="billing-charges">
-                  <h4>Charges</h4>
-                  <ul>
-                    <li v-for="charge in billing.charges" :key="charge.name">
-                      <strong>{{ charge.name }}</strong> — {{ charge.description }}
-                      <span class="charge-cost">(${{ charge.cost.toFixed(2) }})</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              <div v-else class="no-billing">
-                <p>No billing information available for this trip.</p>
-              </div>
-
-              <div v-if="!hasSubmittedRating" class="bike-rating">
-                <h3 class="section-title">Rate Your Bike</h3>
-
-                <div class="stars">
-                  <span 
-                    v-for="star in 5" 
-                    :key="star"
-                    class="star"
-                    :class="{ filled: star <= bikeRating }"
-                    @click="bikeRating = star"
-                  >
-                    ★
-                  </span>
-                </div>
-
-                <button class="action-btn primary submit-rating" @click="submitRating">
-                  Submit Rating
-                </button>
-              </div>
-            </section>
 
           <!-- Recent Trips -->
           <section class="recent-trips">
@@ -297,25 +328,46 @@
         </div>
       </main>
     </div>
+    
+    <!-- Account Details Modal -->
+    <AccountDetails 
+      :show="showAccountDetails" 
+      :user="user"
+      @close="showAccountDetails = false"
+      @modeChanged="handleModeChange"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
+import authService from '../services/authService'
 import ThemeToggle from '../components/ThemeToggle.vue'
 import StationsMap from '../components/StationsMap.vue'
 import apiClient from '../lib/api'
 import RideHistory from '@/components/RideHistory.vue'
 import BillingHistory from '@/components/BillingHistory.vue'
 import PricingPlan from '@/components/PricingPlan.vue'
+import { toast } from "vue3-toastify"
+import AccountDetails from '@/components/AccountDetails.vue'
+import { useDualMode } from '@/composables/useDualMode'
 
 
 const router = useRouter()
+const { currentMode } = useDualMode()
 const user = ref(null)
 const showStationsList = ref(false)
 const showRideHistoryList = ref(false)
 const showBillingHistoryList = ref(false)
+const showAccountDetails = ref(false)
+
+const handleModeChange = (mode) => {
+  // If user switches to operator mode, redirect to operator dashboard
+  if (mode === 'operator' && user.value?.role?.toLowerCase() === 'dual') {
+    router.push('/dashboard/operator')
+  }
+}
 const stations = ref([])
 const loading = ref(false)
 const currentReservation = ref(null)
@@ -329,13 +381,90 @@ const billing = ref(null)
 const bikeRating = ref(0)
 const hasSubmittedRating = ref(false)
 const selectedBike = ref(null)
+const showBillingPopup = ref(false)
 
-onMounted(() => {
-  // Load user data from localStorage
+const TierMap = {
+    0: "ENTRY",
+    1: "BRONZE",
+    2: "SILVER",
+    3: "GOLD"
+  };
+
+  const getLoyaltyStatus = async (user) => {
+    try {
+      const response = await apiClient.getUserLoyaltyTierUpdate(user.id)
+      if (response.success && response.tier != null) {
+        user.loyaltyTier = response.tier
+      }
+    } catch (error) {
+      console.error(`Error fetching user's tier`)
+      console.error("Prev:", user.prevLoyaltyTier, "New:", user.loyaltyTier)
+    }
+    console.log("Prev:", user.prevLoyaltyTier, "New:", user.loyaltyTier);
+
+    if (user.loyaltyTier !== user.prevLoyaltyTier) {
+      if (user.loyaltyTier > user.prevLoyaltyTier) {
+        toast.success("You have been promoted to " + TierMap[user.loyaltyTier] + " tier!");
+      } else if (user.loyaltyTier < user.prevLoyaltyTier) {
+        toast.error("You have been demoted to " + TierMap[user.loyaltyTier] + " tier!");
+      }
+      user.prevLoyaltyTier = user.loyaltyTier 
+      console.log("AfterPrev:", user.prevLoyaltyTier, "New:", user.loyaltyTier);     
+    }
+  }
+
+  const getLoyaltyStatusTwoArgs = (user, tier) => {  
+      if (user.value.loyaltyTier < tier) {
+        toast.success("You have been promoted to " + TierMap[tier] + " tier. it will apply to your next trip!")
+      } else if (user.value.loyaltyTier > tier) {
+        toast.error("You have been demoted to " + TierMap[tier] + " tier!");
+      }
+      user.value.prevLoyaltyTier = user.value.loyaltyTier
+
+      let storedUser = JSON.parse(localStorage.getItem('user'))
+      storedUser.prevLoyaltyTier = user.value.loyaltyTier
+
+      localStorage.setItem('user', JSON.stringify(storedUser))
+  }
+
+onMounted(async () => {
+  // Load user data from localStorage first (for immediate display)
   const userData = localStorage.getItem('user')
   if (userData) {
     user.value = JSON.parse(userData)
+
+    // Normalize flexDollars field (map flexdollarbalance to flexDollars)
+    if (user.value) {
+      if (user.value.flexdollarbalance !== undefined) {
+        user.value.flexDollars = user.value.flexdollarbalance
+      } else if (user.value.flexDollars === undefined) {
+        user.value.flexDollars = 0
+      }
+    }
+    getLoyaltyStatus(user.value)
   }
+  
+  // Refresh user data from backend database to get latest Flex Dollar balance
+  try {
+    const currentUser = await authService.getCurrentUser()
+    if (currentUser) {
+      // Normalize flexDollars field
+      if (currentUser.flexdollarbalance !== undefined) {
+        currentUser.flexDollars = currentUser.flexdollarbalance
+      } else if (currentUser.flexDollars === undefined) {
+        currentUser.flexDollars = 0
+      }
+      
+      user.value = currentUser
+      // Update localStorage with fresh data from database
+      localStorage.setItem('user', JSON.stringify(currentUser))
+      console.log('Refreshed user data from database. Flex Dollars:', currentUser.flexDollars)
+    }
+  } catch (error) {
+    console.warn('Could not refresh user data from backend:', error)
+    // Continue with localStorage data if backend is unavailable
+  }
+  
   // Initialize with clean state
   currentReservation.value = null
   currentTrip.value = null
@@ -369,6 +498,7 @@ const handleLogout = () => {
   console.log('🚪 Logout button clicked')
   localStorage.removeItem('user')
   localStorage.removeItem('token')
+  localStorage.removeItem('dualMode')
   console.log('🚪 Navigating to /login')
   // Use replace instead of push to avoid navigation guard issues
   router.replace('/login')
@@ -466,11 +596,11 @@ const showPricing = () => {
 const checkActiveTrip = async () => {
   try {
     if (!user.value?.id) return
-    if (!apiClient.getUserTrips) {
+    if (!apiClient.getIncompleteUserTrips) {
       currentTrip.value = null
       return
     }
-    const resp = await apiClient.getUserTrips(user.value.id)
+    const resp = await apiClient.getIncompleteUserTrips(user.value.id)
     if (resp && resp.success && Array.isArray(resp.trips)) {
       const incomplete = resp.trips.find(t => !t.tripComplete)
       if (incomplete) {
@@ -691,16 +821,79 @@ const checkActiveReservation = async () => {
         }
         selectedBike.value = currentTrip.value.bikeId
         const response = await apiClient.endTrip(currentTrip.value.id, selectedReturnStation.value)
+
+        // Log the response for debugging
+        console.log('End trip response:', response)
+        console.log('Flex dollar awarded:', response.flexDollarAwarded)
+        console.log('Flex dollar balance:', response.flexDollarBalance)
+
         if (response.success) {
-          alert('Trip ended successfully!')
+          // Build success message
+          let message = 'Trip ended successfully!'
+
+          // Check if flex dollar was awarded
+          if (response.flexDollarAwarded) {
+            const amountAwarded = response.flexDollarAmountAwarded || 1
+            message += `\n\n🎉 You earned ${amountAwarded} Flex Dollar${amountAwarded > 1 ? 's' : ''} for returning to a low-capacity station!`
+            if (response.flexDollarConfirmationMessage) {
+              message += `\n${response.flexDollarConfirmationMessage}`
+            }
+          }
+
+          // Always refresh user data from database to get latest Flex Dollar balance
+          // Add a small delay to ensure database transaction is committed
+          await new Promise(resolve => setTimeout(resolve, 500))
+          
+          try {
+            const currentUser = await authService.getCurrentUser()
+            if (currentUser) {
+              // Normalize flexDollars field
+              if (currentUser.flexdollarbalance !== undefined) {
+                currentUser.flexDollars = currentUser.flexdollarbalance
+              } else if (currentUser.flexDollars === undefined) {
+                currentUser.flexDollars = 0
+              }
+              
+              user.value = currentUser
+              localStorage.setItem('user', JSON.stringify(currentUser))
+              console.log('Refreshed user balance from database after ending trip. Flex Dollars:', currentUser.flexDollars)
+              
+              // Update message with balance from database
+              if (response.flexDollarAwarded) {
+                message += `\nYour Flex Dollar balance: ${currentUser.flexDollars}`
+              }
+            } else if (response.flexDollarBalance !== undefined) {
+              // Fallback to response balance if getCurrentUser fails
+              if (user.value) {
+                user.value.flexDollars = response.flexDollarBalance
+                localStorage.setItem('user', JSON.stringify(user.value))
+                console.log('Updated user flex dollars from response:', user.value.flexDollars)
+              }
+            }
+          } catch (refreshError) {
+            console.warn('Could not refresh user data from backend:', refreshError)
+            // Fallback to response balance
+            if (response.flexDollarBalance !== undefined && user.value) {
+              user.value.flexDollars = response.flexDollarBalance
+              localStorage.setItem('user', JSON.stringify(user.value))
+              console.log('Updated user flex dollars from response (fallback):', user.value.flexDollars)
+            }
+          }
+
+          alert(message)
 
           prevReservationId.value = null
           currentReservation.value = null
+
+          if (response.tier != null) {
+            getLoyaltyStatusTwoArgs(user, response.tier)
+          }
 
           const res = await apiClient.calculatePrice(currentTrip.value.id)
           console.log("Billing response:", res)
           tripSummary.value = res.billing
           billing.value = res.billing
+          showBillingPopup.value = true
 
           currentTrip.value = null
           selectedReturnStation.value = ''
@@ -810,6 +1003,36 @@ const checkActiveReservation = async () => {
   border-bottom: 2px solid var(--border);
   padding: 16px 20px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.flex-dollar-top-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-weight: 700;
+  font-size: 16px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  margin-bottom: 12px;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+  z-index: 10;
+}
+
+.flex-dollar-top-badge svg {
+  color: white;
+  flex-shrink: 0;
+}
+
+.flex-dollar-text {
+  white-space: nowrap;
 }
 
 .header-content {
@@ -846,9 +1069,74 @@ const checkActiveReservation = async () => {
   gap: 16px;
 }
 
+.flex-dollar-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.flex-dollar-badge svg {
+  color: white;
+}
+
 .welcome-text {
   color: var(--text);
   font-weight: 600;
+}
+
+.account-btn {
+  background: var(--surface-hover, #f1f5f9);
+  color: var(--text, #1e293b);
+  border: 2px solid var(--border, #e2e8f0);
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.account-btn::after {
+  content: 'Account Details';
+  position: absolute;
+  bottom: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  z-index: 1000;
+}
+
+.account-btn:hover::after {
+  opacity: 1;
+}
+
+.account-btn:hover {
+  background: var(--primary, #ff6b9d);
+  color: white;
+  border-color: var(--primary, #ff6b9d);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
 }
 
 .logout-btn {
@@ -1202,6 +1490,66 @@ const checkActiveReservation = async () => {
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  border: 2px solid #e2e8f0;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #1e293b;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.modal-body p {
+  margin-bottom: 16px;
 }
 
 @media (min-width: 481px) and (max-width: 768px) {

@@ -1,6 +1,6 @@
 // API Client for backend communication
 const API_BASE_URL = 'http://localhost:8080/api'
-const API_TIMEOUT = 10000
+const API_TIMEOUT = 30000 // Increased to 30 seconds for database operations
 
 class ApiClient {
   constructor() {
@@ -77,6 +77,10 @@ class ApiClient {
     return this.request('/auth/me', {
       credentials: 'include'
     })
+  }
+
+  async getUserLoyaltyTierUpdate(userId) {
+    return this.request(`/UserRequest/${userId}`)
   }
 
   async getUserById(id) {
@@ -201,6 +205,10 @@ class ApiClient {
   
   async getUserTrips(userId, page = 0, size = 3) {
     return this.request(`/trip/paginate/user/${userId}?page=${page}&size=${size}`)
+  }
+
+  async getIncompleteUserTrips(userId) {
+    return this.request(`/trip/incomplete/${userId}`)
   }
 
   async startTrip(reservationId) {
@@ -337,6 +345,17 @@ class ApiClient {
 
   async getBillingsByUserId(userId) {
     return this.request(`/billing/user/${userId}`)
+  }
+
+  // Process trip payment with automatic Flex Dollar application
+  async processTripPayment(tripId, paymentMethod = 'card', paymentDetails = {}) {
+    return this.request(`/billing/trips/${tripId}/process`, {
+      method: 'POST',
+      body: JSON.stringify({
+        paymentMethod,
+        paymentDetails
+      })
+    })
   }
 
   async submitBikeRating(bikeId, rating){

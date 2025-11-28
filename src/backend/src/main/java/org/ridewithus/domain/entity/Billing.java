@@ -36,4 +36,13 @@ public class Billing {
 
     @OneToMany(mappedBy = "billing", cascade = CascadeType.ALL)
     private List<Charge> charges; //= new ArrayList<>();
+
+    @Column(name = "flex_dollar_discount")
+    private int flexDollarDiscount = 0;  // Amount of flex dollars applied as discount
+
+    @Column(name = "total_amount")
+    private int totalAmount;  // Total before flex dollar discount
+
+    @Column(name = "final_amount")
+    private int finalAmount;  // Amount after flex dollar discount
 }
