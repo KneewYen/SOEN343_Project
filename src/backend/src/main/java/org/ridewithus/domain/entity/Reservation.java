@@ -36,9 +36,8 @@ public class Reservation {
     @JoinColumn(name = "user_id", unique = true)
     private User user;
 
-    @Builder.Default
     @Column(name = "expiry_date_time")
-    private LocalDateTime expiryDateTime = LocalDateTime.now().plusMinutes(5); //Time till user can no longer use this reservation
+    private LocalDateTime expiryDateTime; //Time till user can no longer use this reservation
 
     @Enumerated(EnumType.STRING)
     private ReservationStatus status;

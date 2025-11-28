@@ -1,8 +1,10 @@
 package org.ridewithus.domain.services;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import org.ridewithus.domain.loyaltyProgram.ChainOfR.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.ridewithus.domain.entity.*;
@@ -23,6 +25,18 @@ import org.ridewithus.domain.dto.TripDTO;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TripService {
+
+    @Autowired
+    private BronzeHandler bronzeHandler;
+
+    @Autowired
+    private SilverHandler silverHandler;
+
+    @Autowired
+    private GoldHandler goldHandler;
+
+    @Autowired
+    private UserService userService;
 
     @Autowired
     private TripRepository tripRepository;
@@ -48,6 +62,12 @@ public class TripService {
     private StationService stationService;
     @Autowired
     private FlexDollarService flexDollarService;
+
+    @PostConstruct
+    public void initChain() {
+        bronzeHandler.setNext(silverHandler);
+        silverHandler.setNext(goldHandler);
+    }
 
     @Transactional
     public Long startTrip(Long reservationId) throws Exception {
@@ -134,11 +154,11 @@ public class TripService {
         int totalCapacity = stationEntity.getCapacity();
         double occupancyAfterReturn = (double) bikesAfterReturn / totalCapacity;
         boolean willBeBelowThreshold = occupancyAfterReturn < 0.25;
-        
+
         // Debug logging
         System.out.println(String.format(
             "Flex Dollar Check - Station: %s (ID: %d), Current bikes: %d, After return: %d, Capacity: %d, Occupancy: %.2f%%, Below threshold: %s",
-            stationEntity.getName(), endStationId, currentBikesBeforeReturn, bikesAfterReturn, 
+            stationEntity.getName(), endStationId, currentBikesBeforeReturn, bikesAfterReturn,
             totalCapacity, occupancyAfterReturn * 100, willBeBelowThreshold
         ));
 
@@ -196,9 +216,11 @@ public class TripService {
         // Get free docks at destination
         List<Dock> freeDocks = dockRepository.findAllByStationAndStatus(station.get(), Dock.DockStatus.EMPTY);
 
-        if(freeDocks.isEmpty()){
+        if (freeDocks.isEmpty()){
             eventService.emitEvent(user, "STATION_FULL", String.format("%s station is full", station.get().getName()));
         }
+
+        //updateLoyaltyTier(user);
 
         stationService.checkRebalance(user, trip.getStartStation().getId());
 
@@ -217,7 +239,7 @@ public class TripService {
     /**
      * Award Flex Dollars to a rider when they return a bike to a low-occupancy station.
      * Implements UC1: Award Flex Dollars
-     * 
+     *
      * @param user The rider
      * @param endStationId The station where the bike was returned
      * @param stationOpt Optional station object
@@ -231,19 +253,19 @@ public class TripService {
         result.put("amountAwarded", 0);
         result.put("newBalance", user.getFlexDollars());
         result.put("confirmationMessage", "");
-        
+
         try {
             // Award Flex Dollars if station will be below 25% threshold after return
             if (isBelowThreshold) {
                 // Award 1 Flex Dollar using the service (creates ledger entry)
                 int amountAwarded = 1;
                 int newBalance = flexDollarService.creditFlexDollars(user.getId(), amountAwarded, endStationId, tripId);
-                
+
                 // Use the balance returned from creditFlexDollars (it's already updated)
                 // No need to reload user - the service method already refreshed it
-                
+
                 Station station = stationOpt.orElseThrow(() -> new RuntimeException("Station not found"));
-                
+
                 // Create confirmation message
                 String confirmationMessage = String.format(
                     "You earned %d Flex Dollar%s for helping balance station capacity at %s. Your new balance is %d Flex Dollar%s.",
@@ -253,16 +275,16 @@ public class TripService {
                     newBalance,
                     newBalance == 1 ? "" : "s"
                 );
-                
+
                 // Emit event
                 eventService.emitEvent(user, "FLEX_DOLLAR_AWARDED", confirmationMessage);
-                
+
                 // Update result
                 result.put("awarded", true);
                 result.put("amountAwarded", amountAwarded);
                 result.put("newBalance", newBalance);
                 result.put("confirmationMessage", confirmationMessage);
-                
+
                 return result;
             }
         } catch (Exception e) {
@@ -270,8 +292,46 @@ public class TripService {
             System.err.println("Failed to award flex dollars: " + e.getMessage());
             e.printStackTrace();
         }
-        
+
         return result;
+    }
+
+    public Tier getTier(Long tripId) throws Exception {
+        Trip trip = tripRepository.findByTripId(tripId);
+        if (trip == null) {
+            throw new Exception("Trip does not Exists");
+        }
+        if (trip.getUser().getLoyaltyTier() != trip.getUser().getPrevLoyaltyTier()) {
+            return trip.getUser().getLoyaltyTier();
+        } else {
+            return null;
+        }
+    }
+
+    public Tier getTierByUser(User user) {
+        Tier updatedTier = bronzeHandler.handle(user);
+        Tier currentTier = user.getLoyaltyTier();
+
+        if (updatedTier != currentTier){
+            user.setLoyaltyTier(updatedTier);
+            user.setPrevLoyaltyTier(updatedTier);
+            userService.save(user);
+            return updatedTier;
+        } else {
+            return null;
+        }
+    }
+
+    // update tier of user
+    public void updateLoyaltyTier(User user){
+        Tier updatedTier = bronzeHandler.handle(user);
+        Tier currentTier = user.getLoyaltyTier();
+
+        // only update if the tier changes
+        if (updatedTier != currentTier){
+            user.setLoyaltyTier(updatedTier);
+            userService.save(user);
+        }
     }
 
     public List<TripDTO> getUserTrips(Long userId) {

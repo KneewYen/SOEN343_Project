@@ -87,10 +87,34 @@ export default {
           this.isLoggedIn = false
           this.user = null
         } else {
-          // Try to get current user (will fail for guests, that's okay)
-          const response = await apiClient.getCurrentUser().catch(() => null)
-          this.isLoggedIn = !!response?.user
-          this.user = response?.user || null
+          // First check localStorage for user (consistent with other views)
+          const userData = localStorage.getItem('user')
+          if (userData) {
+            try {
+              this.user = JSON.parse(userData)
+              this.isLoggedIn = !!this.user
+            } catch (e) {
+              console.warn('Failed to parse user from localStorage:', e)
+            }
+          }
+          
+          // Try to get current user from API (to get latest data including pricing plan)
+          // This is a secondary check/update, not the primary auth check
+          try {
+            const response = await apiClient.getCurrentUser()
+            // API might return user directly or wrapped in response.user
+            if (response) {
+              this.user = response.user || response
+              this.isLoggedIn = !!this.user
+            }
+          } catch (apiError) {
+            // If API call fails but we have localStorage user, still consider logged in
+            if (!this.user && !userData) {
+              this.isLoggedIn = false
+              this.user = null
+            }
+            // Otherwise keep the user from localStorage
+          }
         }
 
         console.log('user', this.user)

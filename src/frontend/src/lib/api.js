@@ -79,6 +79,10 @@ class ApiClient {
     })
   }
 
+  async getUserLoyaltyTierUpdate(userId) {
+    return this.request(`/UserRequest/${userId}`)
+  }
+
   async getUserById(id) {
     return this.request(`/users/${id}`)
   }
@@ -351,6 +355,12 @@ class ApiClient {
         paymentMethod,
         paymentDetails
       })
+    })
+  }
+
+  async submitBikeRating(bikeId, rating){
+    return this.request(`/bike/rating/${bikeId}/${rating}`, {
+      method: 'POST'
     })
   }
 

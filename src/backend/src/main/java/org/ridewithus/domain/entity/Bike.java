@@ -31,6 +31,11 @@ public class Bike {
     @JoinColumn(name = "dock_id", unique = true) //unique makes it so it has acts as One-to-one relationship, more flexible for later on
     private Dock dock;
 
+    private Long rating;
+
+    @Column(name = "num_review")
+    private Long numReviews;
+
     // Methods delegate to state
     public void reserve() throws Exception {
         if (state != null) {

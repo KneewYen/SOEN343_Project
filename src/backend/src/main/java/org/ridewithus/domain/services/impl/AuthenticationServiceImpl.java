@@ -5,6 +5,7 @@ import org.ridewithus.domain.dto.LoginRequest;
 import org.ridewithus.domain.dto.RegisterRequest;
 import org.ridewithus.domain.dto.UserDTO;
 import org.ridewithus.domain.entity.User;
+import org.ridewithus.domain.loyaltyProgram.ChainOfR.Tier;
 import org.ridewithus.domain.services.AuthenticationService;
 import org.ridewithus.infrastructure.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,6 +67,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             user.setAddress(request.getAddress());
             user.setPassword(request.getPassword());
             user.setRole("rider"); // Default role
+            user.setLoyaltyTier(Tier.NONE);
+            user.setPrevLoyaltyTier(Tier.NONE);
+
 
             // Save to database
             User savedUser = userRepository.save(user);
@@ -141,7 +145,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
         return null;
     }
-    
+
     @Override
     public void logout() {
         this.currentUser = null;
@@ -193,6 +197,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             user.getEmail(),
             user.getRole(),
             user.getAddress(),
+            user.getPricingPlan(),
+            user.getLoyaltyTier(),
+            user.getPrevLoyaltyTier()
             user.getPricingPlan(),
             user.getFlex_dollar_balance()
         );

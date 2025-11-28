@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -52,13 +53,18 @@ public class StationService {
 
         List<Dock> docks = dockRepository.findByStationAndStatus(station.get(), Dock.DockStatus.OCCUPIED);
 
-        List<Bike> bikes = docks.stream().map(Dock::getBike).filter(bike -> bike.getStatus() == BikeStatus.AVAILABLE).toList();
+        // Filter out null bikes and only include bikes with AVAILABLE status
+        List<Bike> bikes = docks.stream()
+                .map(Dock::getBike)
+                .filter(Objects::nonNull).filter(bike -> bike != null && bike.getStatus() == BikeStatus.AVAILABLE)
+                .toList();
 
         return bikes.stream().map(bike ->
                 BikeDTO.builder()
                         .id(bike.getId())
                         .type(bike.getType())
                         .status(bike.getStatus())
+                        .rating(bike.getRating())
                         .dockId(bike.getDock().getId())
                         .build()).toList();
 

@@ -2,6 +2,7 @@ package org.ridewithus.controller;
 
 import org.ridewithus.domain.dto.BillingDTO;
 import org.ridewithus.domain.dto.TripDTO;
+import org.ridewithus.domain.loyaltyProgram.ChainOfR.Tier;
 import org.ridewithus.domain.services.PricingService;
 import org.ridewithus.domain.services.TripService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,13 +43,15 @@ public class TripController {
     @PutMapping("/{tripId}/{stationId}")
     public ResponseEntity<Map<String, Object>> endTrip(@PathVariable("tripId") Long tripId, @PathVariable("stationId") Long stationId) {
         try {
+            Tier tier = tripService.getTier(tripId);
             Map<String, Object> tripResult = tripService.endTrip(tripId, stationId);
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
+            response.put("tier", tier);
             response.put("tripId", tripResult.get("tripId"));
             response.put("flexDollarBalance", tripResult.get("flexDollarBalance"));
             response.put("flexDollarAwarded", tripResult.get("flexDollarAwarded"));
-            
+
             // Include additional Flex Dollar award information if available
             if (tripResult.containsKey("flexDollarAmountAwarded")) {
                 response.put("flexDollarAmountAwarded", tripResult.get("flexDollarAmountAwarded"));
@@ -56,7 +59,7 @@ public class TripController {
             if (tripResult.containsKey("flexDollarConfirmationMessage")) {
                 response.put("flexDollarConfirmationMessage", tripResult.get("flexDollarConfirmationMessage"));
             }
-            
+
             response.put("message", "Trip ended successfully");
             return ResponseEntity.ok(response);
         } catch (Exception e) {

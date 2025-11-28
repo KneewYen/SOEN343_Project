@@ -7,6 +7,8 @@ import org.ridewithus.domain.entity.Trip;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface TripRepository extends JpaRepository<Trip, Long> {
@@ -24,6 +26,8 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
 
     Page<Trip> findByUserId(Long userId, Pageable pageable);
 
+    List<Trip> findByUserIdAndStartTimeAfterAndTripCompleteTrue(Long userId, LocalDateTime starTime);
+  
     List<Trip> findByUserIdAndTripComplete(Long userId, boolean tripComplete);
 
 }
