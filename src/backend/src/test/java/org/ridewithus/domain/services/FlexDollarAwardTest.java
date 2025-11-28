@@ -49,6 +49,8 @@ class FlexDollarAwardTest {
 
     @InjectMocks
     private TripService tripService;
+    @InjectMocks
+    private FlexDollarService flexDollarService;
 
     private Trip trip;
     private Station station;
@@ -295,7 +297,7 @@ class FlexDollarAwardTest {
         when(stationRepository.findById(1L)).thenReturn(Optional.of(station));
         when(dockRepository.findByStationAndStatus(station, Dock.DockStatus.EMPTY))
                 .thenReturn(List.of(dock));
-        when(stationService.minimumCapacityReached(1L)).thenReturn(false); // Exactly 25% = false
+        lenient().when(stationService.minimumCapacityReached(1L)).thenReturn(false); // Exactly 25% = false
 
         // Act
         Map<String, Object> result = tripService.endTrip(1L, 1L);

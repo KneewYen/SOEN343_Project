@@ -191,17 +191,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
      */
     private UserDTO mapToUserDTO(User user) {
         return new UserDTO(
-            user.getId(),
-            user.getFullName(),
-            user.getUserName(),
-            user.getEmail(),
-            user.getRole(),
-            user.getAddress(),
-            user.getPricingPlan(),
-            user.getLoyaltyTier(),
-            user.getPrevLoyaltyTier()
-            user.getPricingPlan(),
-            user.getFlex_dollar_balance()
+                user.getId(),
+                user.getFullName(),
+                user.getUserName(),
+                user.getEmail(),
+                user.getRole(),
+                user.getAddress(),
+                user.getPricingPlan(),
+                user.getFlex_dollar_balance()
         );
     }
 }
