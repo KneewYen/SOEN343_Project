@@ -1,6 +1,7 @@
 {
   "stations": [
     {
+      "id": 1,
       "name": "Concordia",
       "address": "1550 De Maisonneuve Blvd W",
       "latitude": 45.496712,
@@ -9,44 +10,55 @@
       "status": "active",
       "docks": [
         {
+          "id": 1,
           "status": "occupied",
-          "bike": { "type": "e-bike", "status": "available" }
+          "bike": { "id": 1, "type": "e-bike", "status": "available" }
         },
         {
+          "id": 2,
           "status": "empty"
         },
         {
+          "id": 3,
           "status": "occupied",
-          "bike": { "type": "e-bike", "status": "available" }
+          "bike": { "id": 2, "type": "e-bike", "status": "available" }
         },
         {
+          "id": 4,
           "status": "occupied",
-          "bike": { "type": "e-bike", "status": "available" }
+          "bike": { "id": 3, "type": "e-bike", "status": "available" }
         },
         {
+          "id": 5,
           "status": "occupied",
-          "bike": { "type": "standard", "status": "available" }
+          "bike": { "id": 4, "type": "standard", "status": "available" }
         },
         {
+          "id": 6,
           "status": "occupied",
-          "bike": { "type": "standard", "status": "available" }
+          "bike": { "id": 5, "type": "standard", "status": "available" }
         },
         {
+          "id": 7,
           "status": "occupied",
-          "bike": { "type": "standard", "status": "available" }
+          "bike": { "id": 6, "type": "standard", "status": "available" }
         },
         {
+          "id": 8,
           "status": "out_of_service"
         },
         {
+          "id": 9,
           "status": "empty"
         },
         {
+          "id": 10,
           "status": "empty"
         }
       ]
     },
     {
+      "id": 2,
       "name": "McGill",
       "address": "845 Sherbrooke St W, Montreal, Quebec H3A 0G4",
       "latitude": 45.5060,
@@ -55,57 +67,106 @@
       "status": "active",
       "docks": [
         {
+          "id": 11,
           "status": "occupied",
           "bike": {
+            "id": 7,
             "type": "e-bike",
             "status": "available"
           }
         },
         {
+          "id": 12,
           "status": "empty"
         },
         {
+          "id": 13,
           "status": "occupied",
           "bike": {
+            "id": 8,
             "type": "e-bike",
             "status": "available"
           }
         },
         {
+          "id": 14,
           "status": "occupied",
           "bike": {
+            "id": 9,
             "type": "e-bike",
             "status": "available"
           }
         },
         {
+          "id": 15,
           "status": "occupied",
           "bike": {
+            "id": 10,
             "type": "standard",
             "status": "available"
           }
         },
         {
+          "id": 16,
           "status": "occupied",
           "bike": {
+            "id": 11,
             "type": "standard",
             "status": "available"
           }
         },
         {
+          "id": 17,
           "status": "occupied",
           "bike": {
+            "id": 12,
             "type": "standard",
             "status": "available"
           }
         },
         {
+          "id": 18,
           "status": "out_of_service"
         },
         {
+          "id": 19,
           "status": "empty"
         },
         {
+          "id": 20,
+          "status": "empty"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Eaton Centre",
+      "address": "705 rue Sainte-Catherine Ouest",
+      "latitude": 45.502586,
+      "longitude": -73.571404,
+      "capacity": 5,
+      "status": "active",
+      "docks": [
+        {
+          "id": 21,
+          "status": "occupied",
+          "bike": { "id": 13, "type": "standard", "status": "available" }
+        },
+        {
+          "id": 22,
+          "status": "occupied",
+          "bike": { "id": 14, "type": "standard", "status": "available" }
+        },
+        {
+          "id": 23,
+          "status": "out_of_service"
+        },
+        {
+          "id": 24,
+          "status": "empty"
+        },
+        {
+          "id": 25,
           "status": "empty"
         }
       ]

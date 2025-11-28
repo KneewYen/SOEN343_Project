@@ -166,6 +166,13 @@ public class OperatorService {
         String newDock = bike.getDock().getStation().getName();
         eventService.emitEvent(operator,"REBALANCE", String.format("Bike %d: %s -> %s", bike.getId(), oldDock, newDock));
 
+        // Get free docks at destination after rebalancing
+        List<Dock> freeDocksAfterRebalance = dockRepository.findAllByStationAndStatus(destinationStation, Dock.DockStatus.EMPTY);
+
+        if(freeDocksAfterRebalance.isEmpty()){
+            eventService.emitEvent(operator, "STATION_FULL", String.format("%s station is full", destinationStation.getName()));
+        }
+
         return "Bike " + bike.getId() + " successfully moved from station " + sourceStation.getName()
                 + " to station " + destinationStation.getName();
 
@@ -223,8 +230,17 @@ public class OperatorService {
             dockRepository.save(newDock);
             bikeRepository.save(bike);
 
+
+
             String newDockStr = bike.getDock().getStation().getName();
             eventService.emitEvent(operator,"REBALANCE", String.format("Bike %d: %s -> %s", bike.getId(), oldDockStr, newDockStr));
+        }
+
+        // Get free docks at destination after rebalancing
+        List<Dock> freeDocksAfterRebalance = dockRepository.findAllByStationAndStatus(destinationStation, Dock.DockStatus.EMPTY);
+
+        if(freeDocksAfterRebalance.isEmpty()){
+            eventService.emitEvent(operator, "STATION_FULL", String.format("%s station is full", destinationStation.getName()));
         }
 
         return numberOfBikes + " bikes successfully rebalanced from " + sourceStation.getName() + " to " + destinationStation.getName();

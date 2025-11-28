@@ -60,7 +60,7 @@
             <td>{{ ride.userName }}</td>
             <td>{{ ride.startStationId }} → {{ ride.endStationId }}</td>
             <td>{{ ride.bikeType }}</td>
-            <td>{{ ride.totalAmount }}</td>
+            <td>{{ formatCurrency(ride.totalAmount)}}</td>
           </tr>
         </tbody>
       </table>
@@ -174,7 +174,7 @@ function getTripCost(ride) {
 }
 
 function formatCurrency(val) {
-  return typeof val === 'number' ? val.toFixed(2) : val
+  return typeof val === 'number' ? val.toFixed(2) : "-"
 }
 
 //End here
