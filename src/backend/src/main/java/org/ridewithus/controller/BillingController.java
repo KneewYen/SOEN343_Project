@@ -88,7 +88,7 @@ public class BillingController {
     public ResponseEntity<Map<String, Object>> getBillingByTripId(@PathVariable("tripId") Long tripId) {
         try {
             Optional<Billing> billingOpt = billingRepository.findByTrip_TripId(tripId);
-            
+
             Map<String, Object> response = new HashMap<>();
             if (billingOpt.isEmpty()) {
                 response.put("success", false);
